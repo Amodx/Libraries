@@ -1,0 +1,27 @@
+{
+    "name": "@amodx/schemas",
+    "version": "0.0.0",
+    "module": "index.js",
+    "types": "index.d.ts",
+    "type": "module",
+    "description": "Tool for object schemas.",
+    "keywords": [],
+    "scripts": {
+     "build": "mkdir -p dist && rm -rf dist/* && cp package.json dist/package.json && cd ./src && npx tsc",
+     "compile": "cd ./src && npx tsc --watch"
+    },
+    "repository": {
+     "url": "git+https://github.com/Amodx/Libraries.git"
+    },
+    "bugs": {
+     "url": "https://github.com/Amodx/Libraries/issues"
+    },
+    "homepage": "https://github.com/Amodx/Libraries",
+    "author": "Amodx",
+    "license": "MIT",
+    "devDependencies": {},
+    "main": "index.js",
+    "publishConfig": {
+     "access": "public"
+    }
+   }
