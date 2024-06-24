@@ -1,29 +1,30 @@
-import { ComponentData, TraitData } from "./NodeData.types";
+import { ComponentData, ComponentStateData, TraitData } from "./NodeData.types";
 import { Node } from "./Node";
 import { Observable } from "@amodx/core/Observers";
 import { Pipeline } from "@amodx/core/Pipelines";
 import { TraitBase, TraitBaseConstructor } from "./TraitBase";
 import { NodeRegister } from "./NodeRegister";
 import { NodeGraph } from "./NodeGraph";
-
-export interface ComponentMetaData {
+import { Schema, ObjectSchemaInstance } from "@amodx/schemas";
+export interface ComponentMetaData<Properties extends object = any> {
   id: string;
   name: string;
-  schema: any;
+  schema?: Schema<Properties>;
   [key: string]: any;
 }
+export type ComponentCreateFC<Properties extends object = any> = (
+  overrides: Partial<Properties>,
+  traits?: TraitData[],
+  state?: ComponentStateData
+) => ComponentData<Properties>;
 
 export interface ComponentBaseConstructor<Properties extends object = any> {
-  Meta: ComponentMetaData;
-  CreateNew(
-    overrides: Partial<ComponentData<Properties>>
-  ): ComponentData<Properties>;
+  Meta: ComponentMetaData<Properties>;
+  Create: ComponentCreateFC<Properties>;
   new (node: Node, data: ComponentData<Properties>): ComponentBase<Properties>;
 }
 
-export interface ComponentObservers {
-  [key: string]: any;
-}
+export interface ComponentObservers {}
 
 export class ComponentObservers {
   disposed = new Observable();
@@ -32,9 +33,7 @@ export class ComponentObservers {
   traitsUpdated = new Observable();
 }
 
-export interface ComponentPipelines {
-  [key: string]: any;
-}
+export interface ComponentPipelines {}
 
 class ComponentBasePipelines<Properties extends object = any> {
   disposed = new Pipeline<ComponentBase<Properties>>();
@@ -42,38 +41,52 @@ class ComponentBasePipelines<Properties extends object = any> {
   copy = new Pipeline<ComponentData<Properties>>();
 }
 
-export interface ComponentBase {
-  [key: string]: any;
-}
+export interface ComponentBase {}
 
 export abstract class ComponentBase<Properties extends object = any> {
-  static CreateBase(): ComponentData {
-    return {
-      id: NodeGraph.GenerateId(),
+  static OnCreateData = new Pipeline<ComponentData>();
+  static OnCreate = new Observable<ComponentBase>();
+  static CreateBase(
+    traits?: TraitData[],
+    state?: ComponentStateData
+  ): ComponentData {
+    return this.OnCreateData.pipe({
       type: "",
-      state: {},
+      state: state ? state : [],
       properties: "",
-      traits: [],
-    };
+      traits: traits ? traits : [],
+    });
   }
 
   isNode: false = false;
   isComponent: true = true;
   isTrait: false = false;
 
+  type: string;
+  state: ComponentStateData;
+  properties: ObjectSchemaInstance<Properties>;
   observers = new ComponentObservers();
   pipelines = new ComponentBasePipelines<Properties>();
   traits: TraitBase<any>[] = [];
-  constructor(public node: Node, public data: ComponentData<Properties>) {
+  constructor(public node: Node, data: ComponentData<Properties>) {
+    this.type = data.type;
     for (const component of data.traits) {
       this.addTraits(component);
     }
+    this.state = data.state;
+    if (this.getClass().Meta.schema)
+      this.properties = this.getClass().Meta.schema!.instantiate(
+        data.properties
+      );
+
+    ComponentBase.OnCreate.notify(this);
   }
 
   abstract init(): Promise<void>;
   abstract getClass(): ComponentBaseConstructor;
-  abstract getMeta(): ComponentMetaData;
-
+  getMeta() {
+    return this.getClass().Meta;
+  }
   async initAllTraits() {
     for (const trait of this.traits) {
       await trait.init();
@@ -117,43 +130,42 @@ export abstract class ComponentBase<Properties extends object = any> {
     }
     this.observers.traitsUpdated.notify();
   }
-  getTraitById(id: string) {
-    return this.traits.find((_) => _.data.id == id);
-  }
-  removeTraitById(id: string) {
-    const index = this.traits.findIndex((_) => _.data.id == id);
-    if (index !== -1) {
+
+  removeTraitByIndex(index: number) {
+    const trait = this.traits[index];
+    if (trait) {
       const child = this.traits.splice(index, 1)![0];
       this.observers.traitRemoved.notify(child);
+      return true;
     }
-    this.observers.traitsUpdated.notify();
+    return false;
   }
-  removeTraitsByType(type: string) {
-    const components = this.traits.filter((_) => _.data.type == type);
-    components.forEach((_) => this.removeTraitById(_.data.id));
+  removeTrait(type: string) {
+    return this.removeTraitByIndex(
+      this.traits.findIndex((_) => _.getMeta().name)
+    );
   }
 
   getTraitByType(type: string) {
-    return this.traits.find((_) => _.data.type == type);
+    return this.traits.find((_) => _.type == type);
   }
-  getTraitsByType(type: string) {
-    return this.traits.filter((_) => _.data.type == type);
+  getAllTraitsOfType(type: string) {
+    return this.traits.filter((_) => _.type == type);
   }
+
   copy(): ComponentData {
     return this.pipelines.toJSON.pipe({
-      id: NodeGraph.GenerateId(),
-      properties: { ...this.data.properties },
-      type: this.data.type,
-      state: this.data.state,
+      properties: this.properties ? this.properties.getSchema().store() : {},
+      type: this.getMeta().id,
+      state: this.state,
       traits: this.traits.map((_) => _.copy()),
     });
   }
   toJSON(): ComponentData {
     return this.pipelines.toJSON.pipe({
-      id: this.data.id,
-      properties: { ...this.data.properties },
-      type: this.data.type,
-      state: this.data.state,
+      properties: this.properties ? this.properties.getSchema().store() : {},
+      type: this.getMeta().id,
+      state: this.state,
       traits: this.traits.map((_) => _.toJSON()),
     });
   }

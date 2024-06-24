@@ -13,15 +13,15 @@ import { QueueManager } from "../Queue/QueueManager.js";
 import { Threads } from "../Threads.js";
 
 export class ThreadPool {
-  _totalComms = 0;
-  _currentCom = 0;
+  private _totalThreads = 0;
+  private _currentThread = 0;
   name = "";
-  __comms: Thread[] = [];
-  __data: ThreadPoolData = {
+  private __threads: Thread[] = [];
+  private __data: ThreadPoolData = {
     name: "",
-    onPortSet: (port, commName) => {},
+    onPortSet: (port, threadName) => {},
   };
-  __queues: Record<string, QueueManager<any>> = {};
+  private __queues: Record<string, QueueManager<any>> = {};
   messageFunctions: MessageRecord = {};
 
   constructor(data: ThreadPoolData) {
@@ -29,26 +29,30 @@ export class ThreadPool {
     this.name = data.name;
   }
 
-  __throwError(message: string) {
+  getThreads() {
+    return this.__threads;
+  }
+
+  private __throwError(message: string) {
     throw new Error(`[ThreadCommManager : ${this.__data.name}] ${message}`);
   }
 
-  connectToCom(commToConnectTo: Thread) {
-    for (const comm of this.__comms) {
-      comm.connectToThread(commToConnectTo);
+  connectToThread(threadToConnectTo: Thread) {
+    for (const thread of this.__threads) {
+      thread.connectToThread(threadToConnectTo);
     }
   }
 
   destroyAll() {
-    for (const comm of this.__comms) {
-      comm.destroy();
+    for (const thread of this.__threads) {
+      thread.destroy();
     }
   }
 
   isReady() {
     let ready = true;
-    for (const comm of this.__comms) {
-      if (!comm.isPortSet()) ready = false;
+    for (const thread of this.__threads) {
+      if (!thread.isPortSet()) ready = false;
     }
     return ready;
   }
@@ -66,18 +70,18 @@ export class ThreadPool {
   }
 
   addPort(port: CommPortTypes) {
-    this._totalComms++;
-    const newCommName = `${this.__data.name}-${this._totalComms}`;
+    this._totalThreads++;
+    const newCommName = `${this.__data.name}-${this._totalThreads}`;
     const newComm = new Thread(newCommName, this.__data.name, this);
     Threads.addThread(newComm);
     newComm.setPort(port);
     this.__data.onPortSet(port, newCommName);
 
-    this.__comms.push(newComm);
+    this.__threads.push(newComm);
     newComm.sendMessage(ThreadsMessageHeaders.internal, [
       ThreadsInternalMessages.nameThread,
       newCommName,
-      this._totalComms,
+      this._totalThreads,
     ]);
   }
   addPorts(ports: CommPortTypes[]) {
@@ -85,9 +89,9 @@ export class ThreadPool {
       this.addPort(port);
     }
   }
-  addComms(comms: Thread[]) {
-    this._totalComms += comms.length;
-    this.__comms.push(...comms);
+  addComms(threads: Thread[]) {
+    this._totalThreads += threads.length;
+    this.__threads.push(...threads);
   }
 
   __isManagerMessage(data: any) {
@@ -109,8 +113,8 @@ export class ThreadPool {
     data: any[] = [],
     transfers?: any[]
   ) {
-    for (const comm of this.__comms) {
-      comm.sendMessage(message, data, transfers);
+    for (const thread of this.__threads) {
+      thread.sendMessage(message, data, transfers);
     }
   }
 
@@ -120,8 +124,8 @@ export class ThreadPool {
     transfers: any[] = [],
     queueId?: string
   ) {
-    for (const comm of this.__comms) {
-      comm.runTasks(id, data, transfers, queueId);
+    for (const thread of this.__threads) {
+      thread.runTasks(id, data, transfers, queueId);
     }
   }
 
@@ -133,12 +137,12 @@ export class ThreadPool {
     queueId?: string
   ) {
     if (threadNumber < 0) {
-      const comm = this.__comms[this._currentCom];
-      comm.runTasks(id, data, transfers, queueId);
+      const thread = this.__threads[this._currentThread];
+      thread.runTasks(id, data, transfers, queueId);
       return this.__handleCount();
     } else {
-      const comm = this.__comms[threadNumber];
-      comm.runTasks(id, data, transfers, queueId);
+      const thread = this.__threads[threadNumber];
+      thread.runTasks(id, data, transfers, queueId);
       return threadNumber;
     }
   }
@@ -152,15 +156,15 @@ export class ThreadPool {
     excludeThread = -1
   ) {
     if (typeof threadNumber === "undefined") {
-      if (this._currentCom == excludeThread) {
+      if (this._currentThread == excludeThread) {
         this.__handleCount();
       }
-      const comm = this.__comms[this._currentCom];
-      comm.runPromiseTasks(id, data, transfers, onDone);
+      const thread = this.__threads[this._currentThread];
+      thread.runPromiseTasks(id, data, transfers, onDone);
       return this.__handleCount();
     } else {
-      const comm = this.__comms[threadNumber];
-      comm.runPromiseTasks(id, data, transfers, onDone);
+      const thread = this.__threads[threadNumber];
+      thread.runPromiseTasks(id, data, transfers, onDone);
       return threadNumber;
     }
   }
@@ -186,11 +190,11 @@ export class ThreadPool {
     });
   }
 
-  __handleCount() {
-    let countReturn = this._currentCom;
-    this._currentCom++;
-    if (this._currentCom >= this._totalComms) {
-      this._currentCom = 0;
+  private __handleCount() {
+    let countReturn = this._currentThread;
+    this._currentThread++;
+    if (this._currentThread >= this._totalThreads) {
+      this._currentThread = 0;
     }
     return countReturn;
   }
@@ -238,36 +242,17 @@ export class ThreadPool {
     return <QueueManager<T>>queue;
   }
 
-  __syncQueue(id: string | number, sab: SharedArrayBuffer) {
-    for (const comm of this.__comms) {
-      comm.sendMessage(ThreadsMessageHeaders.internal, [
-        ThreadsInternalMessages.syncQueue,
-        Threads.threadName,
-        id,
-        sab,
-      ]);
-    }
-  }
 
-  __unSyncQueue(id: string | number) {
-    for (const comm of this.__comms) {
-      comm.sendMessage(ThreadsMessageHeaders.internal, [
-        ThreadsInternalMessages.unSyncQueue,
-        Threads.threadName,
-        id,
-      ]);
-    }
-  }
 
   syncData<T>(dataType: string | number, data: T) {
-    for (const comm of this.__comms) {
-      comm.syncData(dataType, data);
+    for (const thread of this.__threads) {
+      thread.syncData(dataType, data);
     }
   }
 
   unSyncData<T>(dataType: string | number, data: T) {
-    for (const comm of this.__comms) {
-      comm.unSyncData(dataType, data);
+    for (const thread of this.__threads) {
+      thread.unSyncData(dataType, data);
     }
   }
 }

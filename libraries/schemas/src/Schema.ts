@@ -1,8 +1,11 @@
 import { Property } from "./Properties/Property";
-import { PropertyInputBase } from "./Inputs/PropertyInput";
 import { PropertyInputRegister } from "./Inputs/PropertyInputRegister";
-import { SchemaNode, TemplateNode } from "Schemas/SchemaNode";
-import { SchemaInstance } from "./Schemas/SchemaInstance";
+import { SchemaNode, TemplateNode } from "./Schemas/SchemaNode";
+import { ObjectSchema } from "./Schemas/ObjectSchema";
+import {
+  ObjectSchemaInstance,
+  ObjectSchemaInstanceBase,
+} from "./Schemas/ObjectSchemaInstance";
 class SchemaData {
   static Create(data: Partial<SchemaData>): SchemaData {
     return {
@@ -15,18 +18,26 @@ class SchemaData {
   private constructor(
     public id: string,
     public name: string,
-    public properties: Property[]
+    public properties: Property<any, any>[]
   ) {}
 }
 
 export class Schema<DataInterface extends object = any> {
   static Create<DataInterface extends object = any>(
-    ...properties: Property[]
-  ): SchemaInstance<DataInterface> & DataInterface {
+    ...properties: Property<any, any>[]
+  ): Schema<DataInterface> {
+    return new Schema<DataInterface>(
+      SchemaData.Create({ id: "", name: "", properties })
+    );
+  }
+  static CreateInstance<DataInterface extends object = any>(
+    ...properties: Property<any, any>[]
+  ): ObjectSchemaInstance<DataInterface> {
     return new Schema<DataInterface>(
       SchemaData.Create({ id: "", name: "", properties })
     ).instantiate();
   }
+
   static Inputs = PropertyInputRegister;
 
   private constructor(public data: SchemaData) {
@@ -35,7 +46,29 @@ export class Schema<DataInterface extends object = any> {
 
   private template: TemplateNode;
 
-  instantiate(): SchemaInstance<DataInterface> & DataInterface {
+  createData(): DataInterface {
+    const traverse = (properties: TemplateNode, parentObject: any) => {
+      for (const template of properties.children) {
+        if (template.children && template.children.length) {
+          const parent = {};
+          traverse(template, parent);
+          parentObject[template.property.id] = parent;
+          continue;
+        }
+        Object.defineProperty(parentObject, template.property.id, {
+          value: template.property.value,
+        });
+      }
+    };
+
+    const instance = {} as any;
+    traverse(this.template, instance);
+    return instance as any;
+  }
+
+  instantiate(
+    data?: Partial<DataInterface>
+  ): ObjectSchemaInstance<DataInterface> {
     const traverse = (
       properties: TemplateNode,
       schemaNode: SchemaNode,
@@ -45,9 +78,10 @@ export class Schema<DataInterface extends object = any> {
         schemaNode.children ??= [];
         const node = new SchemaNode(
           Property.Create(template.property),
-          instance
+          objectSchema
         );
         schemaNode.children.push(node);
+
         if (template.children && template.children.length) {
           const parent = {};
           traverse(template, node, parent);
@@ -65,8 +99,15 @@ export class Schema<DataInterface extends object = any> {
       }
     };
 
-    const instance = new SchemaInstance(this);
-    traverse(this.template, instance.__root, instance);
+    const objectSchema = new ObjectSchema(this);
+    const instance = new ObjectSchemaInstanceBase(this, objectSchema);
+    traverse(this.template, objectSchema.__root, instance);
+
+    objectSchema.traverse((node) => {
+      if (node.property.initialize) node.property.initialize(node);
+    });
+    if (data) objectSchema.loadIn(data);
+
     return instance as any;
   }
 
@@ -74,8 +115,9 @@ export class Schema<DataInterface extends object = any> {
     const traverse = (properties: Property[], parent: TemplateNode) => {
       for (const property of properties) {
         parent.children ??= [];
-        parent.children.push(new TemplateNode(property));
-        if (property.children) traverse(property.children, parent);
+        const newNode = new TemplateNode(property);
+        parent.children.push(newNode);
+        if (property.children) traverse(property.children, newNode);
       }
     };
     const root = new TemplateNode(Property.Create({ id: "__root__" }));

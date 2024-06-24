@@ -1,6 +1,6 @@
 import { PropertyConditionAction } from "./PropertyConditionAction";
-import { PropertyInputBase } from "../Inputs/PropertyInput";
-import { SchemaNode } from "Schemas/SchemaNode";
+import { PropertyInputBase, PropertyInputData } from "../Inputs/PropertyInput";
+import { SchemaNode } from "../Schemas/SchemaNode";
 
 class PropertyState {
   static Create(data: Partial<PropertyState>) {
@@ -9,14 +9,19 @@ class PropertyState {
   private constructor(public enabled = true, public locked = false) {}
 }
 
-export class Property<Value = any, Input extends PropertyInputBase = any> {
-  static Create<T>(data: Partial<Property<T>>) {
-    return new Property(
+export class Property<
+  Value = any,
+  Input extends PropertyInputData | null = null
+> {
+  static Create<Value = any, Input extends PropertyInputData | null = null>(
+    data: Partial<Property<Value, Input>>
+  ) {
+    return new Property<Value, Input>(
       data.id ? data.id : "",
       data.name ? data.name : data.id ? data.id : "",
       data.value as any,
       data.state ? PropertyState.Create(data.state) : PropertyState.Create({}),
-      data.hydrate,
+      data.initialize,
       data.input,
       data.editable,
       data.conditions,
@@ -29,7 +34,7 @@ export class Property<Value = any, Input extends PropertyInputBase = any> {
     public name: string,
     public value: Value,
     public state: PropertyState,
-    public hydrate?: (node:SchemaNode )=>void,
+    public initialize?: (node: SchemaNode) => void,
     public input?: Input,
     public editable?: boolean,
     public conditions?: PropertyConditionAction[],

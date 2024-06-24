@@ -4,7 +4,7 @@
 export class SafeInterval {
   private _active = false;
   private _run: () => void | Promise<void> = () => {}; 
-  private interval = 100;
+  private interval = 1;
   private currentTimeout: number | undefined; 
   private canRun = true;
 

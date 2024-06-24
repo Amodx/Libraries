@@ -1,5 +1,5 @@
 import { Property } from "../Properties/Property";
-import { PropertyInputBase } from "../Inputs/PropertyInput";
+import { PropertyInputBase, PropertyInputData } from "../Inputs/PropertyInput";
 import { PropertyInputRegister } from "../Inputs/PropertyInputRegister";
 
 import { Observable } from "@amodx/core/Observers/index";
@@ -10,39 +10,68 @@ export class TemplateNode {
   children: TemplateNode[];
 }
 
-class SchemaNodeObservers {
-  updated = new Observable<Property>();
-  loadedIn = new Observable<Property>();
+class SchemaNodeObservers<
+  Value = any,
+  Input extends PropertyInputBase<any, any> = any
+> {
+  stateUpdated = new Observable<SchemaNode<Value, Input>>();
+  updated = new Observable<SchemaNode<Value, Input>>();
+  loadedIn = new Observable<SchemaNode<Value, Input>>();
 }
 
-class SchemaNodePipelines {
-  onStore = new Pipeline<Property>();
-  updated = new Pipeline<{ newValue: any; property: Property }>();
-  loadedIn = new Pipeline<{ value: any; property: Property }>();
+class SchemaNodePipelines<
+  Value = any,
+  Input extends PropertyInputBase<any, any> = any
+> {
+  onStore = new Pipeline<Property<Value, Input["data"]>>();
+  updated = new Pipeline<{ newValue: any; node: SchemaNode<Value, Input> }>();
+  loadedIn = new Pipeline<{ value: any; node: SchemaNode<Value, Input> }>();
 }
 
-export class SchemaNode {
+export class SchemaNode<
+  Value = any,
+  Input extends PropertyInputBase<any, any> = any
+> {
   children: SchemaNode[] | null = null;
-  conditions: PropertyConditionAction[];
-  input: PropertyInputBase;
+  conditions: PropertyConditionAction[] = [];
+  input: Input | null;
 
-  observers = new SchemaNodeObservers();
-  pipelines = new SchemaNodePipelines();
+  observers = new SchemaNodeObservers<Value, Input>();
+  pipelines = new SchemaNodePipelines<Value, Input>();
 
-  constructor(public property: Property, public root: any) {
+  constructor(
+    public property: Property<Value, Input["data"]>,
+    public root: any
+  ) {
     if (property.input) {
-      const inputClass = PropertyInputRegister.getProperty(property.input.id);
-      this.input = new inputClass(property.input, this);
+      const inputClass = PropertyInputRegister.getProperty(property.input.type);
+      this.input = new inputClass(property.input, this as any) as any;
     }
     if (property.conditions && property.conditions.length) {
       for (const condition of property.conditions) {
-        condition.node = this;
+        condition.node = this as any;
         this.conditions.push(condition);
       }
       this.observers.updated.subscribe(this, () => {
         this.conditions.forEach((_) => _.evaluate(this.root));
       });
     }
+  
+  }
+
+  isEnabled() {
+    return this.property.state.enabled;
+  }
+  setEnabled(enabled: boolean) {
+    this.property.state.enabled = enabled;
+    this.observers.stateUpdated.notify(this);
+  }
+  isLocked() {
+    return this.property.state.locked;
+  }
+  setLocked(locked: boolean) {
+    this.property.state.locked = locked;
+    this.observers.stateUpdated.notify(this);
   }
 
   store() {
@@ -51,20 +80,21 @@ export class SchemaNode {
   loadIn(value: any) {
     const oldValue = this.property.value;
     this.property.value = this.pipelines.loadedIn.pipe({
-      property: this.property,
+      node: this,
       value,
     }).value;
-    if (oldValue != this.property.value)
-      this.observers.loadedIn.notify(this.property);
+    if (oldValue != this.property.value) this.observers.loadedIn.notify(this);
+  }
+  get() {
+    return this.property.value;
   }
   update(newValue: any) {
     const oldValue = this.property.value;
     this.property.value = this.pipelines.updated.pipe({
-      property: this.property,
+      node: this,
       newValue,
     }).newValue;
-    if (oldValue != this.property.value)
-      this.observers.updated.notify(this.property);
+    if (oldValue != this.property.value) this.observers.updated.notify(this);
   }
   forEach(run: (node: SchemaNode) => void) {
     if (!this.children) return;

@@ -59,14 +59,13 @@ export class Threads {
 
   static getThread(id: string) {
     const thread = this._threads.get(id);
-    if (!thread) throw new Error(`Thread with id ${id} doest not exist`);
+    if (!thread) return null;
     return thread;
   }
 
   static getThreadPool(id: string) {
     const threadPool = this._threadPools.get(id);
-    if (!threadPool)
-      throw new Error(`Thread pool with id ${id} doest not exist`);
+    if (!threadPool) return null;
     return threadPool;
   }
 

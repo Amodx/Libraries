@@ -1,9 +1,4 @@
-import {
-  PropertyInputBase,
-  PropertyInputConstructor,
-  PropertyInputData,
-  PropertyInputMetaData,
-} from "./PropertyInput";
+import { PropertyInputBase, PropertyInputMetaData } from "./PropertyInput";
 import { PropertyInputRegister } from "./PropertyInputRegister";
 
 class StringInput extends PropertyInputBase<
@@ -201,7 +196,7 @@ class IntInput extends PropertyInputBase<number, { min: number; max: number }> {
 
 class SelectInput extends PropertyInputBase<
   string,
-  { options: [string, string][] }
+  { options: string[] }
 > {
   static Meta = {
     id: "select",
@@ -284,6 +279,127 @@ class PasswordInput extends PropertyInputBase<
   }
 }
 
+class CheckboxInput extends PropertyInputBase<boolean, {}> {
+  static Meta = {
+    id: "checkbox",
+    name: "Checkbox",
+  };
+
+  static Create(data: Partial<CheckboxInput["data"]>): CheckboxInput["data"] {
+    return {
+      ...PropertyInputBase.CreateBase({}),
+      type: CheckboxInput.Meta.id,
+      properties: {},
+      ...data,
+    };
+  }
+
+  getClass() {
+    return CheckboxInput;
+  }
+  getMeta(): PropertyInputMetaData {
+    return CheckboxInput.Meta;
+  }
+}
+
+class DateInput extends PropertyInputBase<string, {}> {
+  static Meta = {
+    id: "date",
+    name: "Date",
+  };
+
+  static Create(data: Partial<DateInput["data"]>): DateInput["data"] {
+    return {
+      ...PropertyInputBase.CreateBase({}),
+      type: DateInput.Meta.id,
+      properties: {},
+      ...data,
+    };
+  }
+
+  getClass() {
+    return DateInput;
+  }
+  getMeta(): PropertyInputMetaData {
+    return DateInput.Meta;
+  }
+}
+
+class TextareaInput extends PropertyInputBase<
+  string,
+  { rows: number; cols: number }
+> {
+  static Meta = {
+    id: "textarea",
+    name: "Textarea",
+  };
+
+  static Create(data: Partial<TextareaInput["data"]>): TextareaInput["data"] {
+    return {
+      ...PropertyInputBase.CreateBase({}),
+      type: TextareaInput.Meta.id,
+      properties: {
+        rows: 4,
+        cols: 50,
+      },
+      ...data,
+    };
+  }
+
+  getClass() {
+    return TextareaInput;
+  }
+  getMeta(): PropertyInputMetaData {
+    return TextareaInput.Meta;
+  }
+}
+
+class EmailInput extends PropertyInputBase<string, {}> {
+  static Meta = {
+    id: "email",
+    name: "Email",
+  };
+
+  static Create(data: Partial<EmailInput["data"]>): EmailInput["data"] {
+    return {
+      ...PropertyInputBase.CreateBase({}),
+      type: EmailInput.Meta.id,
+      properties: {},
+      ...data,
+    };
+  }
+
+  getClass() {
+    return EmailInput;
+  }
+  getMeta(): PropertyInputMetaData {
+    return EmailInput.Meta;
+  }
+}
+
+class UrlInput extends PropertyInputBase<string, {}> {
+  static Meta = {
+    id: "url",
+    name: "URL",
+  };
+
+  static Create(data: Partial<UrlInput["data"]>): UrlInput["data"] {
+    return {
+      ...PropertyInputBase.CreateBase({}),
+      type: UrlInput.Meta.id,
+      properties: {},
+      ...data,
+    };
+  }
+
+  getClass() {
+    return UrlInput;
+  }
+  getMeta(): PropertyInputMetaData {
+    return UrlInput.Meta;
+  }
+}
+
 PropertyInputRegister.regsiterProperty(
   ColorInput,
   RangeInput,
@@ -294,7 +410,12 @@ PropertyInputRegister.regsiterProperty(
   StringInput,
   SelectInput,
   FilePathInput,
-  PasswordInput
+  PasswordInput,
+  CheckboxInput,
+  DateInput,
+  TextareaInput,
+  EmailInput,
+  UrlInput
 );
 
 export {
@@ -308,4 +429,9 @@ export {
   SelectInput as SelectPropertyInput,
   FilePathInput as FilePathPropertyInput,
   PasswordInput as PasswordPropertyInput,
+  CheckboxInput as CheckboxPropertyInput,
+  DateInput as DatePropertyInput,
+  TextareaInput as TextareaPropertyInput,
+  EmailInput as EmailPropertyInput,
+  UrlInput as UrlPropertyInput,
 };

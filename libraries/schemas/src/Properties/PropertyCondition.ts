@@ -1,10 +1,10 @@
-import { Path } from "./Path";
+import { ObjectPath } from "./ObjectPath";
 
 type LogicalOperation = "==" | "===" | "!=" | "!==" | "<" | ">" | "<=" | ">=";
 
 export class PropertyCondition<Data extends object> {
   static Create<Data extends object>(
-    path: Path<Data>,
+    path: ObjectPath<Data,any>,
     operation: LogicalOperation,
     value: any
   ) {
@@ -14,7 +14,7 @@ export class PropertyCondition<Data extends object> {
   }
 
   private constructor(
-    public path: Path<Data>,
+    public path: ObjectPath<Data,any>,
     public operation: LogicalOperation
   ) {}
 

@@ -133,16 +133,16 @@ export class IndexDBCore {
   }
 
   static tasks = {
-    close(comm: Thread | ThreadPool, id: string) {
+    close(thread: Thread | ThreadPool, id: string) {
       return new Promise(async (resolve, reject) => {
-        if (comm instanceof Thread) {
-          return comm.runPromiseTasks("zdb-close-database", id, [], () => {
+        if (thread instanceof Thread) {
+          return thread.runPromiseTasks("zdb-close-database", id, [], () => {
             resolve(true);
           });
         }
-        if (comm instanceof ThreadPool) {
+        if (thread instanceof ThreadPool) {
           await Promise.all(
-            comm.__comms.map(
+            thread.getThreads().map(
               (_) =>
                 new Promise((r) => {
                   _.runPromiseTasks("zdb-close-database", id, [], () => {
@@ -156,16 +156,16 @@ export class IndexDBCore {
         reject(false);
       });
     },
-    open(comm: Thread | ThreadPool, id: string) {
+    open(thread: Thread | ThreadPool, id: string) {
       return new Promise(async (resolve, reject) => {
-        if (comm instanceof Thread) {
-          return comm.runPromiseTasks("zdb-open-database", id, [], () => {
+        if (thread instanceof Thread) {
+          return thread.runPromiseTasks("zdb-open-database", id, [], () => {
             resolve(true);
           });
         }
-        if (comm instanceof ThreadPool) {
+        if (thread instanceof ThreadPool) {
           await Promise.all(
-            comm.__comms.map(
+            thread.getThreads().map(
               (_) =>
                 new Promise((r) => {
                   _.runPromiseTasks("zdb-open-database", id, [], () => {

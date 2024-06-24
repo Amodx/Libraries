@@ -56,12 +56,12 @@ InternalTasks.registerTasks(
       port = data[2];
     }
     if (threadManager == "worker") {
-      const comm = Threads.getThread(threadName);
-      comm.setPort(port);
+      const thread = Threads.getThread(threadName);
+      if (thread) thread.setPort(port);
     }
     if (threadManager != "worker") {
-      const comm = Threads.getThreadPool(threadManager);
-      comm.addPort(port);
+      const thread = Threads.getThreadPool(threadManager);
+      if (thread) thread.addPort(port);
     }
   }
 );
@@ -146,12 +146,13 @@ const __handleTasksDone = (
   transfers: any
 ) => {
   if (mode == 1) {
-    const comm = Threads.getThread(threadId);
-    comm.sendMessage(
-      ThreadsMessageHeaders.internal,
-      [ThreadsInternalMessages.completeTasks, tasksId, tid, tasksData],
-      transfers
-    );
+    const thread = Threads.getThread(threadId);
+    thread &&
+      thread.sendMessage(
+        ThreadsMessageHeaders.internal,
+        [ThreadsInternalMessages.completeTasks, tasksId, tid, tasksData],
+        transfers
+      );
   }
   if (mode == 2) {
     //complete queue
@@ -204,6 +205,7 @@ InternalTasks.registerTasks(
 
     const thread = Threads.getThread(threadId);
     const takss = TasksManager.getTasks(tasksId);
+
     if (!takss) return;
 
     if (takss && thread) {

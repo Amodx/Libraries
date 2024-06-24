@@ -1,4 +1,4 @@
-import { SchemaNode } from "Schemas/SchemaNode";
+import { SchemaNode } from "../Schemas/SchemaNode";
 import { PropertyCondition } from "./PropertyCondition";
 
 type PropertyConditionFunction = <Data extends object = any>(
@@ -28,20 +28,20 @@ export class PropertyConditionAction<Data extends object = any> {
     }
     if (result) {
       if (this.action == "enable") {
-        this.node.property.state.enabled = true;
+        this.node.setEnabled(true)
         return;
       }
       if (this.action == "lock") {
-        this.node.property.state.locked = true;
+        this.node.setLocked(true)
         return;
       }
     } else {
       if (this.action == "enable") {
-        this.node.property.state.enabled = false;
+        this.node.setEnabled(false)
         return;
       }
       if (this.action == "lock") {
-        this.node.property.state.locked = false;
+        this.node.setLocked(false)
         return;
       }
     }

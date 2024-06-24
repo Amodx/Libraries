@@ -1,6 +1,7 @@
 export interface NodeStateData {
   [key: string]: any;
 }
+
 export type NodeData = {
   id: string;
   name: string;
@@ -17,7 +18,6 @@ export interface ComponentStateData {
   [key: string]: any;
 }
 export type ComponentData<Properties extends object = any> = {
-  id: string;
   type: string;
   state: ComponentStateData;
   properties: Properties;
@@ -27,7 +27,6 @@ export interface TraitStateData {
   [key: string]: any;
 }
 export type TraitData<Properties extends object = any> = {
-  id: string;
   type: string;
   state: TraitStateData;
   properties: Properties;

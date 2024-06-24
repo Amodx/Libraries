@@ -1,7 +1,6 @@
 import { Observable } from "@amodx/core/Observers";
 import { NodeData } from "./NodeData.types";
-import { Node } from "./Node";
-import { shortId } from "@amodx/core/Ids/ShortIds";
+import { Node, NodeId } from "./Node";
 
 export interface NodeGraphObservers {}
 
@@ -14,23 +13,22 @@ export class NodeGraphObservers {
 export interface NodeGraphDependencies {
   [key: string]: any;
 }
-export interface NodeGraph {
-  [key: string]: any;
-}
+export interface NodeGraph {}
 export class NodeGraph {
-  static GenerateId(): string {
-    return shortId();
-  }
-  _nodes = new Map<string, Node>();
+  _nodeMap = new Map<BigInt, Map<BigInt, Node>>();
 
   observers = new NodeGraphObservers();
-  root: Node;
+  root = new Node(null as any, Node.Create({}), this);
 
   constructor(public dependencies: NodeGraphDependencies) {}
 
-  getNode(id: string) {
-    const node = this._nodes.get(id);
-    if (!node) throw new Error(`Node with id ${id} does not exist`);
+  getNode(id: NodeId | string) {
+    if (typeof id == "string") id = NodeId.Create(id);
+
+    const high = this._nodeMap.get(id.low);
+    if (!high) throw new Error(`Node with id ${id.idString} does not exist`);
+    const node = high.get(id.high);
+    if (!node) throw new Error(`Node with id ${id.idString} does not exist`);
     return node;
   }
 
@@ -45,7 +43,14 @@ export class NodeGraph {
     const newNode = new Node(parent, data, this);
 
     parent.addChild(newNode);
-    this._nodes.set(newNode.data.id, newNode);
+
+    let high = this._nodeMap.get(newNode.id.low);
+    if (!high) {
+      high = new Map<BigInt, Node>();
+      this._nodeMap.set(newNode.id.low, high);
+    }
+    high.set(newNode.id.high, newNode);
+
     this.observers.nodeAdded.notify(newNode);
     this.observers.nodesUpdated.notify();
     if (data.children?.length) {
@@ -59,11 +64,16 @@ export class NodeGraph {
     return newNode;
   }
 
-  removeNode(id: string) {
-    const node = this._nodes.get(id);
+  removeNode(id: NodeId) {
+    const high = this._nodeMap.get(id.low);
+
+    if (!high) return;
+
+    const node = high.get(id.high);
+
     if (!node) return;
-    node.dispose();
-    this._nodes.delete(id);
+    if (!node.isDisposed()) node.dispose();
+    high.delete(id.high);
     this.observers.nodeRemoved.notify(node);
     this.observers.nodesUpdated.notify();
   }

@@ -1,15 +1,72 @@
-import { ComponentData, NodeData } from "./NodeData.types";
+import { ComponentData, NodeData, NodeStateData } from "./NodeData.types";
 import { ComponentBase, ComponentBaseConstructor } from "./ComponentBase";
 import { NodeGraph } from "./NodeGraph";
 import { Observable } from "@amodx/core/Observers";
 import { Pipeline } from "@amodx/core/Pipelines";
 import { NodeRegister } from "./NodeRegister";
 export interface NodeConstructor {
-  CreateNew(overrides: Partial<NodeData>): NodeData;
+  Create(overrides: Partial<NodeData>): NodeData;
   new (parent: Node, data: NodeData, graph: NodeGraph): Node;
 }
+
+export class NodeId {
+  high: bigint;
+  low: bigint;
+  idString: string;
+
+  private constructor(low: bigint, high: bigint) {
+    this.low = low;
+    this.high = high;
+    this.idString = NodeId.ToHexString(this);
+  }
+
+  static Create(id?: string): NodeId {
+    if (id) {
+      const { high, low } = NodeId.FromString(id);
+      return new NodeId(low, high);
+    } else {
+      const array = new Uint8Array(16);
+      crypto.getRandomValues(array);
+
+      const high =
+        (BigInt(array[0]) << 56n) |
+        (BigInt(array[1]) << 48n) |
+        (BigInt(array[2]) << 40n) |
+        (BigInt(array[3]) << 32n) |
+        (BigInt(array[4]) << 24n) |
+        (BigInt(array[5]) << 16n) |
+        (BigInt(array[6]) << 8n) |
+        BigInt(array[7]);
+
+      const low =
+        (BigInt(array[8]) << 56n) |
+        (BigInt(array[9]) << 48n) |
+        (BigInt(array[10]) << 40n) |
+        (BigInt(array[11]) << 32n) |
+        (BigInt(array[12]) << 24n) |
+        (BigInt(array[13]) << 16n) |
+        (BigInt(array[14]) << 8n) |
+        BigInt(array[15]);
+
+      return new NodeId(low, high);
+    }
+  }
+
+  static FromString(id: string): { high: bigint; low: bigint } {
+    const high = BigInt("0x" + id.slice(0, 16));
+    const low = BigInt("0x" + id.slice(16, 32));
+    return { high, low };
+  }
+  static ToHexString(id: NodeId): string {
+    return (
+      id.high.toString(16).padStart(16, "0") +
+      id.low.toString(16).padStart(16, "0")
+    );
+  }
+}
+
 export interface NodeObservers {
-  [key: string]: any;
+
 }
 
 export class NodeObservers {
@@ -19,11 +76,12 @@ export class NodeObservers {
   childrenUpdated = new Observable();
   componentAdded = new Observable<ComponentBase<any>>();
   componentRemoved = new Observable<ComponentBase<any>>();
+  componentsUpdated = new Observable();
 }
 
 export interface NodePipelines {
-  [key: string]: any;
 }
+
 export class NodePipelines {
   disposed = new Pipeline<Node>();
   toJSON = new Pipeline<NodeData>();
@@ -31,23 +89,24 @@ export class NodePipelines {
 }
 
 export interface Node {
-  [key: string]: any;
 }
 
 export class Node extends EventTarget {
-  static CreateNew(data: Partial<NodeData>): NodeData {
-    return {
-      id: NodeGraph.GenerateId(),
+  static OnCreateData = new Pipeline<NodeData>();
+  static OnCreate = new Observable<Node>();
+  static Create(data: Partial<NodeData>): NodeData {
+    return this.OnCreateData.pipe({
+      id: NodeId.Create().idString,
       name: "",
       state: {},
       components: [],
       children: [],
       ...data,
-    };
+    });
   }
 
   get id() {
-    return this.data.id;
+    return this.nodeId;
   }
 
   isNode: true = true;
@@ -58,16 +117,18 @@ export class Node extends EventTarget {
   pipelines = new NodePipelines();
   components: ComponentBase<any>[] = [];
   children: Node[] = [];
+  private nodeId: NodeId;
   constructor(
     public parent: Node,
     public data: NodeData,
     public graph: NodeGraph
   ) {
     super();
+    this.nodeId = NodeId.Create(this.data.id);
+    Node.OnCreate.notify(this);
     for (const component of data.components) {
       this._addComponentData(component);
     }
-    this.graph._nodes.set(data.id, this);
   }
 
   async initAllChildren() {
@@ -97,9 +158,10 @@ export class Node extends EventTarget {
     return this._disposed;
   }
   dispose() {
-    this.graph._nodes.delete(this.id);
+    if (this._disposed) return;
     this._disposed = true;
-    this.parent.removeChild(this.id);
+    this.graph.removeNode(this.id);
+    this.parent?.removeChild(this.id.idString);
     for (const comp of this.components) {
       comp.dispose();
     }
@@ -118,7 +180,7 @@ export class Node extends EventTarget {
   }
 
   parentTo(node: Node) {
-    this.parent.removeChild(this.id);
+    this.parent?.removeChild(this.id.idString);
     node.addChild(this);
     this.parent = node;
   }
@@ -148,50 +210,49 @@ export class Node extends EventTarget {
       const newComponent = new compType(this, comp);
       this.components.push(newComponent);
       await newComponent.init();
+      this.observers.componentAdded.notify(newComponent);
     }
+    this.observers.componentsUpdated.notify();
   }
 
-  getCompnentById(id: string) {
-    return this.components.find((_) => _.data.id == id);
-  }
   getComponentByClass<ComponentClass extends ComponentBase>(
     componentClass: ComponentBaseConstructor
   ) {
-    return this.getCompnentByType(componentClass.Meta.id) as ComponentClass;
+    return this.getCompnent(componentClass.Meta.id) as ComponentClass;
   }
-  removeComponentById(id: string) {
-    const index = this.components.findIndex((_) => _.data.id == id);
-    if (index !== -1) {
+  removeComponentByIndex(index: number) {
+    const component = this.components[index];
+    if (component) {
       const child = this.components.splice(index, 1)![0];
       this.observers.componentRemoved.notify(child);
+      this.observers.componentsUpdated.notify();
+      return true;
     }
+    return false;
   }
-  removeComponentByType(type: string) {
-    const components = this.components.filter((_) => _.data.type == type);
-    components.forEach((_) => this.removeComponentById(_.data.id));
+  removeComponent(type: string) {
+    return this.removeComponentByIndex(
+      this.components.findIndex((_) => _.getMeta().name)
+    );
   }
 
-  getCompnentByType(type: string) {
-    return this.components.find((_) => _.data.type == type);
+  getCompnent(type: string) {
+    return this.components.find((_) => _.type == type);
   }
-  getCompnentsByType(type: string) {
-    return this.components.filter((_) => _.data.type == type);
+  getAllComponentsOfType(type: string) {
+    return this.components.filter((_) => _.type == type);
   }
 
   getChildWithComponentByClass<ComponentClass extends ComponentBase>(
     componentClass: ComponentBaseConstructor
   ): { node: Node; component: ComponentClass } | null {
-    const found = this.getCompnentByType(
-      componentClass.Meta.id
-    ) as ComponentClass;
+    const found = this.getCompnent(componentClass.Meta.id) as ComponentClass;
     const self = this;
 
     if (found) return { node: self, component: found };
 
     for (const child of this.traverseChildren()) {
-      const found = child.getCompnentByType(
-        componentClass.Meta.id
-      ) as ComponentClass;
+      const found = child.getCompnent(componentClass.Meta.id) as ComponentClass;
       if (found) return { node: child, component: found };
     }
 
@@ -200,7 +261,7 @@ export class Node extends EventTarget {
 
   copy(): NodeData {
     return this.pipelines.toJSON.pipe({
-      id: NodeGraph.GenerateId(),
+      id: NodeId.Create().idString,
       name: this.data.name,
       state: this.data.state,
       children: this.children.map((_) => _.copy()),

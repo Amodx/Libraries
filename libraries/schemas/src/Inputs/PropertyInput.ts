@@ -1,5 +1,5 @@
 import { Pipeline } from "@amodx/core/Pipelines";
-import { SchemaNode } from "Schemas/SchemaNode";
+import { SchemaNode } from "../Schemas/SchemaNode";
 
 class PropertyInputPipelines<Value = any> {
   onGet = new Pipeline<{ value: Value; input: PropertyInputBase }>();
@@ -12,6 +12,7 @@ export interface PropertyInputData<
 > {
   type: string;
   properties: Properties;
+  disabled?: boolean;
   mode?: string;
   required?: boolean;
   validator?: string;
@@ -66,7 +67,7 @@ export abstract class PropertyInputBase<
   get() {
     return this.pipelines.onGet.pipe({
       input: this,
-      value: this.node.property.value,
+      value: this.node.get(),
     }).value;
   }
   set(newValue: Value) {

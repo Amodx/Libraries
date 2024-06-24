@@ -1,9 +1,10 @@
 import { Schema } from "../Schema";
 import { SchemaNode } from "./SchemaNode";
 import { Property } from "../Properties/Property";
+import { ObjectPath } from "../Properties/ObjectPath";
 
-export class SchemaInstance<DataInterface extends object = any> {
-  __root = new SchemaNode(Property.Create({ id: "__root__" }),{});
+export class ObjectSchema<DataInterface extends object = any> {
+  __root = new SchemaNode(Property.Create({ id: "__root__" }), {});
   constructor(private readonly __schema: Schema) {}
 
   traverse(run: (node: SchemaNode) => void) {
@@ -23,8 +24,28 @@ export class SchemaInstance<DataInterface extends object = any> {
     return this.__root;
   }
 
-  clone(): SchemaInstance & DataInterface {
+  clone(): ObjectSchema<DataInterface> {
     return this.__schema.instantiate();
+  }
+
+  getNode(path: ObjectPath<DataInterface, any>): SchemaNode | null {
+    let finalNode: SchemaNode | null = null;
+    const traverse = (node: SchemaNode, path: string[]) => {
+      if (!node.children) return;
+      for (const child of node.children) {
+        if (node.property.id == path[0]) {
+          if (node.property.children && node.property.children.length) {
+            path.shift();
+            traverse(node, path);
+            return;
+          }
+          finalNode = child;
+        }
+      }
+    };
+
+    traverse(this.getRoot(), [...path.path] as string[]);
+    return finalNode;
   }
 
   store() {

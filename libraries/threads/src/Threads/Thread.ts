@@ -81,7 +81,6 @@ export class Thread {
         this.__handleMessage(event.data, event);
       };
       (port as MessagePort).onmessageerror = (event: MessageEvent) => {
-        console.log(event);
         this.__throwError("Error occured.");
       };
     }
@@ -90,7 +89,6 @@ export class Thread {
         this.__handleMessage(data, data);
       });
       (port as NodeWorker).on("error", (data: any[]) => {
-        console.log(data);
         this.__throwError("Error occured.");
       });
     }

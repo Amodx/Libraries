@@ -1,3 +1,4 @@
+import { PropertyInputBase, PropertyInputData } from "./Inputs/PropertyInput";
 import {
   ColorPropertyInput,
   FilePathPropertyInput,
@@ -9,41 +10,45 @@ import {
   StringPropertyInput,
   Vec2PropertyInput,
   Vec3PropertyInput,
+  CheckboxPropertyInput,
+  DatePropertyInput,
+  TextareaPropertyInput,
+  EmailPropertyInput,
+  UrlPropertyInput,
 } from "./Inputs/DefaultInputs";
-import { Path } from "./Properties/Path";
+import { ObjectPath } from "./Properties/ObjectPath";
 import { Property } from "./Properties/Property";
 import { PropertyCondition } from "./Properties/PropertyCondition";
 import { PropertyConditionAction } from "./Properties/PropertyConditionAction";
-import { Schema } from "./Schema";
 import { SchemaNode } from "./Schemas/SchemaNode";
 
-type PropertyCreateData<T = any, V = any> = {
+type PropertyCreateData<Value extends any, Input extends PropertyInputData> = {
   id: string;
   name?: string;
-  value?: V;
-  hydrate?: (node: SchemaNode) => void;
-} & T;
+  value?: Value;
+  initialize?: (node: SchemaNode) => void;
+} & Partial<Input["properties"]>;
 
-type PropertyFC<T = any, V = any> = (
-  data: PropertyCreateData<T, V>
-) => Property;
+type PropertyFC<Value extends any, Input extends PropertyInputBase> = (
+  data: PropertyCreateData<Value, Input["data"]>
+) => Property<Value, Input["data"]>;
 
 export const PropConditions = Object.assign(
-  (data: Property, ...conditions: PropertyConditionAction[]) => {
+  (data: Property<any, any>, ...conditions: PropertyConditionAction[]) => {
     data.conditions = conditions;
     return data;
   },
   {
     Action: PropertyConditionAction.Create,
     Condition: PropertyCondition.Create,
-    Path: Path.Create,
+    Path: ObjectPath.Create,
   }
 );
 
 export const ObjectProp = (
   id: string,
   name: string,
-  ...properties: Property[]
+  ...properties: Property<any, any>[]
 ) => {
   return Property.Create({
     id: id,
@@ -51,210 +56,231 @@ export const ObjectProp = (
     children: properties,
   });
 };
+export const AnyProp: PropertyFC<any, any> = (data) => {
+  return Property.Create({
+    id: data.id,
+    name: data.name,
+    value: data.value ? data.value : null,
+    initialize: data.initialize,
+    input: null,
+  });
+};
 
-export const StringProp: PropertyFC<
-  StringPropertyInput["data"]["properties"],
-  string
-> = (data) => {
+export const StringProp: PropertyFC<string, StringPropertyInput> = (data) => {
   return Property.Create({
     id: data.id,
     name: data.name,
     value: data.value ? data.value : "",
-    hydrate: data.hydrate,
+    initialize: data.initialize,
     input: StringPropertyInput.Create({
       properties: {
-        min: data.min,
-        max: data.max,
+        min: data.min ? data.min : 0,
+        max: data.max ? data.max : Number.MAX_SAFE_INTEGER,
       },
     }),
   });
 };
 
-export const PasswordProp: PropertyFC<
-  StringPropertyInput["data"]["properties"],
-  string
-> = (data) => {
+export const PasswordProp: PropertyFC<string, PasswordPropertyInput> = (
+  data
+) => {
   return Property.Create({
     id: data.id,
     name: data.name,
     value: data.value ? data.value : "",
-    hydrate: data.hydrate,
+    initialize: data.initialize,
     input: PasswordPropertyInput.Create({
       properties: {
-        min: data.min,
-        max: data.max,
+        min: data.min ? data.min : 0,
+        max: data.max ? data.max : Number.MAX_SAFE_INTEGER,
       },
     }),
   });
 };
 
-export const FloatProp: PropertyFC<
-  StringPropertyInput["data"]["properties"],
-  number
-> = (data) => {
+export const FloatProp: PropertyFC<number, FloatPropertyInput> = (data) => {
   return Property.Create({
     id: data.id,
     name: data.name,
     value: data.value ? data.value : 0,
-    hydrate: data.hydrate,
+    initialize: data.initialize,
     input: FloatPropertyInput.Create({
       properties: {
-        min: data.min,
-        max: data.max,
+        min: data.min ? data.min : 0,
+        max: data.max ? data.max : Number.MAX_VALUE,
       },
     }),
   });
 };
-export const IntProp: PropertyFC<
-  StringPropertyInput["data"]["properties"],
-  number
-> = (data) => {
+export const IntProp: PropertyFC<number, IntPropertyInput> = (data) => {
   return Property.Create({
     id: data.id,
     name: data.name,
     value: data.value ? data.value : 0,
-    hydrate: data.hydrate,
+    initialize: data.initialize,
     input: IntPropertyInput.Create({
       properties: {
-        min: data.min,
-        max: data.max,
+        min: data.min ? data.min : 0,
+        max: data.max ? data.max : Number.MAX_SAFE_INTEGER,
       },
     }),
   });
 };
-export const RangeProp: PropertyFC<
-  RangePropertyInput["data"]["properties"],
-  number
-> = (data) => {
+export const RangeProp: PropertyFC<number, RangePropertyInput> = (data) => {
   return Property.Create({
     id: data.id,
     name: data.name,
     value: data.value ? data.value : 0,
-    hydrate: data.hydrate,
+    initialize: data.initialize,
     input: RangePropertyInput.Create({
       properties: {
-        min: data.min,
-        max: data.max,
-        step: data.step,
+        min: data.min ? data.min : 0,
+        max: data.max ? data.max : Number.MAX_VALUE,
+        step: data.step ? data.step : 0.1,
       },
     }),
   });
 };
-export const ColorProp: PropertyFC<
-  StringPropertyInput["data"]["properties"],
-  string
-> = (data) => {
+export const ColorProp: PropertyFC<string, ColorPropertyInput> = (data) => {
   return Property.Create({
     id: data.id,
     name: data.name,
     value: data.value ? data.value : "#ffffff",
-    hydrate: data.hydrate,
+    initialize: data.initialize,
     input: ColorPropertyInput.Create({
       properties: {},
     }),
   });
 };
 
-export const SelectProp: PropertyFC<
-  SelectPropertyInput["data"]["properties"],
-  string
-> = (data) => {
-  return Property.Create({
+export const SelectProp: PropertyFC<string, SelectPropertyInput> = (data) => {
+  return Property.Create<string, SelectPropertyInput["data"]>({
     id: data.id,
     name: data.name,
     value: data.value ? data.value : "",
-    hydrate: data.hydrate,
+    initialize: data.initialize,
     input: SelectPropertyInput.Create({
       properties: {
-        options: data.options,
+        options: data.options ? data.options : [],
       },
     }),
   });
 };
 
-export const FilePathProp: PropertyFC<
-  FilePathPropertyInput["data"]["properties"],
-  string
-> = (data) => {
+export const FilePathProp: PropertyFC<string, FilePathPropertyInput> = (
+  data
+) => {
   return Property.Create({
     id: data.id,
     name: data.name,
     value: data.value ? data.value : "#ffffff",
-    hydrate: data.hydrate,
+    initialize: data.initialize,
     input: FilePathPropertyInput.Create({
       properties: {
-        acceptedFileExtensions: data.acceptedFileExtensions,
+        acceptedFileExtensions: data.acceptedFileExtensions
+          ? data.acceptedFileExtensions
+          : [],
       },
     }),
   });
 };
 
-export const Vec2Prop: PropertyFC<
-  Vec2PropertyInput["data"]["properties"],
-  [number, number]
-> = (data) => {
+export const Vec2Prop: PropertyFC<[number, number], Vec2PropertyInput> = (
+  data
+) => {
   return Property.Create({
     id: data.id,
     name: data.name,
     value: data.value ? data.value : [0, 0],
-    hydrate: data.hydrate,
+    initialize: data.initialize,
     input: Vec2PropertyInput.Create({
       properties: {
-        valueType: data.valueType,
+        valueType: data.valueType ? data.valueType : "position",
       },
     }),
   });
 };
 
 export const Vec3Prop: PropertyFC<
-  Vec3PropertyInput["data"]["properties"],
-  [number, number, number]
+  [number, number, number],
+  Vec3PropertyInput
 > = (data) => {
   return Property.Create({
     id: data.id,
     name: data.name,
     value: data.value ? data.value : [0, 0, 0],
-    hydrate: data.hydrate,
+    initialize: data.initialize,
     input: Vec3PropertyInput.Create({
       properties: {
-        valueType: data.valueType,
+        valueType: data.valueType ? data.valueType : "position",
       },
     }),
   });
 };
 
-Schema.Create(
-  StringProp({
-    id: "main",
-    name: "what is up",
-    min: 0,
-    max: 100,
-  }),
-  StringProp({
-    id: "main",
-    name: "what is up",
-    min: 0,
-    max: 100,
-  }),
-  PropConditions(
-    ObjectProp(
-      "property",
-      "Cool",
-      StringProp({
-        id: "main",
-        name: "what is up",
-        min: 0,
-        max: 100,
-      })
-    ),
-    PropConditions.Action("enable", [
-      PropConditions.Condition(PropConditions.Path("a.b"), "==", null),
-    ]),
-    PropConditions.Action("lock", [
-      PropConditions.Condition(PropConditions.Path("a.b"), "==", null),
-    ]),
-    PropConditions.Action(() => {}, [
-      PropConditions.Condition(PropConditions.Path("a.b"), "==", null),
-    ])
-  )
-);
+export const CheckboxProp: PropertyFC<boolean, CheckboxPropertyInput> = (
+  data
+) => {
+  return Property.Create({
+    id: data.id,
+    name: data.name,
+    value: data.value ? data.value : false,
+    initialize: data.initialize,
+    input: CheckboxPropertyInput.Create({
+      properties: {},
+    }),
+  });
+};
+
+export const DateProp: PropertyFC<string, DatePropertyInput> = (data) => {
+  return Property.Create({
+    id: data.id,
+    name: data.name,
+    value: data.value ? data.value : "",
+    initialize: data.initialize,
+    input: DatePropertyInput.Create({
+      properties: {},
+    }),
+  });
+};
+
+export const TextareaProp: PropertyFC<string, TextareaPropertyInput> = (
+  data
+) => {
+  return Property.Create({
+    id: data.id,
+    name: data.name,
+    value: data.value ? data.value : "",
+    initialize: data.initialize,
+    input: TextareaPropertyInput.Create({
+      properties: {
+        rows: data.rows ? data.rows : 4,
+        cols: data.cols ? data.cols : 10,
+      },
+    }),
+  });
+};
+
+export const EmailProp: PropertyFC<string, EmailPropertyInput> = (data) => {
+  return Property.Create({
+    id: data.id,
+    name: data.name,
+    value: data.value ? data.value : "",
+    initialize: data.initialize,
+    input: EmailPropertyInput.Create({
+      properties: {},
+    }),
+  });
+};
+
+export const UrlProp: PropertyFC<string, UrlPropertyInput> = (data) => {
+  return Property.Create({
+    id: data.id,
+    name: data.name,
+    value: data.value ? data.value : "",
+    initialize: data.initialize,
+    input: UrlPropertyInput.Create({
+      properties: {},
+    }),
+  });
+};

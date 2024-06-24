@@ -22,12 +22,14 @@ export class ObjectToTypedNodes {
         node.value[key] = this._addPrimitive(value);
         continue;
       }
-      if(value instanceof ArrayBuffer || value instanceof SharedArrayBuffer) {
+      if (value instanceof ArrayBuffer || value instanceof SharedArrayBuffer) {
         node.value[key] = this._addPrimitive(value);
         continue;
       }
-      if(value instanceof Blob || value instanceof File) {
-
+      if (
+        value instanceof Blob ||
+        (typeof File !== "undefined" && value instanceof File)
+      ) {
         continue;
       }
       if (typeof value == "object" && !Array.isArray(value)) {
@@ -39,7 +41,6 @@ export class ObjectToTypedNodes {
         continue;
       }
 
-    
       node.value[key] = this._addPrimitive(value);
     }
 
@@ -64,7 +65,6 @@ export class ObjectToTypedNodes {
       if (
         typeof value == "object" &&
         Array.isArray(value) &&
-
         !ArrayBuffer.isView(value)
       ) {
         node.value.push(this._traverseArray(value));
@@ -89,7 +89,7 @@ export class ObjectToTypedNodes {
     if (typeof node == "undefined") {
       return TypedNodes.undefined();
     }
-    if(node instanceof ArrayBuffer || node instanceof SharedArrayBuffer) {
+    if (node instanceof ArrayBuffer || node instanceof SharedArrayBuffer) {
       return TypedNodes.arrayBuffer(node);
     }
     if (ArrayBuffer.isView(node)) {
