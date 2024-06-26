@@ -56,6 +56,23 @@ export class QuadVertexData<Data> {
     run(3, this.vertices[3]);
     run(4, this.vertices[4]);
   }
+
+  clone() {
+    return new QuadVertexData<Data>({
+      [QuadVerticies.TopRight]: structuredClone(
+        this.vertices[QuadVerticies.TopRight]
+      ),
+      [QuadVerticies.TopLeft]: structuredClone(
+        this.vertices[QuadVerticies.TopLeft]
+      ),
+      [QuadVerticies.BottomLeft]: structuredClone(
+        this.vertices[QuadVerticies.BottomLeft]
+      ),
+      [QuadVerticies.BottomRight]: structuredClone(
+        this.vertices[QuadVerticies.BottomRight]
+      ),
+    });
+  }
 }
 
 export class QuadVector3VertexData extends QuadVertexData<Vector3Like> {
@@ -121,6 +138,22 @@ export class QuadVector3VertexData extends QuadVertexData<Vector3Like> {
       Vector3Like.Equals(this.vertices[QuadVerticies.BottomRight], v1)
     );
   }
+  clone() {
+    return new QuadVector3VertexData({
+      [QuadVerticies.TopRight]: Vector3Like.Clone(
+        this.vertices[QuadVerticies.TopRight]
+      ),
+      [QuadVerticies.TopLeft]: Vector3Like.Clone(
+        this.vertices[QuadVerticies.TopLeft]
+      ),
+      [QuadVerticies.BottomLeft]: Vector3Like.Clone(
+        this.vertices[QuadVerticies.BottomLeft]
+      ),
+      [QuadVerticies.BottomRight]: Vector3Like.Clone(
+        this.vertices[QuadVerticies.BottomRight]
+      ),
+    });
+  }
 }
 
 export class QuadVector2VertexData extends QuadVertexData<Vector2Like> {
@@ -184,6 +217,22 @@ export class QuadVector2VertexData extends QuadVertexData<Vector2Like> {
       Vector2Like.Equals(this.vertices[QuadVerticies.BottomLeft], v1) &&
       Vector2Like.Equals(this.vertices[QuadVerticies.BottomRight], v1)
     );
+  }
+  clone() {
+    return new QuadVector2VertexData({
+      [QuadVerticies.TopRight]: Vector2Like.Clone(
+        this.vertices[QuadVerticies.TopRight]
+      ),
+      [QuadVerticies.TopLeft]: Vector2Like.Clone(
+        this.vertices[QuadVerticies.TopLeft]
+      ),
+      [QuadVerticies.BottomLeft]: Vector2Like.Clone(
+        this.vertices[QuadVerticies.BottomLeft]
+      ),
+      [QuadVerticies.BottomRight]: Vector2Like.Clone(
+        this.vertices[QuadVerticies.BottomRight]
+      ),
+    });
   }
 }
 
@@ -268,5 +317,13 @@ export class QuadScalarVertexData extends QuadVertexData<number> {
     if (this.vertices[3] > value) return false;
     if (this.vertices[4] > value) return false;
     return true;
+  }
+  clone() {
+    return new QuadScalarVertexData({
+      [QuadVerticies.TopRight]: this.vertices[QuadVerticies.TopRight],
+      [QuadVerticies.TopLeft]: this.vertices[QuadVerticies.TopLeft],
+      [QuadVerticies.BottomLeft]: this.vertices[QuadVerticies.BottomLeft],
+      [QuadVerticies.BottomRight]: this.vertices[QuadVerticies.BottomRight],
+    });
   }
 }

@@ -10,3 +10,5 @@ export enum QuadVerticies {
   BottomLeft = 3,
   BottomRight = 4,
 }
+const normal = [QuadVerticies.TopRight,QuadVerticies.TopLeft,QuadVerticies.BottomLeft,QuadVerticies.BottomRight]
+const rot90deg = [QuadVerticies.TopLeft,QuadVerticies.BottomLeft,QuadVerticies.BottomRight,QuadVerticies.TopRight]

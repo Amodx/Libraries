@@ -1,6 +1,6 @@
 import { Vec2Array, Vec3Array, Vector2Like, Vector3Like } from "@amodx/math";
-import { QuadVector2VertexData, QuadVector3VertexData } from "./QuadVertexData";
-import { QuadVertexVec3Data } from "Geometry.types";
+import { QuadScalarVertexData, QuadVector2VertexData, QuadVector3VertexData } from "./QuadVertexData";
+import { QuadVertexVec3Data, QuadVerticies } from "../Geometry.types";
 
 export class Quad {
   static Create(
@@ -12,6 +12,16 @@ export class Quad {
     orientation?: 0 | 1
   ) {
     return new Quad({ positions, uvs, doubleSided, orientation });
+  }
+
+  static RotateVertices90Degrees( 
+    vertices: [QuadVerticies, QuadVerticies, QuadVerticies, QuadVerticies],
+    times = 1
+  ): [QuadVerticies, QuadVerticies, QuadVerticies, QuadVerticies] {
+    while (times--) {
+      vertices = [vertices[1], vertices[2], vertices[3], vertices[0]];
+    }
+    return vertices;
   }
 
   static GetQuadNormal(
@@ -222,4 +232,6 @@ export class Quad {
       );
     }
   }
+
+
 }

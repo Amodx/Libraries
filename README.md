@@ -1,10 +1,20 @@
-<h1 align="center">Amodx Libraries</h1>
----
 
-What is Amodx?
+<h1 align="center">Amodx Libraries</h1>
+
+### What is Amodx?
+
 Amodx is a collection of free, open-source, and highly useful abstract APIs and tools. This mono repo houses the core libraries essential for various Amodx projects, designed to provide robust and efficient solutions for diverse development needs.
 
-Packages
+### Packages
+
+- **@amodx/math**
+  - A math library offering common types and tools for vector and matrix math.
+- **@amodx/meshing**
+  - A library for building custom meshes from scratch.
+- **@amodx/schemas**
+  - A library for creating type-safe schemas for objects.
+- **@amodx/elmtree**
+  - A simple, lightweight JavaScript framework.
 - **@amodx/audio**
   - An audio library tailored specifically for games, providing powerful and flexible audio management capabilities.
 - **@amodx/binary**
@@ -19,7 +29,7 @@ Packages
   - A library designed for multithreaded communication and thread pool management, enhancing the performance and efficiency of your applications.
 - **@amodx/uncsi**
   - The Universal Node Component System Interface (UNCSI), used to build flexible and scalable Node Component Systems (NCS) and Entity Component Systems (ECS).
-- **@amodx/uri** 
+- **@amodx/uri**
   - The Universal Renderer Interface (URI), which abstracts away different rendering libraries to provide a unified rendering approach.
 - **@amodx/core**
   - A collection of utility classes and functions that serve as the foundation for most other Amodx libraries, ensuring consistency and reducing redundancy.
