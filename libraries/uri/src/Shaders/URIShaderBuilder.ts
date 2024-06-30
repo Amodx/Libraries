@@ -1,5 +1,6 @@
 import { URIShader } from "./Classes/URIShader.js";
 import type {
+  ShaderConstantData,
   ShaderDefinesData,
   ShaderFunctionData,
   ShaderSnippetData,
@@ -127,7 +128,32 @@ ${data.output} ${id}(${paramters}){
       return this._process(data);
     },
   },
-
+  constants: {
+    _process(data: ShaderConstantData) {
+      return `${data.body.GLSL}`;
+    },
+    build(
+      data:
+        | ShaderConstantData
+        | ShaderConstantData[]
+        | Map<string, ShaderConstantData>
+    ) {
+      let output = "";
+      if (data instanceof Map) {
+        for (const [key, define] of data) {
+          output += this._process(define as ShaderConstantData);
+        }
+        return output;
+      }
+      if (Array.isArray(data)) {
+        for (const define of data) {
+          output += this._process(define as ShaderConstantData);
+        }
+        return output;
+      }
+      return this._process(data);
+    },
+  },
   uniforms: {
     _process(data: ShaderUniformData) {
       let [name, type, length] = data;

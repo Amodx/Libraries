@@ -22,15 +22,15 @@ class SchemaData {
   ) {}
 }
 
-export class Schema<DataInterface extends object = any> {
-  static Create<DataInterface extends object = any>(
+export class Schema<DataInterface extends object = {}> {
+  static Create<DataInterface extends object = {}>(
     ...properties: Property<any, any>[]
   ): Schema<DataInterface> {
     return new Schema<DataInterface>(
       SchemaData.Create({ id: "", name: "", properties })
     );
   }
-  static CreateInstance<DataInterface extends object = any>(
+  static CreateInstance<DataInterface extends object = {}>(
     ...properties: Property<any, any>[]
   ): ObjectSchemaInstance<DataInterface> {
     return new Schema<DataInterface>(
@@ -107,6 +107,8 @@ export class Schema<DataInterface extends object = any> {
       if (node.property.initialize) node.property.initialize(node);
     });
     if (data) objectSchema.loadIn(data);
+
+    objectSchema.init();
 
     return instance as any;
   }

@@ -49,11 +49,8 @@ export abstract class URITexture<
   InteralTexture extends any = any
 > {
   _texture: InteralTexture | null = null;
-  constructor(data: URITextureData<Scene>) {
-    this._create(data);
-
-
+  constructor(public data: URITextureData<Scene>) {
   }
-  abstract _create(data: URITextureData<Scene>): InteralTexture;
+  abstract _create(): Promise<InteralTexture>;
   abstract dispose(): void;
 }

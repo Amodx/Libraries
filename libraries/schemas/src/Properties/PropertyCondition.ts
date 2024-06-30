@@ -2,9 +2,9 @@ import { ObjectPath } from "./ObjectPath";
 
 type LogicalOperation = "==" | "===" | "!=" | "!==" | "<" | ">" | "<=" | ">=";
 
-export class PropertyCondition<Data extends object> {
+export class PropertyCondition<Data extends object = {}> {
   static Create<Data extends object>(
-    path: ObjectPath<Data,any>,
+    path: ObjectPath<Data, any>,
     operation: LogicalOperation,
     value: any
   ) {
@@ -14,35 +14,33 @@ export class PropertyCondition<Data extends object> {
   }
 
   private constructor(
-    public path: ObjectPath<Data,any>,
+    public path: ObjectPath<Data, any>,
     public operation: LogicalOperation
   ) {}
 
   value: any;
 
-  evaluate(obj: Data, value = this.value): boolean {
-    const propertyValue = this.path.get(obj);
-
+  evaluate(newValue: any) {
+    const value = this.value;
     switch (this.operation) {
       case "==":
-        return propertyValue == value;
+        return newValue == value;
       case "===":
-        return propertyValue === value;
+        return newValue === value;
       case "!=":
-        return propertyValue != value;
+        return newValue != value;
       case "!==":
-        return propertyValue !== value;
+        return newValue !== value;
       case "<":
-        return propertyValue < value;
+        return newValue < value;
       case ">":
-        return propertyValue > value;
+        return newValue > value;
       case "<=":
-        return propertyValue <= value;
+        return newValue <= value;
       case ">=":
-        return propertyValue >= value;
+        return newValue >= value;
       default:
         throw new Error(`Unsupported operation: ${this.operation}`);
     }
   }
 }
-

@@ -195,8 +195,11 @@ class IntInput extends PropertyInputBase<number, { min: number; max: number }> {
 }
 
 class SelectInput extends PropertyInputBase<
-  string,
-  { options: string[] }
+  string|number,
+  {
+    options: string[] | [display: string, value: string | number][];
+    mode?: string;
+  }
 > {
   static Meta = {
     id: "select",

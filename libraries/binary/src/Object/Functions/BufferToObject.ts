@@ -251,7 +251,7 @@ export class BufferToObject {
         dv,
         index + 1
       ) as BinaryNumberTypes;
-      if (!type) throw new Error();
+      if (type === undefined) throw new Error(`Not a valid type for a typed array ${type}`);
       const length = ByteDataGet[BinaryNumberTypes.Uint32](dv, index + 2);
       index += ByteCounts.Uint8 * 2 + ByteCounts.Uint32;
       let array: TypedArrays | number[];

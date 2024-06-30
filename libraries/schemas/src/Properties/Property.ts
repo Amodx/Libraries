@@ -6,7 +6,11 @@ class PropertyState {
   static Create(data: Partial<PropertyState>) {
     return new PropertyState(data.enabled, data.locked);
   }
-  private constructor(public enabled = true, public locked = false) {}
+  private constructor(
+    public enabled = true,
+    public locked = false,
+    public valid = true
+  ) {}
 }
 
 export class Property<

@@ -1,13 +1,13 @@
 import { SchemaNode } from "../Schemas/SchemaNode";
 import { PropertyCondition } from "./PropertyCondition";
 
-type PropertyConditionFunction = <Data extends object = any>(
+type PropertyConditionFunction = <Data extends object = {}>(
   action: PropertyConditionAction<Data>,
   node: SchemaNode,
   result: boolean
 ) => void;
 
-export class PropertyConditionAction<Data extends object = any> {
+export class PropertyConditionAction<Data extends object = {}> {
   static Create<Data extends object = any>(
     action: "enable" | "lock" | PropertyConditionFunction,
     conditions: PropertyCondition<Data>[]
@@ -17,34 +17,35 @@ export class PropertyConditionAction<Data extends object = any> {
   private constructor(
     public action: "enable" | "lock" | PropertyConditionFunction,
     public conditions: PropertyCondition<Data>[]
-  ) {}
+  ) {
 
-  node: SchemaNode;
+  }
 
-  evaluate(obj: Data, value?: any) {
+  evaluate(newValue: any, affectedNode: SchemaNode) {
     let result = false;
+    console.log("evulate conditions");
     for (const e of this.conditions) {
-      result = e.evaluate(obj, value);
+      result = e.evaluate(newValue);
     }
     if (result) {
       if (this.action == "enable") {
-        this.node.setEnabled(true)
+        affectedNode.setEnabled(true);
         return;
       }
       if (this.action == "lock") {
-        this.node.setLocked(true)
+        affectedNode.setLocked(true);
         return;
       }
     } else {
       if (this.action == "enable") {
-        this.node.setEnabled(false)
+        affectedNode.setEnabled(false);
         return;
       }
       if (this.action == "lock") {
-        this.node.setLocked(false)
+        affectedNode.setLocked(false);
         return;
       }
     }
-    return this.action(this, this.node, result);
+    return this.action(this, affectedNode, result);
   }
 }

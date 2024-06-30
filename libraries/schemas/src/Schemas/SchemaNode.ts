@@ -4,7 +4,12 @@ import { PropertyInputRegister } from "../Inputs/PropertyInputRegister";
 
 import { Observable } from "@amodx/core/Observers/index";
 import { Pipeline } from "@amodx/core/Pipelines";
-import { PropertyConditionAction } from "Properties/PropertyConditionAction";
+import { PropertyConditionAction } from "../Properties/PropertyConditionAction";
+import { ObjectSchema } from "./ObjectSchema";
+import {
+  ObjectPropertyValidatorRegister,
+  ObjectPropertyValidatorResponse,
+} from "../Validation";
 export class TemplateNode {
   constructor(public property: Property) {}
   children: TemplateNode[];
@@ -17,6 +22,9 @@ class SchemaNodeObservers<
   stateUpdated = new Observable<SchemaNode<Value, Input>>();
   updated = new Observable<SchemaNode<Value, Input>>();
   loadedIn = new Observable<SchemaNode<Value, Input>>();
+  updatedOrLoadedIn = new Observable<SchemaNode<Value, Input>>();
+  evaluate = new Observable<void>();
+  validate = new Observable<void>();
 }
 
 class SchemaNodePipelines<
@@ -39,6 +47,8 @@ export class SchemaNode<
   observers = new SchemaNodeObservers<Value, Input>();
   pipelines = new SchemaNodePipelines<Value, Input>();
 
+  validatorResponse: ObjectPropertyValidatorResponse;
+
   constructor(
     public property: Property<Value, Input["data"]>,
     public root: any
@@ -47,18 +57,57 @@ export class SchemaNode<
       const inputClass = PropertyInputRegister.getProperty(property.input.type);
       this.input = new inputClass(property.input, this as any) as any;
     }
-    if (property.conditions && property.conditions.length) {
-      for (const condition of property.conditions) {
-        condition.node = this as any;
-        this.conditions.push(condition);
-      }
-      this.observers.updated.subscribe(this, () => {
-        this.conditions.forEach((_) => _.evaluate(this.root));
-      });
-    }
-  
   }
 
+  init(schema: ObjectSchema) {
+    const property = this.property;
+    if (property.conditions && property.conditions.length) {
+      for (const action of property.conditions) {
+        for (const condition of action.conditions) {
+          const otherNode = schema.getNode(condition.path)!;
+          otherNode.observers.updatedOrLoadedIn.subscribe(this, () => {
+            action.evaluate(otherNode.get(), this);
+          });
+          this.observers.evaluate.subscribe(this, () => {
+            action.evaluate(otherNode.get(), this);
+          });
+        }
+        this.conditions.push(action);
+      }
+    }
+    if (property.input?.validator) {
+      const validator = ObjectPropertyValidatorRegister.getValidator(
+        property.input.validator
+      );
+
+      this.observers.updatedOrLoadedIn.subscribe(this, () => {
+        const response = validator.validate(this.get(), this);
+        this.validatorResponse = response;
+        if (response.success) {
+          if (!property.state.valid) {
+            property.state.valid = true;
+            this.observers.stateUpdated.notify(this);
+          }
+        } else {
+          if (property.state.valid) {
+            property.state.valid = false;
+            this.observers.stateUpdated.notify(this);
+          }
+        }
+      });
+    }
+  }
+
+  evaluateConditions() {
+    this.observers.evaluate.notify();
+  }
+
+  validate() {
+    this.observers.validate.notify();
+  }
+  isValid() {
+    return this.property.state.valid;
+  }
   isEnabled() {
     return this.property.state.enabled;
   }
@@ -78,23 +127,28 @@ export class SchemaNode<
     return this.pipelines.onStore.pipe(Property.Create(this.property)).value;
   }
   loadIn(value: any) {
-    const oldValue = this.property.value;
     this.property.value = this.pipelines.loadedIn.pipe({
       node: this,
       value,
     }).value;
-    if (oldValue != this.property.value) this.observers.loadedIn.notify(this);
+    this.observers.loadedIn.notify(this);
+    this.observers.updatedOrLoadedIn.notify(this);
   }
   get() {
     return this.property.value;
   }
   update(newValue: any) {
     const oldValue = this.property.value;
+    console.log("update the thing", newValue, this);
     this.property.value = this.pipelines.updated.pipe({
       node: this,
       newValue,
     }).newValue;
-    if (oldValue != this.property.value) this.observers.updated.notify(this);
+    if (oldValue != this.property.value) {
+      console.log(oldValue, this.property.value);
+      this.observers.updated.notify(this);
+      this.observers.updatedOrLoadedIn.notify(this);
+    }
   }
   forEach(run: (node: SchemaNode) => void) {
     if (!this.children) return;

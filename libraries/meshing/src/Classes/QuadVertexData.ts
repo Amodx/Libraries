@@ -50,11 +50,19 @@ export class QuadVertexData<Data> {
     return true;
   }
 
-  forEach(run: (vertex: QuadVerticies, value: Data) => void) {
-    run(1, this.vertices[1]);
-    run(2, this.vertices[2]);
-    run(3, this.vertices[3]);
-    run(4, this.vertices[4]);
+  [Symbol.iterator](): Iterator<Data> {
+    let index = QuadVerticies.TopRight;
+    const items = this.vertices;
+
+    return {
+      next(): IteratorResult<Data> {
+        if (index < QuadVerticies.BottomRight) {
+          return { value: items[index++ as QuadVerticies], done: false };
+        } else {
+          return { value: undefined, done: true };
+        }
+      },
+    };
   }
 
   clone() {

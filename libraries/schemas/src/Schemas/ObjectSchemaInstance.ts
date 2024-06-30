@@ -15,5 +15,5 @@ export class ObjectSchemaInstanceBase {
   }
 }
 
-export type ObjectSchemaInstance<T extends object = any> =
+export type ObjectSchemaInstance<T extends object = {}> =
   ObjectSchemaInstanceBase & T;

@@ -1,7 +1,6 @@
 import { URIShaderBuilder } from "../URIShaderBuilder.js";
 import {
-  ShaderCodeBody,
-  ShaderCodeSections,
+  ShaderConstantData,
   ShaderData,
   ShaderDataTypes,
   ShaderFunctionData,
@@ -13,35 +12,6 @@ import { URIMeshShaderAttributes } from "./URIMeshShaderAttributes.js";
 
 type ShaderTypes = "shared" | "vertex" | "frag";
 
-const GetShaderSections = (): ShaderCodeSections => {
-  return {
-    fragMain: {
-      GLSL: "",
-    },
-    vertexMain: {
-      GLSL: "",
-    },
-    fragTop: {
-      GLSL: "",
-    },
-    vertexTop: {
-      GLSL: "",
-    },
-    fragBeforeMain: {
-      GLSL: "",
-    },
-    vertexBeforeMain: {
-      GLSL: "",
-    },
-    fragMainTop: {
-      GLSL: "",
-    },
-    vertexMainTop: {
-      GLSL: "",
-    },
-  };
-};
-
 enum ShaderVersions {
   GLSL2,
   GLSL3,
@@ -50,26 +20,7 @@ enum ShaderVersions {
 
 export class URIShader {
   static ShaderVersions = ShaderVersions;
-  data: ShaderData = {
-    mesh: new URIMeshShaderAttributes(""),
-    snippetArgumentOverrides: new Map(),
-    sharedDefines: new Map(),
-    fragDefines: new Map(),
-    vertexDefines: new Map(),
-    sharedUniforms: new Map(),
-    vertexUniforms: new Map(),
-    fragxUniforms: new Map(),
-    textures: new Map(),
-    varying: new Map(),
-    varyingArgumentOverrides: new Map(),
-    localFragFunctions: new Map(),
-    localVertexFunctions: new Map(),
-    sharedFunctions: [],
-    fragFunctions: [],
-    vertexFunctions: [],
-    functionArgumentOverrides: new Map(),
-    ...GetShaderSections(),
-  };
+  data: ShaderData = ShaderData.Create({});
   compiled = {
     vertex: "",
     fragment: "",
@@ -153,6 +104,28 @@ export class URIShader {
     return this;
   }
 
+  addConstants(data: ShaderConstantData[], forSharer: ShaderTypes = "shared") {
+    if (forSharer == "shared") {
+      for (const uniform of data) {
+        this.data.shaderConstants.set(uniform.id, uniform);
+      }
+      return this;
+    }
+    if (forSharer == "vertex") {
+      for (const uniform of data) {
+        this.data.vertexConstants.set(uniform.id, uniform);
+      }
+      return this;
+    }
+    if (forSharer == "frag") {
+      for (const uniform of data) {
+        this.data.fragConstants.set(uniform.id, uniform);
+      }
+      return this;
+    }
+    return this;
+  }
+
   addVarying(data: ShaderVaryingData<any>[]) {
     for (const varying of data) {
       this.data.varying.set(varying.id, varying);
@@ -213,7 +186,27 @@ export class URIShader {
     }
     return this;
   }
-
+  compileConstants() {
+    const constants = URIShaderBuilder.constants.build(
+      this.data.shaderConstants
+    );
+    const vertexConstants = URIShaderBuilder.constants.build(
+      this.data.vertexConstants
+    );
+    const fragConstants = URIShaderBuilder.constants.build(
+      this.data.fragConstants
+    );
+    return {
+      vertex: `
+        ${constants}
+        ${vertexConstants}
+        `,
+      fragment: `
+      ${constants}
+      ${fragConstants}
+      `,
+    };
+  }
   compileDefines() {
     const defines = URIShaderBuilder.define.build(this.data.sharedDefines);
     const vertexDefines = URIShaderBuilder.define.build(
@@ -385,7 +378,7 @@ export class URIShader {
   precision highp float;`
   ) {
     const data = this.data;
-
+    const constants = this.compileConstants();
     const defines = this.compileDefines();
     const uniforms = this.compileUniforms();
     const textures = this.compileTextures();
@@ -399,6 +392,10 @@ ${this.data.vertexTop.GLSL}
 
 //defines 
 ${defines.vertex}
+
+
+//constants 
+${constants.vertex}
 
 
 //uniforms
@@ -429,6 +426,9 @@ ${this.data.fragTop.GLSL}
 
 //defines 
 ${defines.fragment}
+
+//constants 
+${constants.fragment}
 
 //uniforms
 ${uniforms.fragment}

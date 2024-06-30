@@ -26,6 +26,7 @@ type PropertyCreateData<Value extends any, Input extends PropertyInputData> = {
   id: string;
   name?: string;
   value?: Value;
+  validator?: string;
   initialize?: (node: SchemaNode) => void;
 } & Partial<Input["properties"]>;
 
@@ -73,6 +74,7 @@ export const StringProp: PropertyFC<string, StringPropertyInput> = (data) => {
     value: data.value ? data.value : "",
     initialize: data.initialize,
     input: StringPropertyInput.Create({
+      validator: data.validator,
       properties: {
         min: data.min ? data.min : 0,
         max: data.max ? data.max : Number.MAX_SAFE_INTEGER,
@@ -90,6 +92,7 @@ export const PasswordProp: PropertyFC<string, PasswordPropertyInput> = (
     value: data.value ? data.value : "",
     initialize: data.initialize,
     input: PasswordPropertyInput.Create({
+      validator: data.validator,
       properties: {
         min: data.min ? data.min : 0,
         max: data.max ? data.max : Number.MAX_SAFE_INTEGER,
@@ -105,6 +108,7 @@ export const FloatProp: PropertyFC<number, FloatPropertyInput> = (data) => {
     value: data.value ? data.value : 0,
     initialize: data.initialize,
     input: FloatPropertyInput.Create({
+      validator: data.validator,
       properties: {
         min: data.min ? data.min : 0,
         max: data.max ? data.max : Number.MAX_VALUE,
@@ -119,6 +123,7 @@ export const IntProp: PropertyFC<number, IntPropertyInput> = (data) => {
     value: data.value ? data.value : 0,
     initialize: data.initialize,
     input: IntPropertyInput.Create({
+      validator: data.validator,
       properties: {
         min: data.min ? data.min : 0,
         max: data.max ? data.max : Number.MAX_SAFE_INTEGER,
@@ -133,6 +138,7 @@ export const RangeProp: PropertyFC<number, RangePropertyInput> = (data) => {
     value: data.value ? data.value : 0,
     initialize: data.initialize,
     input: RangePropertyInput.Create({
+      validator: data.validator,
       properties: {
         min: data.min ? data.min : 0,
         max: data.max ? data.max : Number.MAX_VALUE,
@@ -148,20 +154,25 @@ export const ColorProp: PropertyFC<string, ColorPropertyInput> = (data) => {
     value: data.value ? data.value : "#ffffff",
     initialize: data.initialize,
     input: ColorPropertyInput.Create({
+      validator: data.validator,
       properties: {},
     }),
   });
 };
 
-export const SelectProp: PropertyFC<string, SelectPropertyInput> = (data) => {
-  return Property.Create<string, SelectPropertyInput["data"]>({
+export const SelectProp: PropertyFC<string | number, SelectPropertyInput> = (
+  data
+) => {
+  return Property.Create<string | number, SelectPropertyInput["data"]>({
     id: data.id,
     name: data.name,
     value: data.value ? data.value : "",
     initialize: data.initialize,
     input: SelectPropertyInput.Create({
+      validator: data.validator,
       properties: {
         options: data.options ? data.options : [],
+        mode: data.mode,
       },
     }),
   });
@@ -176,6 +187,7 @@ export const FilePathProp: PropertyFC<string, FilePathPropertyInput> = (
     value: data.value ? data.value : "#ffffff",
     initialize: data.initialize,
     input: FilePathPropertyInput.Create({
+      validator: data.validator,
       properties: {
         acceptedFileExtensions: data.acceptedFileExtensions
           ? data.acceptedFileExtensions
@@ -194,6 +206,7 @@ export const Vec2Prop: PropertyFC<[number, number], Vec2PropertyInput> = (
     value: data.value ? data.value : [0, 0],
     initialize: data.initialize,
     input: Vec2PropertyInput.Create({
+      validator: data.validator,
       properties: {
         valueType: data.valueType ? data.valueType : "position",
       },
@@ -209,8 +222,10 @@ export const Vec3Prop: PropertyFC<
     id: data.id,
     name: data.name,
     value: data.value ? data.value : [0, 0, 0],
+
     initialize: data.initialize,
     input: Vec3PropertyInput.Create({
+      validator: data.validator,
       properties: {
         valueType: data.valueType ? data.valueType : "position",
       },
@@ -227,6 +242,7 @@ export const CheckboxProp: PropertyFC<boolean, CheckboxPropertyInput> = (
     value: data.value ? data.value : false,
     initialize: data.initialize,
     input: CheckboxPropertyInput.Create({
+      validator: data.validator,
       properties: {},
     }),
   });
@@ -239,6 +255,7 @@ export const DateProp: PropertyFC<string, DatePropertyInput> = (data) => {
     value: data.value ? data.value : "",
     initialize: data.initialize,
     input: DatePropertyInput.Create({
+      validator: data.validator,
       properties: {},
     }),
   });
@@ -253,6 +270,7 @@ export const TextareaProp: PropertyFC<string, TextareaPropertyInput> = (
     value: data.value ? data.value : "",
     initialize: data.initialize,
     input: TextareaPropertyInput.Create({
+      validator: data.validator,
       properties: {
         rows: data.rows ? data.rows : 4,
         cols: data.cols ? data.cols : 10,
@@ -268,6 +286,7 @@ export const EmailProp: PropertyFC<string, EmailPropertyInput> = (data) => {
     value: data.value ? data.value : "",
     initialize: data.initialize,
     input: EmailPropertyInput.Create({
+      validator: data.validator,
       properties: {},
     }),
   });
@@ -280,6 +299,7 @@ export const UrlProp: PropertyFC<string, UrlPropertyInput> = (data) => {
     value: data.value ? data.value : "",
     initialize: data.initialize,
     input: UrlPropertyInput.Create({
+      validator: data.validator,
       properties: {},
     }),
   });

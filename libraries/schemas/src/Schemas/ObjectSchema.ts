@@ -3,9 +3,31 @@ import { SchemaNode } from "./SchemaNode";
 import { Property } from "../Properties/Property";
 import { ObjectPath } from "../Properties/ObjectPath";
 
-export class ObjectSchema<DataInterface extends object = any> {
+export class ObjectSchema<DataInterface extends object = {}> {
   __root = new SchemaNode(Property.Create({ id: "__root__" }), {});
+
   constructor(private readonly __schema: Schema) {}
+
+  init() {
+    this.traverse((_) => {
+      _.init(this);
+    });
+
+    this.evaluate();
+    this.validate();
+    return this;
+  }
+
+  evaluate() {
+    this.traverse((_) => {
+      _.observers.evaluate.notify();
+    });
+  }
+  validate() {
+    this.traverse((_) => {
+      _.observers.evaluate.notify();
+    });
+  }
 
   traverse(run: (node: SchemaNode) => void) {
     const traverse = (parent: SchemaNode) => {
@@ -25,18 +47,21 @@ export class ObjectSchema<DataInterface extends object = any> {
   }
 
   clone(): ObjectSchema<DataInterface> {
-    return this.__schema.instantiate();
+    return this.__schema
+      .instantiate()
+      .getSchema() as ObjectSchema<DataInterface>;
   }
 
   getNode(path: ObjectPath<DataInterface, any>): SchemaNode | null {
     let finalNode: SchemaNode | null = null;
+
     const traverse = (node: SchemaNode, path: string[]) => {
       if (!node.children) return;
       for (const child of node.children) {
-        if (node.property.id == path[0]) {
-          if (node.property.children && node.property.children.length) {
+        if (child.property.id == path[0]) {
+          if (child.property.children && child.property.children.length) {
             path.shift();
-            traverse(node, path);
+            traverse(child, path);
             return;
           }
           finalNode = child;

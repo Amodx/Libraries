@@ -26,7 +26,7 @@ export type BinaryBitArrayProperty = {
   id: string;
   type: "bit-array";
   length: number;
-};
+}; 
 export type BinaryHeaderProperty = {
   id: string;
   type: "header";

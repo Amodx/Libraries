@@ -16,6 +16,7 @@ export interface URIMaterialData<
   mipMapBias?: number;
   hasEffects?: boolean;
   backFaceCulling?: boolean;
+  stencil?: boolean;
 }
 
 export abstract class URIMaterial<

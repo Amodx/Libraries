@@ -1,8 +1,40 @@
-import { Vec2Array, Vec3Array, Vector2Like, Vector3Like } from "@amodx/math";
-import { QuadScalarVertexData, QuadVector2VertexData, QuadVector3VertexData } from "./QuadVertexData";
-import { QuadVertexVec3Data, QuadVerticies } from "../Geometry.types";
+import {
+  Mat3Array,
+  Matrix3x3Like,
+  Vec2Array,
+  Vec3Array,
+  Vector2Like,
+  Vector3Like,
+} from "@amodx/math";
+import { QuadVector2VertexData, QuadVector3VertexData } from "./QuadVertexData";
+import {
+  QuadUVData,
+  QuadVertexVec3Data,
+  QuadVerticies,
+} from "../Geometry.types";
 
 export class Quad {
+  static FullUVs: Readonly<QuadUVData> = Object.freeze([
+    [1, 1],
+    [0, 1],
+    [0, 0],
+    [1, 0],
+  ]);
+  static RotateUvs(
+    uvs: QuadUVData | Readonly<QuadUVData>,
+    rotation: number
+  ): QuadUVData {
+    const rotationMatrix: Mat3Array = Matrix3x3Like.RotationZ(rotation);
+    const pivot: Vec2Array = [0.5, 0.5];
+    const rotatedUVs: [Vec2Array, Vec2Array, Vec2Array, Vec2Array] = [
+      Vector2Like.RotateAroundPivotArray(rotationMatrix, uvs[0], pivot),
+      Vector2Like.RotateAroundPivotArray(rotationMatrix, uvs[1], pivot),
+      Vector2Like.RotateAroundPivotArray(rotationMatrix, uvs[2], pivot),
+      Vector2Like.RotateAroundPivotArray(rotationMatrix, uvs[3], pivot),
+    ];
+    return rotatedUVs;
+  }
+
   static Create(
     positions?:
       | [Vec3Array, Vec3Array]
@@ -14,7 +46,7 @@ export class Quad {
     return new Quad({ positions, uvs, doubleSided, orientation });
   }
 
-  static RotateVertices90Degrees( 
+  static RotateVertices90Degrees(
     vertices: [QuadVerticies, QuadVerticies, QuadVerticies, QuadVerticies],
     times = 1
   ): [QuadVerticies, QuadVerticies, QuadVerticies, QuadVerticies] {
@@ -190,6 +222,23 @@ export class Quad {
       Vector2Like.FromArray(v3),
       Vector2Like.FromArray(v4)
     );
+    return this;
+  }
+
+  scale(x: number, y: number, z: number) {
+    const scale = Vector3Like.Create(x, y, z);
+    for (const position of this.positions) {
+      Vector3Like.MultiplyInPlace(position, scale);
+    }
+    return this;
+  }
+
+  transform(x: number, y: number, z: number) {
+    const transform = Vector3Like.Create(x, y, z);
+    for (const position of this.positions) {
+      Vector3Like.AddInPlace(position, transform);
+    }
+    return this;
   }
 
   setPositions(
@@ -231,7 +280,15 @@ export class Quad {
         Vector3Like.FromArray(n4)
       );
     }
+    return this;
   }
 
-
+  clone() {
+    return Quad.Create(
+      this.positions
+        .getAsArray()
+        .map((_) => Vector3Like.ToArray(_)) as QuadVertexVec3Data,
+      this.uvs.getAsArray().map((_) => Vector2Like.ToArray(_)) as QuadUVData
+    );
+  }
 }
