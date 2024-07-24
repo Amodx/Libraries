@@ -1,3 +1,5 @@
+import { SignalData } from "./ElementProps";
+
 export class IterableWeakMap<K extends object, V> {
   #weakMap = new WeakMap();
   #refSet = new Set();
@@ -67,5 +69,38 @@ export class IterableWeakMap<K extends object, V> {
     for (const [key, value] of this) {
       yield value;
     }
+  }
+}
+
+export class SignalsController {
+  static map = new WeakMap<any, IterableWeakMap<HTMLElement, Function[]>>();
+  static register(
+    signal: SignalData<any> | SignalData<any>[],
+    elm: HTMLElement
+  ) {
+    if (!signal || (Array.isArray(signal) && !signal.length)) return;
+    [...(Array.isArray(signal) ? signal : [signal])].forEach((signal) => {
+      if (!this.map.has(signal.origin))
+        return this.map.set(
+          signal.origin,
+          new IterableWeakMap([[elm, [signal.update]]])
+        );
+      const updates = this.map.get(signal.origin)?.get(elm);
+      if (updates) {
+        updates.push(signal.update);
+      } else {
+        this.map.get(signal.origin)!.set(elm, [signal.update]);
+      }
+    });
+  }
+  static async run(props: any) {
+    const elements = this.map.get(props);
+    if (!elements) return false;
+    for (const [key, functions] of elements) {
+      for (const func of functions) {
+        await func(key, props);
+      }
+    }
+    return true;
   }
 }

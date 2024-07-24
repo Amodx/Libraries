@@ -1,6 +1,6 @@
 export type SignalData<Tag extends keyof HTMLElementTagNameMap> = {
   origin: any;
-  receiver: (elm: HTMLElementTagNameMap[Tag], signalProps: any) => void;
+  update: (elm: HTMLElementTagNameMap[Tag], signalProps: any) => void;
 };
 export type RefernceObject<Refernce = any> = {
   current: Refernce | null;
@@ -10,12 +10,12 @@ export type ElmObjRefData = {
   ref?: RefernceObject;
 };
 
-export type ElementChildren =  
-  | (HTMLElement | HTMLElement[])
-  | (HTMLElement | HTMLElement[])[]
+export type ElementChildren =
+  | (HTMLElement | DocumentFragment | DocumentFragment[] | HTMLElement[])
+  | (HTMLElement | DocumentFragment | DocumentFragment[] | HTMLElement[])[]
   | string
   | null
-
+  | false;
 
 type PropsMap = {
   [K in keyof HTMLElementTagNameMap]: Partial<HTMLElementTagNameMap[K]>;

@@ -36,6 +36,10 @@ class SchemaNodePipelines<
   loadedIn = new Pipeline<{ value: any; node: SchemaNode<Value, Input> }>();
 }
 
+class SchemaNodeProxy<Value = any> {
+  constructor(public get: () => Value, public set: (value: Value) => Value) {}
+}
+
 export class SchemaNode<
   Value = any,
   Input extends PropertyInputBase<any, any> = any
@@ -57,6 +61,26 @@ export class SchemaNode<
       const inputClass = PropertyInputRegister.getProperty(property.input.type);
       this.input = new inputClass(property.input, this as any) as any;
     }
+  }
+
+  private proxy: SchemaNodeProxy<Value> | null = null;
+
+  enableProxy(get: () => Value, set: (value: Value) => Value) {
+    this.proxy = new SchemaNodeProxy(get, set);
+  }
+
+  disableProxy() {
+    this.proxy = null;
+  }
+
+  private getValue() {
+    if (!this.proxy) return this.property.value;
+    return this.proxy.get();
+  }
+
+  private setValue(value: Value) {
+    if (!this.proxy) return (this.property.value = value);
+    return this.proxy.set(value);
   }
 
   init(schema: ObjectSchema) {
@@ -105,19 +129,24 @@ export class SchemaNode<
   validate() {
     this.observers.validate.notify();
   }
+
   isValid() {
     return this.property.state.valid;
   }
+
   isEnabled() {
     return this.property.state.enabled;
   }
+
   setEnabled(enabled: boolean) {
     this.property.state.enabled = enabled;
     this.observers.stateUpdated.notify(this);
   }
+
   isLocked() {
     return this.property.state.locked;
   }
+
   setLocked(locked: boolean) {
     this.property.state.locked = locked;
     this.observers.stateUpdated.notify(this);
@@ -126,36 +155,43 @@ export class SchemaNode<
   store() {
     return this.pipelines.onStore.pipe(Property.Create(this.property)).value;
   }
+
   loadIn(value: any) {
-    this.property.value = this.pipelines.loadedIn.pipe({
-      node: this,
-      value,
-    }).value;
+    this.setValue(
+      this.pipelines.loadedIn.pipe({
+        node: this,
+        value,
+      }).value
+    );
     this.observers.loadedIn.notify(this);
     this.observers.updatedOrLoadedIn.notify(this);
   }
+
   get() {
-    return this.property.value;
+    return this.getValue();
   }
+
   update(newValue: any) {
-    const oldValue = this.property.value;
-    console.log("update the thing", newValue, this);
-    this.property.value = this.pipelines.updated.pipe({
-      node: this,
-      newValue,
-    }).newValue;
-    if (oldValue != this.property.value) {
-      console.log(oldValue, this.property.value);
+    const oldValue = this.getValue();
+    this.setValue(
+      this.pipelines.updated.pipe({
+        node: this,
+        newValue,
+      }).newValue
+    );
+    if (oldValue != this.getValue()) {
       this.observers.updated.notify(this);
       this.observers.updatedOrLoadedIn.notify(this);
     }
   }
+
   forEach(run: (node: SchemaNode) => void) {
     if (!this.children) return;
     for (const child of this.children) {
       run(child);
     }
   }
+
   map<T>(map: (node: SchemaNode) => T): T[] {
     const data: T[] = [];
     this.forEach((_) => data.push(map(_)));

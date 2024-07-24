@@ -16,6 +16,7 @@ export class DataChannel<DataType extends any = ArrayBuffer> {
     public channel: RTCDataChannel,
     binaryType: BinaryType | undefined = "arraybuffer"
   ) {
+
     if (binaryType) this.channel.binaryType = binaryType;
     this.channel.negotiated;
     this.channel.onmessage = (event) => this.observers.message.notify(event);

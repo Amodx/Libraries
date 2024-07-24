@@ -38,3 +38,4 @@ export const animate = Object.assign(
   },
   animateObject
 );
+  

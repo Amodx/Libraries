@@ -23,7 +23,6 @@ export class PropertyConditionAction<Data extends object = {}> {
 
   evaluate(newValue: any, affectedNode: SchemaNode) {
     let result = false;
-    console.log("evulate conditions");
     for (const e of this.conditions) {
       result = e.evaluate(newValue);
     }

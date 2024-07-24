@@ -81,7 +81,6 @@ export class Schema<DataInterface extends object = {}> {
           objectSchema
         );
         schemaNode.children.push(node);
-
         if (template.children && template.children.length) {
           const parent = {};
           traverse(template, node, parent);
@@ -90,7 +89,7 @@ export class Schema<DataInterface extends object = {}> {
         }
         Object.defineProperty(parentObject, template.property.id, {
           get() {
-            return node.property.value;
+            return node.get();
           },
           set(value: any) {
             node.update(value);

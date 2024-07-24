@@ -6,7 +6,7 @@ type QueryPathTree<T> = {
     : [P];
 };
 
-type QueryPath<T> = QueryPathTree<T>[keyof T];
+export type QueryPath<T> = QueryPathTree<T>[keyof T];
 
 type QueryPathValue<T, P extends any[]> = P extends [infer K, ...infer Rest]
   ? K extends keyof T

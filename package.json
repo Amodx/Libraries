@@ -10,7 +10,7 @@
     "init:amodx:indexdb": "cd ./libraries/indexdb ; npm run build ; cd ../../ ; npm init -y --scope @amodx -w ./libraries/indexdb/dist",
     "init:amodx:audio": "cd ./libraries/audio ; npm run build ; cd ../../ ; npm init -y --scope @amodx -w ./libraries/audio/dist",
     "init:amodx:uri": "cd ./libraries/uri ; npm run build ; cd ../../ ; npm init -y --scope @amodx -w ./libraries/uri/dist",
-    "init:amodx:uncsi": "cd ./libraries/uncsi ; npm run build ; cd ../../ ; npm init -y --scope @amodx -w ./libraries/uncsi/dist",
+    "init:amodx:ncs": "cd ./libraries/ncs ; npm run build ; cd ../../ ; npm init -y --scope @amodx -w ./libraries/ncs/dist",
     "init:amodx:controls": "cd ./libraries/controls ; npm run build ; cd ../../ ; npm init -y --scope @amodx -w ./libraries/controls/dist",
     "init:amodx:rng": "cd ./libraries/rng ; npm run build ; cd ../../ ; npm init -y --scope @amodx -w ./libraries/rng/dist",
     "init:amodx:elmtree": "cd ./libraries/elmtree ; npm run build ; cd ../../ ; npm init -y --scope @amodx -w ./libraries/elmtree/dist",
@@ -26,13 +26,13 @@
     "libraries\\binary\\dist",
     "libraries\\threads\\dist",
     "libraries\\uri\\dist",
+
     "libraries\\indexdb\\dist",
     "libraries\\controls\\dist",
     "libraries\\rng\\dist",
     "libraries\\audio\\dist",
-    "libraries\\schemas\\dist",
-    "amodxMonoRepo\\libraries\\core\\dist",
-    "amodxMonoRepo\\libraries\\binary\\dist"
+    "libraries\\schemas\\dist"
+
   ],
   "devDependencies": {
     "@types/react": "^18.2.17",

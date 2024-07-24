@@ -1,3 +1,6 @@
+import { AMath } from "./AMath";
+import { Vector2Like } from "./Vectors";
+
 export enum CompassDirections {
   North = "north",
   South = "south",
@@ -83,12 +86,9 @@ export class Directions {
       (CompassAnglesMap[direction] + Math.PI) % (2 * Math.PI);
     for (const dir in CompassAngles) {
       if (CompassAngles[dir as keyof typeof CompassAngles] === oppositeAngle) {
-   
         return dir.toLowerCase() as CompassDirections;
       }
     }
-
-
 
     return direction.toLowerCase() as any;
   }
@@ -116,13 +116,46 @@ export class Directions {
   /**
    * Converts a compass direction to a vector.
    * @param direction - The compass direction.
-   * @returns The corresponding vector as an object with x and y properties.
+   * @returns The corresponding vector.
    */
-  static ToVector(direction: CompassDirections): { x: number; y: number } {
+  static ToVector(direction: CompassDirections): Vector2Like {
     const angle = CompassAnglesMap[direction];
     return {
       x: Math.cos(angle),
       y: Math.sin(angle),
     };
+  }
+
+  /**
+   * Converts a normalized vector to a compass direction.
+   * @param vector - The normalized vector.
+   * @returns The corresponding compass direction.
+   */
+  static FromVector(vector: Vector2Like): CompassDirections {
+    // const angle = Math.atan2(vector.y, vector.x);
+    const angle = Math.atan2(vector.x, vector.y);
+    const normalizedAngle = (angle + 2 * Math.PI) % (2 * Math.PI);
+
+    let closestDirection = CompassDirections.North;
+    let smallestDifference = Math.PI * 2;
+
+    for (const dir in CompassAngles) {
+      const dirAngle = CompassAngles[dir as keyof typeof CompassAngles];
+      const difference = Math.abs(normalizedAngle - dirAngle);
+
+      const altDifference = Math.min(
+        difference,
+        Math.abs(2 * Math.PI - difference)
+      );
+
+      if (altDifference < smallestDifference) {
+        smallestDifference = altDifference;
+        closestDirection = dir as CompassDirections;
+      }
+    }
+
+    return CompassDirections[
+      closestDirection as any as keyof typeof CompassDirections
+    ];
   }
 }

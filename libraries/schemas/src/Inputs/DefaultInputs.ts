@@ -113,7 +113,7 @@ class FloatInput extends PropertyInputBase<
 }
 
 class Vec2Input extends PropertyInputBase<
-  [number, number],
+  { x: number; y: number },
   { valueType: "position" | "dimension" }
 > {
   static Meta = {
@@ -141,7 +141,7 @@ class Vec2Input extends PropertyInputBase<
 }
 
 class Vec3Input extends PropertyInputBase<
-  [number, number, number],
+  { x: number; y: number; z: number },
   { valueType: "position" | "dimension" }
 > {
   static Meta = {
@@ -195,7 +195,7 @@ class IntInput extends PropertyInputBase<number, { min: number; max: number }> {
 }
 
 class SelectInput extends PropertyInputBase<
-  string|number,
+  string | number,
   {
     options: string[] | [display: string, value: string | number][];
     mode?: string;

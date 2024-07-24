@@ -13,8 +13,8 @@ Amodx is a collection of free, open-source, and highly useful abstract APIs and 
   - A library for building custom meshes from scratch.
 - **@amodx/schemas**
   - A library for creating type-safe schemas for objects.
-- **@amodx/elmtree**
-  - A simple, lightweight JavaScript framework.
+- **@amodx/elm**
+  - A simple, lightweight html renderer.
 - **@amodx/audio**
   - An audio library tailored specifically for games, providing powerful and flexible audio management capabilities.
 - **@amodx/binary**
@@ -27,8 +27,8 @@ Amodx is a collection of free, open-source, and highly useful abstract APIs and 
   - A library dedicated to seeded random number generation, noise creation, and weighted randomness, ideal for game development and simulations.
 - **@amodx/threads**
   - A library designed for multithreaded communication and thread pool management, enhancing the performance and efficiency of your applications.
-- **@amodx/uncsi**
-  - The Universal Node Component System Interface (UNCSI), used to build flexible and scalable Node Component Systems (NCS) and Entity Component Systems (ECS).
+- **@amodx/ncs**
+  - The NCS library is used to build flexible and scalable Node Component Systems (NCS). 
 - **@amodx/uri**
   - The Universal Renderer Interface (URI), which abstracts away different rendering libraries to provide a unified rendering approach.
 - **@amodx/core**

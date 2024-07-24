@@ -33,7 +33,6 @@ export default function (controls: typeof Controls) {
 
   const mouseDownListener = (event: MouseEvent) => {
     const button = ControlsMap.mapMoueButton(event.button);
-    console.log("mouse down listener", button);
     if (controls._capturing && controls._capturingMode == "keyboard") {
       controls._capturedData = {
         mouse: {

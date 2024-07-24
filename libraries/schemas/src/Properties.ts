@@ -23,7 +23,6 @@ import { PropertyConditionAction } from "./Properties/PropertyConditionAction";
 import { SchemaNode } from "./Schemas/SchemaNode";
 
 type PropertyCreateData<Value extends any, Input extends PropertyInputData> = {
-  id: string;
   name?: string;
   value?: Value;
   validator?: string;
@@ -31,7 +30,8 @@ type PropertyCreateData<Value extends any, Input extends PropertyInputData> = {
 } & Partial<Input["properties"]>;
 
 type PropertyFC<Value extends any, Input extends PropertyInputBase> = (
-  data: PropertyCreateData<Value, Input["data"]>
+  id: string,
+  data?: Exclude<PropertyCreateData<Value, Input["data"]>, "id">
 ) => Property<Value, Input["data"]>;
 
 export const PropConditions = Object.assign(
@@ -57,9 +57,9 @@ export const ObjectProp = (
     children: properties,
   });
 };
-export const AnyProp: PropertyFC<any, any> = (data) => {
+export const AnyProp: PropertyFC<any, any> = (id, data = {}) => {
   return Property.Create({
-    id: data.id,
+    id,
     name: data.name,
     value: data.value ? data.value : null,
     initialize: data.initialize,
@@ -67,9 +67,12 @@ export const AnyProp: PropertyFC<any, any> = (data) => {
   });
 };
 
-export const StringProp: PropertyFC<string, StringPropertyInput> = (data) => {
+export const StringProp: PropertyFC<string, StringPropertyInput> = (
+  id,
+  data = {}
+) => {
   return Property.Create({
-    id: data.id,
+    id,
     name: data.name,
     value: data.value ? data.value : "",
     initialize: data.initialize,
@@ -84,10 +87,11 @@ export const StringProp: PropertyFC<string, StringPropertyInput> = (data) => {
 };
 
 export const PasswordProp: PropertyFC<string, PasswordPropertyInput> = (
-  data
+  id,
+  data = {}
 ) => {
   return Property.Create({
-    id: data.id,
+    id,
     name: data.name,
     value: data.value ? data.value : "",
     initialize: data.initialize,
@@ -101,9 +105,12 @@ export const PasswordProp: PropertyFC<string, PasswordPropertyInput> = (
   });
 };
 
-export const FloatProp: PropertyFC<number, FloatPropertyInput> = (data) => {
+export const FloatProp: PropertyFC<number, FloatPropertyInput> = (
+  id,
+  data = {}
+) => {
   return Property.Create({
-    id: data.id,
+    id,
     name: data.name,
     value: data.value ? data.value : 0,
     initialize: data.initialize,
@@ -116,9 +123,12 @@ export const FloatProp: PropertyFC<number, FloatPropertyInput> = (data) => {
     }),
   });
 };
-export const IntProp: PropertyFC<number, IntPropertyInput> = (data) => {
+export const IntProp: PropertyFC<number, IntPropertyInput> = (
+  id,
+  data = {}
+) => {
   return Property.Create({
-    id: data.id,
+    id,
     name: data.name,
     value: data.value ? data.value : 0,
     initialize: data.initialize,
@@ -131,9 +141,12 @@ export const IntProp: PropertyFC<number, IntPropertyInput> = (data) => {
     }),
   });
 };
-export const RangeProp: PropertyFC<number, RangePropertyInput> = (data) => {
+export const RangeProp: PropertyFC<number, RangePropertyInput> = (
+  id,
+  data = {}
+) => {
   return Property.Create({
-    id: data.id,
+    id,
     name: data.name,
     value: data.value ? data.value : 0,
     initialize: data.initialize,
@@ -147,9 +160,12 @@ export const RangeProp: PropertyFC<number, RangePropertyInput> = (data) => {
     }),
   });
 };
-export const ColorProp: PropertyFC<string, ColorPropertyInput> = (data) => {
+export const ColorProp: PropertyFC<string, ColorPropertyInput> = (
+  id,
+  data = {}
+) => {
   return Property.Create({
-    id: data.id,
+    id,
     name: data.name,
     value: data.value ? data.value : "#ffffff",
     initialize: data.initialize,
@@ -161,10 +177,11 @@ export const ColorProp: PropertyFC<string, ColorPropertyInput> = (data) => {
 };
 
 export const SelectProp: PropertyFC<string | number, SelectPropertyInput> = (
-  data
+  id,
+  data = {}
 ) => {
   return Property.Create<string | number, SelectPropertyInput["data"]>({
-    id: data.id,
+    id,
     name: data.name,
     value: data.value ? data.value : "",
     initialize: data.initialize,
@@ -179,10 +196,11 @@ export const SelectProp: PropertyFC<string | number, SelectPropertyInput> = (
 };
 
 export const FilePathProp: PropertyFC<string, FilePathPropertyInput> = (
-  data
+  id,
+  data = {}
 ) => {
   return Property.Create({
-    id: data.id,
+    id,
     name: data.name,
     value: data.value ? data.value : "#ffffff",
     initialize: data.initialize,
@@ -197,31 +215,32 @@ export const FilePathProp: PropertyFC<string, FilePathPropertyInput> = (
   });
 };
 
-export const Vec2Prop: PropertyFC<[number, number], Vec2PropertyInput> = (
-  data
-) => {
+export const Vec2Prop: PropertyFC<
+  { x: number; y: number },
+  Vec2PropertyInput
+> = (id, data = {}) => {
   return Property.Create({
-    id: data.id,
+    id,
     name: data.name,
-    value: data.value ? data.value : [0, 0],
+    value: data.value ? data.value : { x: 0, y: 0 },
     initialize: data.initialize,
     input: Vec2PropertyInput.Create({
       validator: data.validator,
       properties: {
         valueType: data.valueType ? data.valueType : "position",
       },
-    }),
+    }), 
   });
 };
 
 export const Vec3Prop: PropertyFC<
-  [number, number, number],
+  { x: number; y: number; z: number },
   Vec3PropertyInput
-> = (data) => {
+> = (id, data = {}) => {
   return Property.Create({
-    id: data.id,
+    id,
     name: data.name,
-    value: data.value ? data.value : [0, 0, 0],
+    value: data.value ? data.value : { x: 0, y: 0, z: 0 },
 
     initialize: data.initialize,
     input: Vec3PropertyInput.Create({
@@ -234,10 +253,11 @@ export const Vec3Prop: PropertyFC<
 };
 
 export const CheckboxProp: PropertyFC<boolean, CheckboxPropertyInput> = (
-  data
+  id,
+  data = {}
 ) => {
   return Property.Create({
-    id: data.id,
+    id,
     name: data.name,
     value: data.value ? data.value : false,
     initialize: data.initialize,
@@ -248,9 +268,12 @@ export const CheckboxProp: PropertyFC<boolean, CheckboxPropertyInput> = (
   });
 };
 
-export const DateProp: PropertyFC<string, DatePropertyInput> = (data) => {
+export const DateProp: PropertyFC<string, DatePropertyInput> = (
+  id,
+  data = {}
+) => {
   return Property.Create({
-    id: data.id,
+    id,
     name: data.name,
     value: data.value ? data.value : "",
     initialize: data.initialize,
@@ -262,10 +285,11 @@ export const DateProp: PropertyFC<string, DatePropertyInput> = (data) => {
 };
 
 export const TextareaProp: PropertyFC<string, TextareaPropertyInput> = (
-  data
+  id,
+  data = {}
 ) => {
   return Property.Create({
-    id: data.id,
+    id,
     name: data.name,
     value: data.value ? data.value : "",
     initialize: data.initialize,
@@ -279,9 +303,12 @@ export const TextareaProp: PropertyFC<string, TextareaPropertyInput> = (
   });
 };
 
-export const EmailProp: PropertyFC<string, EmailPropertyInput> = (data) => {
+export const EmailProp: PropertyFC<string, EmailPropertyInput> = (
+  id,
+  data = {}
+) => {
   return Property.Create({
-    id: data.id,
+    id,
     name: data.name,
     value: data.value ? data.value : "",
     initialize: data.initialize,
@@ -292,9 +319,12 @@ export const EmailProp: PropertyFC<string, EmailPropertyInput> = (data) => {
   });
 };
 
-export const UrlProp: PropertyFC<string, UrlPropertyInput> = (data) => {
+export const UrlProp: PropertyFC<string, UrlPropertyInput> = (
+  id,
+  data = {}
+) => {
   return Property.Create({
-    id: data.id,
+    id,
     name: data.name,
     value: data.value ? data.value : "",
     initialize: data.initialize,
