@@ -64,6 +64,7 @@ export abstract class PropertyInputBase<
     if (this.init) this.init();
   }
 
+  abstract compare(value1: Value, value2: Value): boolean;
   get() {
     return this.pipelines.onGet.pipe({
       input: this,

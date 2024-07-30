@@ -2,16 +2,25 @@
 import { createRoot } from "react-dom/client";
 import "./core.css";
 import { App } from "App";
-import { elm, useSignal, } from "@amodx/elm";
-
+import { elm, useSignal } from "@amodx/elm";
 
 const signal = useSignal(0);
 
-console.log(signal.compose)
-setInterval(()=>{
-  console.log("interval",signal.value)
+console.log(signal.compose);
+setInterval(() => {
+  console.log("interval", signal.value);
   signal.value++;
-},100)
+}, 100);
+
+document.body.append(
+  elm(
+    "div",
+    {},
+    elm("img", {
+      signal: signal((elm) => (elm.innerText = String(signal.value))),
+    })
+  )
+);
 
 /* const root = createRoot(document.getElementById("root")!);
 document.getElementById("root")!.classList.add("bp5-dark");

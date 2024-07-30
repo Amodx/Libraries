@@ -1,28 +1,10 @@
-import { Pipeline } from "@amodx/core/Pipelines";
 import { TraitData, TraitRegisterData, TraitStateData } from "./TraitData";
-import { Observable } from "@amodx/core/Observers";
 import { ObjectSchemaInstance, Schema } from "@amodx/schemas";
-
 import { ComponentInstance } from "../Components/ComponentInstance";
-import { NCS } from "../NCS";
 import { NodeInstance } from "../Nodes/NodeInstance";
-
-export interface TraitObservers {}
-
-export class TraitObservers {
-  disposed = new Observable();
-  traitAdded = new Observable<TraitInstance>();
-  traitRemoved = new Observable<TraitInstance>();
-  traitsUpdated = new Observable();
-}
-
-export interface TraitPipelines {}
-
-class TraitBasePipelines<TraitSchema extends object = {}> {
-  disposed = new Pipeline<TraitInstance<TraitSchema>>();
-  toJSON = new Pipeline<TraitData<TraitSchema>>();
-  copy = new Pipeline<TraitData<TraitSchema>>();
-}
+import { TraintContainer } from "./TraitContainer";
+import { TraitObservers } from "./TraitObservers";
+import { TraitPipelines } from "./TraitPipelines";
 
 export class TraitInstance<
   TraitSchema extends object = {},
@@ -36,17 +18,46 @@ export class TraitInstance<
   logic: Logic;
   state: TraitStateData;
 
-  traits: TraitInstance[] = [];
-
   private _shared: Shared;
   get shared() {
     return this._shared;
   }
 
-  observers = new TraitObservers();
-  pipelines = new TraitBasePipelines();
+  private _traits?: TraintContainer;
+  get traits() {
+    if (!this._traits) {
+      this._traits = new TraintContainer(this);
+    }
+    return this._traits;
+  }
+  get hasTraits() {
+    return Boolean(this._traits);
+  }
+
+  private _observers?: TraitObservers;
+  get observers() {
+    if (!this._observers) {
+      this._observers = new TraitObservers();
+    }
+    return this._observers;
+  }
+  get hasObservers() {
+    return Boolean(this._observers);
+  }
+
+  private _pipelines?: TraitPipelines<TraitSchema>;
+  get pipelines(): TraitPipelines<TraitSchema> {
+    if (!this._pipelines) {
+      this._pipelines = new TraitPipelines<TraitSchema>();
+    }
+    return this._pipelines;
+  }
+  get hasPipelines() {
+    return Boolean(this._pipelines);
+  }
+
   constructor(
-    public parent: ComponentInstance | TraitInstance,
+    public parent: ComponentInstance<any, any, any, any> | TraitInstance,
     private traitProotypeData: TraitRegisterData<
       TraitSchema,
       Data,
@@ -74,9 +85,7 @@ export class TraitInstance<
         : ({} as any);
 
     if (this.schema.getSchema) this.schema.getSchema().loadIn(data.schema);
-    if (data.traits?.length) {
-      this.addTraits(...data.traits);
-    }
+  
 
     if (data.state) {
       this.state = structuredClone(data.state);
@@ -85,12 +94,6 @@ export class TraitInstance<
     this._shared = traitProotypeData.shared
       ? traitProotypeData.shared
       : ({} as any);
-  }
-
-  async initAllTraits() {
-    for (const trait of this.traits) {
-      await trait.init();
-    }
   }
 
   getNode(): NodeInstance {
@@ -107,15 +110,6 @@ export class TraitInstance<
     return node;
   }
 
-  *traverseTraits(): Generator<any> {
-    const children = [...this.traits];
-    while (children.length) {
-      const child = children.shift()!;
-      yield child;
-      if (child.traits.length) children.push(...child.traits);
-    }
-  }
-
   async init() {
     if (!this.traitProotypeData.init) return;
     await this.traitProotypeData.init(this);
@@ -129,77 +123,43 @@ export class TraitInstance<
     if (!this.traitProotypeData.dispose) return;
     await this.traitProotypeData.dispose(this);
     this._disposed = true;
-    for (const child of this.traits) {
-      child.dispose();
-    }
-    this.pipelines.disposed.pipe(this);
-    this.observers.disposed.notify();
-  }
-
-  addTraits(...traits: TraitData[]) {
-    for (const trait of traits) {
-      const traitType = NCS.getTrait(trait.type);
-      const newTrait = new TraitInstance(this, traitType, trait);
-      this.traits.push(newTrait);
-      this.observers.traitAdded.notify(newTrait);
-    }
-    this.observers.traitsUpdated.notify();
-  }
-
-  async removeTraitByIndex(index: number) {
-    const trait = this.traits[index];
-    if (trait) {
-      const child = this.traits.splice(index, 1)![0];
-      this.observers.traitRemoved.notify(child);
-      this.observers.traitsUpdated.notify();
-      await trait.dispose();
-      return true;
-    }
-    return false;
-  }
-  removeTrait(type: string) {
-    return this.removeTraitByIndex(
-      this.traits.findIndex((_) => _.type == type)
-    );
-  }
-
-  getTrait(type: string) {
-    return this.traits.find((_) => _.type == type);
-  }
-  getAllTraitsOfType(type: string) {
-    return this.traits.filter((_) => _.type == type);
-  }
-  async removeAllTraitsOfType(type: string) {
-    const filtered = this.getAllTraitsOfType(type);
-    for (const trait of filtered) {
-      await trait.dispose();
-    }
-    this.traits = this.traits.filter((_) => _.type != type);
-    for (const comp of filtered) {
-      this.observers.traitRemoved.notify(comp);
-    }
-    this.observers.traitsUpdated.notify();
-    return filtered;
+    if (this.hasTraits) await this.traits.dispose();
+    this.hasPipelines && this.pipelines.disposed.pipe(this);
+    this.hasObservers && this.observers.disposed.notify();
   }
 
   copy(): TraitData {
-    return this.pipelines.toJSON.pipe({
+    const data: TraitData = {
       schema: this.schema?.getSchema
         ? this.schema.getSchema().store()
         : ({} as any),
       type: this.type,
       state: this.state,
-      traits: this.traits.map((_) => _.copy()),
-    });
+      traits:
+        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) || [],
+    };
+    return (
+      (this.hasPipelines &&
+        this.pipelines.isCopySet() &&
+        this.pipelines.copy.pipe(data)) ||
+      data
+    );
   }
   toJSON(): TraitData {
-    return this.pipelines.toJSON.pipe({
+    const data: TraitData = {
       schema: this.schema?.getSchema
         ? this.schema.getSchema().store()
         : ({} as any),
       type: this.type,
       state: this.state,
-      traits: this.traits.map((_) => _.toJSON()),
-    });
+      traits:
+        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) || [],
+    };
+    return (
+      (this.hasPipelines &&
+        this.pipelines.isCopySet() &&
+        this.pipelines.copy.pipe(data)) ||
+      data
+    );
   }
 }

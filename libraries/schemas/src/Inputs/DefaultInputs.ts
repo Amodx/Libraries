@@ -22,6 +22,10 @@ class StringInput extends PropertyInputBase<
     };
   }
 
+  compare(value1: string, value2: string): boolean {
+    return value1 == value2;
+  }
+
   getClass() {
     return StringInput;
   }
@@ -43,6 +47,10 @@ class ColorInput extends PropertyInputBase<string, {}> {
       properties: {},
       ...data,
     };
+  }
+
+  compare(value1: string, value2: string): boolean {
+    return value1 == value2;
   }
 
   getClass() {
@@ -75,6 +83,10 @@ class RangeInput extends PropertyInputBase<
     };
   }
 
+  compare(value1: number, value2: number): boolean {
+    return value1 == value2;
+  }
+
   getClass() {
     return RangeInput;
   }
@@ -102,6 +114,10 @@ class FloatInput extends PropertyInputBase<
       },
       ...data,
     };
+  }
+
+  compare(value1: number, value2: number): boolean {
+    return value1 == value2;
   }
 
   getClass() {
@@ -132,6 +148,13 @@ class Vec2Input extends PropertyInputBase<
     };
   }
 
+  compare(
+    value1: { x: number; y: number },
+    value2: { x: number; y: number }
+  ): boolean {
+    return value1.x == value2.x && value1.y == value2.y;
+  }
+
   getClass() {
     return Vec2Input;
   }
@@ -160,6 +183,13 @@ class Vec3Input extends PropertyInputBase<
     };
   }
 
+  compare(
+    value1: { x: number; y: number; z: number },
+    value2: { x: number; y: number; z: number }
+  ): boolean {
+    return value1.x == value2.x && value1.y == value2.y && value1.z == value2.z;
+  }
+
   getClass() {
     return Vec3Input;
   }
@@ -185,7 +215,9 @@ class IntInput extends PropertyInputBase<number, { min: number; max: number }> {
       ...data,
     };
   }
-
+  compare(value1: number, value2: number): boolean {
+    return value1 == value2;
+  }
   getClass() {
     return IntInput;
   }
@@ -216,7 +248,9 @@ class SelectInput extends PropertyInputBase<
       ...data,
     };
   }
-
+  compare(value1: string | number, value2: string | number): boolean {
+    return value1 == value2;
+  }
   getClass() {
     return SelectInput;
   }
@@ -243,6 +277,9 @@ class FilePathInput extends PropertyInputBase<
       },
       ...data,
     };
+  }
+  compare(value1: string, value2: string): boolean {
+    return value1 == value2;
   }
 
   getClass() {
@@ -273,6 +310,9 @@ class PasswordInput extends PropertyInputBase<
       ...data,
     };
   }
+  compare(value1: string, value2: string): boolean {
+    return value1 == value2;
+  }
 
   getClass() {
     return PasswordInput;
@@ -296,6 +336,10 @@ class CheckboxInput extends PropertyInputBase<boolean, {}> {
       ...data,
     };
   }
+  
+  compare(value1: boolean, value2: boolean): boolean {
+    return value1 == value2;
+  }
 
   getClass() {
     return CheckboxInput;
@@ -318,6 +362,9 @@ class DateInput extends PropertyInputBase<string, {}> {
       properties: {},
       ...data,
     };
+  }
+  compare(value1: string, value2: string): boolean {
+    return value1 == value2;
   }
 
   getClass() {
@@ -348,6 +395,9 @@ class TextareaInput extends PropertyInputBase<
       ...data,
     };
   }
+  compare(value1: string, value2: string): boolean {
+    return value1 == value2;
+  }
 
   getClass() {
     return TextareaInput;
@@ -371,6 +421,9 @@ class EmailInput extends PropertyInputBase<string, {}> {
       ...data,
     };
   }
+  compare(value1: string, value2: string): boolean {
+    return value1 == value2;
+  }
 
   getClass() {
     return EmailInput;
@@ -393,6 +446,9 @@ class UrlInput extends PropertyInputBase<string, {}> {
       properties: {},
       ...data,
     };
+  }
+  compare(value1: string, value2: string): boolean {
+    return value1 == value2;
   }
 
   getClass() {

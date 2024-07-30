@@ -1,6 +1,6 @@
 import { NodeInstance } from "../Nodes/NodeInstance";
 import { ComponentInstance } from "./ComponentInstance";
-import { Graph } from "../Graph/Graph";
+import { Graph } from "../Graphs/Graph";
 
 class NodeGraphMap {
   private nodes = new Set<NodeInstance>();

@@ -13,7 +13,7 @@ export interface ComponentMetaData {
 /**
  * Interface representing the state data of a component.
  */
-export interface ComponentStateData { 
+export interface ComponentStateData {
   [key: string]: any;
 }
 
@@ -66,11 +66,6 @@ export type ComponentRegisterData<
   type: string;
 
   /**
-   * The optional name of the component.
-   */
-  name?: string;
-
-  /**
    * The schema used to create an editable version of the component.
    * For the actual ComponentInstance the schema is created into an object.
    */
@@ -110,7 +105,7 @@ export type ComponentRegisterData<
    * @param component - The instance of the component being initialized.
    */
   init?(
-    component: ComponentInstance<ComponentSchema, Data, Logic>
+    component: ComponentInstance<ComponentSchema, Data, Logic, Shared>
   ): Promise<void> | void;
 
   /**
@@ -121,16 +116,15 @@ export type ComponentRegisterData<
    * @param component - The instance of the component being updated.
    */
   update?(
-    component: ComponentInstance<ComponentSchema, Data, Logic>
+    component: ComponentInstance<ComponentSchema, Data, Logic, Shared>
   ): Promise<void> | void;
-  
+
   /**
    * Optional disposal function for the component.
    *
    * @param component - The instance of the component being disposed.
    */
   dispose?(
-    component: ComponentInstance<ComponentSchema, Data, Logic>
+    component: ComponentInstance<ComponentSchema, Data, Logic, Shared>
   ): Promise<void> | void;
-
 };

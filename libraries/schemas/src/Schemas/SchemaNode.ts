@@ -179,7 +179,16 @@ export class SchemaNode<
         newValue,
       }).newValue
     );
-    if (oldValue != this.getValue()) {
+    const newFinalValue = this.getValue();
+    if (this.input) {
+      if (!this.input.compare(oldValue, newFinalValue)) {
+        this.observers.updated.notify(this);
+        this.observers.updatedOrLoadedIn.notify(this);
+      }
+      return;
+    }
+
+    if (oldValue != newFinalValue) {
       this.observers.updated.notify(this);
       this.observers.updatedOrLoadedIn.notify(this);
     }

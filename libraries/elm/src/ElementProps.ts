@@ -21,10 +21,10 @@ type PropsMap = {
   [K in keyof HTMLElementTagNameMap]: Partial<HTMLElementTagNameMap[K]>;
 };
 
-type ProperOmit<T, K extends PropertyKey> = {
+export type ProperOmit<T, K extends PropertyKey> = {
   [P in keyof T as Exclude<P, K>]: T[P];
 };
-type RecursivePartial<T> = {
+export type RecursivePartial<T> = {
   [P in keyof T]?: RecursivePartial<T[P]>;
 };
 

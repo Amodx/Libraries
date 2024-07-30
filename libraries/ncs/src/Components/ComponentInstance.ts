@@ -1,10 +1,8 @@
-import { Pipeline } from "@amodx/core/Pipelines";
 import {
   ComponentData,
   ComponentStateData,
   ComponentRegisterData,
 } from "./ComponentData";
-import { Observable } from "@amodx/core/Observers";
 import {
   ObjectPath,
   ObjectSchemaInstance,
@@ -12,30 +10,13 @@ import {
   Schema,
 } from "@amodx/schemas";
 
-import { TraitData } from "../Traits/TraitData";
 import { NodeInstance } from "../Nodes/NodeInstance";
-import { NCS } from "../NCS";
-import { TraitInstance } from "../Traits/TraitInstance";
 import { ComponentInstanceMap } from "./ComponentInstanceMap";
 import { SchemaNode } from "@amodx/schemas/Schemas/SchemaNode";
-import { GraphUpdate } from "../Graph/GraphUpdate";
-
-export interface ComponentObservers {}
-
-export class ComponentObservers {
-  disposed = new Observable();
-  traitAdded = new Observable<TraitInstance>();
-  traitRemoved = new Observable<TraitInstance>();
-  traitsUpdated = new Observable();
-}
-
-export interface ComponentPipelines {}
-
-class ComponentBasePipelines<ComponentSchema extends object = {}> {
-  disposed = new Pipeline<ComponentInstance<ComponentSchema>>();
-  toJSON = new Pipeline<ComponentData<ComponentSchema>>();
-  copy = new Pipeline<ComponentData<ComponentSchema>>();
-}
+import { GraphUpdate } from "../Graphs/GraphUpdate";
+import { ComponentObservers } from "./ComponentObservers";
+import { ComponentPipelines } from "./ComponentPipelines";
+import { TraintContainer } from "../Traits/TraitContainer";
 
 export class ComponentInstance<
   ComponentSchema extends object = {},
@@ -43,24 +24,54 @@ export class ComponentInstance<
   Logic extends object = {},
   Shared extends object = {}
 > {
-  type: string;
-  schema: ObjectSchemaInstance<ComponentSchema>;
-  data: Data;
-  logic: Logic;
-  state: ComponentStateData;
-
-  traits: TraitInstance[] = [];
-
-  private _shared: Shared;
+  get type() {
+    return this.componentProotypeData.type;
+  }
   get shared() {
-    return this._shared;
+    return this.componentProotypeData.shared as Shared;
   }
   get componentPrototype() {
     return this.componentProotypeData;
   }
 
-  observers = new ComponentObservers();
-  pipelines = new ComponentBasePipelines<ComponentSchema>();
+  schema: ObjectSchemaInstance<ComponentSchema>;
+  data: Data;
+  logic: Logic;
+  state: ComponentStateData;
+
+  private _traits?: TraintContainer;
+  get traits() {
+    if (!this._traits) {
+      this._traits = new TraintContainer(this);
+    }
+    return this._traits;
+  }
+  get hasTraits() {
+    return Boolean(this._traits);
+  }
+
+  private _observers?: ComponentObservers;
+  get observers() {
+    if (!this._observers) {
+      this._observers = new ComponentObservers();
+    }
+    return this._observers;
+  }
+  get hasObservers() {
+    return Boolean(this._observers);
+  }
+
+  private _pipelines?: ComponentPipelines<ComponentSchema>;
+  get pipelines(): ComponentPipelines<ComponentSchema> {
+    if (!this._pipelines) {
+      this._pipelines = new ComponentPipelines<ComponentSchema>();
+    }
+    return this._pipelines;
+  }
+  get hasPipelines() {
+    return Boolean(this._pipelines);
+  }
+
   constructor(
     public node: NodeInstance,
     private componentProotypeData: ComponentRegisterData<
@@ -71,7 +82,14 @@ export class ComponentInstance<
     >,
     data: ComponentData
   ) {
-    this.type = componentProotypeData.type;
+    this.schema =
+      Array.isArray(componentProotypeData.schema) &&
+      componentProotypeData.schema.length
+        ? Schema.CreateInstance(...componentProotypeData.schema)
+        : ({} as any);
+
+    if (this.schema.getSchema) this.schema.getSchema().loadIn(data.schema);
+
     this.logic = componentProotypeData.logic
       ? typeof componentProotypeData.logic == "function"
         ? componentProotypeData.logic(this)
@@ -84,37 +102,12 @@ export class ComponentInstance<
         : structuredClone(componentProotypeData.data)
       : ({} as Data);
 
-    this.schema =
-      Array.isArray(componentProotypeData.schema) &&
-      componentProotypeData.schema.length
-        ? Schema.CreateInstance(...componentProotypeData.schema)
-        : ({} as any);
-
-    if (this.schema.getSchema) this.schema.getSchema().loadIn(data.schema);
-
-    if (data.traits?.length) {
-      this.addTraits(...data.traits);
-    }
-
     if (data.state) {
       this.state = structuredClone(data.state);
     }
 
-    this._shared = componentProotypeData.shared
-      ? componentProotypeData.shared
-      : ({} as any);
-
     const map = ComponentInstanceMap.getMap(data.type);
     map.addNode(node, this);
-
-
-
-  }
-
-  async initAllTraits() {
-    for (const trait of this.traits) {
-      await trait.init();
-    }
   }
 
   addOnSchemaUpdate(
@@ -136,20 +129,11 @@ export class ComponentInstance<
       ?.observers.updatedOrLoadedIn.unsubscribe(listener);
   }
 
-  *traverseTraits(): Generator<any> {
-    const children = [...this.traits];
-    while (children.length) {
-      const child = children.shift()!;
-      yield child;
-      if (child.traits.length) children.push(...child.traits);
-    }
-  }
-
   async init() {
     if (!this.componentProotypeData.init) return;
     await this.componentProotypeData.init(this);
-    if(this.componentProotypeData.update) {
-      GraphUpdate.addToUpdate(this)
+    if (this.componentProotypeData.update) {
+      GraphUpdate.addToUpdate(this);
     }
   }
 
@@ -158,88 +142,70 @@ export class ComponentInstance<
     return this._disposed;
   }
   async dispose() {
-    if (!this.componentProotypeData.dispose) return;
-    await this.componentProotypeData.dispose(this);
+    if (this.componentProotypeData.update) {
+      GraphUpdate.removeFromUpate(this);
+    }
+    this.hasPipelines &&
+      this.pipelines.isDisposedSet() &&
+      this.pipelines.disposed.pipe(this);
+    this.hasObservers &&
+      this.observers.isDisposedSet() &&
+      this.observers.disposed.notify();
+    if (this.componentProotypeData.dispose)
+      await this.componentProotypeData.dispose(this);
+
     this._disposed = true;
 
     const map = ComponentInstanceMap.getMap(this.type);
     map.removeNode(this.node, this);
 
-    for (const child of this.traits) {
-      child.dispose();
-    }
-    this.pipelines.disposed.pipe(this);
-    this.observers.disposed.notify();
-  }
+    if (this.hasTraits) await this.traits.dispose();
 
-  addTraits(...traits: TraitData[]) {
-    for (const trait of traits) {
-      const traitType = NCS.getTrait(trait.type);
-      const newTrait = new TraitInstance(this, traitType, trait);
-      this.traits.push(newTrait);
-      this.observers.traitAdded.notify(newTrait);
-    }
-    this.observers.traitsUpdated.notify();
-  }
-
-  async removeTraitByIndex(index: number) {
-    const trait = this.traits[index];
-    if (trait) {
-      const child = this.traits.splice(index, 1)![0];
-      this.observers.traitRemoved.notify(child);
-      this.observers.traitsUpdated.notify();
-      await trait.dispose();
-      return true;
-    }
-    return false;
-  }
-  removeTrait(type: string) {
-    return this.removeTraitByIndex(
-      this.traits.findIndex((_) => _.type == type)
-    );
-  }
-
-  getTrait(type: string) {
-    return this.traits.find((_) => _.type == type);
-  }
-  getAllTraitsOfType(type: string) {
-    return this.traits.filter((_) => _.type == type);
-  }
-  async removeAllTraitsOfType(type: string) {
-    const filtered = this.getAllTraitsOfType(type);
-    for (const trait of filtered) {
-      await trait.dispose();
-    }
-    this.traits = this.traits.filter((_) => _.type != type);
-    for (const comp of filtered) {
-      this.observers.traitRemoved.notify(comp);
-    }
-    this.observers.traitsUpdated.notify();
-    return filtered;
+    (this as any).logic = null;
+    (this as any).data = null;
+    (this as any).schema = null;
+    delete this._traits;
+    delete this._observers;
+    delete this._pipelines;
   }
 
   getDependencies() {
-    return this.node.graph.dependencies;
+    //  return this.node.graph.dependencies;
+    return false;
   }
 
   copy(): ComponentData {
-    return this.pipelines.toJSON.pipe({
+    const data: ComponentData = {
       schema: this.schema?.getSchema
         ? this.schema.getSchema().store()
         : ({} as any),
       type: this.type,
       state: this.state,
-      traits: this.traits.map((_) => _.copy()),
-    });
+      traits:
+        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) || [],
+    };
+    return (
+      (this.hasPipelines &&
+        this.pipelines.isCopySet() &&
+        this.pipelines.copy.pipe(data)) ||
+      data
+    );
   }
   toJSON(): ComponentData {
-    return this.pipelines.toJSON.pipe({
+    const data: ComponentData = {
       schema: this.schema?.getSchema
         ? this.schema.getSchema().store()
         : ({} as any),
       type: this.type,
       state: this.state,
-      traits: this.traits.map((_) => _.toJSON()),
-    });
+      traits:
+        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) || [],
+    };
+    return (
+      (this.hasPipelines &&
+        this.pipelines.isToJSONSet() &&
+        this.pipelines.toJSON.pipe(data)) ||
+      data
+    );
   }
 }

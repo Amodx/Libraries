@@ -1,7 +1,4 @@
 import { Schema } from "../Schema";
-import { SchemaNode } from "./SchemaNode";
-import { Property } from "../Properties/Property";
-import { ObjectPath } from "../Properties/ObjectPath";
 import { ObjectSchema } from "./ObjectSchema";
 
 export class ObjectSchemaInstanceBase {
@@ -13,7 +10,11 @@ export class ObjectSchemaInstanceBase {
   getSchema() {
     return this.__objectSchema;
   }
-}
+
+  toJSON() {
+    return this.__objectSchema.store();
+  }
+}                 
 
 export type ObjectSchemaInstance<T extends object = {}> =
   ObjectSchemaInstanceBase & T;

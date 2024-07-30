@@ -1,17 +1,10 @@
-import { Observable } from "@amodx/core/Observers";
 import { NodeData } from "../Nodes/NodeData";
 import { NodeInstance } from "../Nodes/NodeInstance";
 import { NodeId } from "../Nodes/NodeId";
 import { GraphEvents } from "./GraphEvents";
 import { Node } from "../NCS";
 import { GraphUpdate } from "./GraphUpdate";
-export interface GraphObservers {}
-
-export class GraphObservers {
-  nodeAdded = new Observable<NodeInstance>();
-  nodeRemoved = new Observable<NodeInstance>();
-  nodesUpdated = new Observable();
-}
+import { GraphObservers } from "./GraphObservers";
 
 export interface GraphDependencies {
   [key: string]: any;
@@ -19,11 +12,9 @@ export interface GraphDependencies {
 export interface Graph {}
 export class Graph {
   _nodeMap = new Map<BigInt, Map<BigInt, NodeInstance>>();
-
+  events = new GraphEvents();
   observers = new GraphObservers();
   root = new NodeInstance(null as any, Node({ name: "__root__" }), this);
-
-  events = new GraphEvents();
 
   constructor(public dependencies: GraphDependencies) {}
 
@@ -56,14 +47,18 @@ export class Graph {
     }
     high.set(newNode.id.high, newNode);
 
+    if (data.components?.length) {
+      await newNode.components.addComponents(...data.components);
+    }
+
     this.observers.nodeAdded.notify(newNode);
     this.observers.nodesUpdated.notify();
+
     if (data.children?.length) {
       for (const child of data.children) {
         await this.addNode(child, newNode);
       }
     }
-    await newNode.initAllComponents();
 
     return newNode;
   }

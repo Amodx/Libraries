@@ -1,5 +1,5 @@
 import { Observable } from "@amodx/core/Observers";
-import { NodeEventCursor } from "Nodes/NodeEvents";
+import { NodeEventCursor } from "../Nodes/NodeEvents";
 
 export class GraphEvents {
   private events = new Map<string, Observable>();
@@ -29,6 +29,7 @@ export class GraphEvents {
     observer.unsubscribe(run);
     return true;
   }
+  
   dispatch<Data>(id: string, data: NodeEventCursor) {
     let observer = this.events.get(id);
     if (!observer) return false;

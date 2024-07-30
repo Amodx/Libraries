@@ -1,4 +1,4 @@
-import { ComponentInstance } from "Components/ComponentInstance";
+import { ComponentInstance } from "../Components/ComponentInstance";
 import { Graph } from "./Graph";
 
 export class GraphUpdate {
@@ -11,10 +11,15 @@ export class GraphUpdate {
       this.updating.set(component.node.graph, updating);
     }
     updating.add(component);
-    component.observers.disposed.subscribeOnce(() => {
-      updating.delete(component);
-    });
+    component.observers.disposed.subscribeOnce(() => {});
   }
+  static removeFromUpate(component: ComponentInstance<any, any, any, any>) {
+    let updating = this.updating.get(component.node.graph);
+    if (!updating) return;
+    updating.delete(component);
+  
+  }
+
   static getUpdating(graph: Graph) {
     return this.updating.get(graph)!;
   }

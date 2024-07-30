@@ -1,5 +1,5 @@
 export * from "./NCS";
-export * from "./Graph/Graph";
+export * from "./Graphs/Graph";
 export * from "./Components/ComponentData";
 export * from "./Components/ComponentInstance";
 export * from "./Traits/TraitData";
