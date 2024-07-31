@@ -1,22 +1,13 @@
-import {
-  ComponentData,
-  ComponentStateData,
-  ComponentRegisterData,
-} from "./ComponentData";
-import {
-  ObjectPath,
-  ObjectSchemaInstance,
-  QueryPath,
-  Schema,
-} from "@amodx/schemas";
-
-import { NodeInstance } from "../Nodes/NodeInstance";
-import { ComponentInstanceMap } from "./ComponentInstanceMap";
+import { ComponentData, ComponentStateData } from "./ComponentData";
+import { ObjectPath, ObjectSchemaInstance, QueryPath } from "@amodx/schemas";
 import { SchemaNode } from "@amodx/schemas/Schemas/SchemaNode";
+import { NodeInstance } from "../Nodes/NodeInstance";
+
 import { GraphUpdate } from "../Graphs/GraphUpdate";
 import { ComponentObservers } from "./ComponentObservers";
 import { ComponentPipelines } from "./ComponentPipelines";
 import { TraintContainer } from "../Traits/TraitContainer";
+import { ComponentPrototype } from "./ComponentPrototype";
 
 export class ComponentInstance<
   ComponentSchema extends object = {},
@@ -25,14 +16,12 @@ export class ComponentInstance<
   Shared extends object = {}
 > {
   get type() {
-    return this.componentProotypeData.type;
+    return this.componentPrototype.data.type;
   }
   get shared() {
-    return this.componentProotypeData.shared as Shared;
+    return this.componentPrototype.data.shared as Shared;
   }
-  get componentPrototype() {
-    return this.componentProotypeData;
-  }
+  componentPrototype: ComponentPrototype<ComponentSchema, Data, Logic, Shared>;
 
   schema: ObjectSchemaInstance<ComponentSchema>;
   data: Data;
@@ -71,44 +60,7 @@ export class ComponentInstance<
   get hasPipelines() {
     return Boolean(this._pipelines);
   }
-
-  constructor(
-    public node: NodeInstance,
-    private componentProotypeData: ComponentRegisterData<
-      ComponentSchema,
-      Data,
-      Logic,
-      Shared
-    >,
-    data: ComponentData
-  ) {
-    this.schema =
-      Array.isArray(componentProotypeData.schema) &&
-      componentProotypeData.schema.length
-        ? Schema.CreateInstance(...componentProotypeData.schema)
-        : ({} as any);
-
-    if (this.schema.getSchema) this.schema.getSchema().loadIn(data.schema);
-
-    this.logic = componentProotypeData.logic
-      ? typeof componentProotypeData.logic == "function"
-        ? componentProotypeData.logic(this)
-        : structuredClone(componentProotypeData.logic)
-      : ({} as Logic);
-
-    this.data = componentProotypeData.data
-      ? typeof componentProotypeData.data == "function"
-        ? componentProotypeData.data(this)
-        : structuredClone(componentProotypeData.data)
-      : ({} as Data);
-
-    if (data.state) {
-      this.state = structuredClone(data.state);
-    }
-
-    const map = ComponentInstanceMap.getMap(data.type);
-    map.addNode(node, this);
-  }
+  public node: NodeInstance;
 
   addOnSchemaUpdate(
     path: QueryPath<ComponentSchema>,
@@ -130,10 +82,10 @@ export class ComponentInstance<
   }
 
   async init() {
-    if (!this.componentProotypeData.init) return;
-    await this.componentProotypeData.init(this);
-    if (this.componentProotypeData.update) {
-      GraphUpdate.addToUpdate(this);
+    if (!this.componentPrototype.data.init) return;
+    await this.componentPrototype.data.init(this);
+    if (this.componentPrototype.data.update) {
+      GraphUpdate.addComponentToUpdate(this);
     }
   }
 
@@ -142,8 +94,8 @@ export class ComponentInstance<
     return this._disposed;
   }
   async dispose() {
-    if (this.componentProotypeData.update) {
-      GraphUpdate.removeFromUpate(this);
+    if (this.componentPrototype.data.update) {
+      GraphUpdate.removeComponentFromUpate(this);
     }
     this.hasPipelines &&
       this.pipelines.isDisposedSet() &&
@@ -151,19 +103,15 @@ export class ComponentInstance<
     this.hasObservers &&
       this.observers.isDisposedSet() &&
       this.observers.disposed.notify();
-    if (this.componentProotypeData.dispose)
-      await this.componentProotypeData.dispose(this);
+    if (this.componentPrototype.data.dispose)
+      await this.componentPrototype.data.dispose(this);
 
     this._disposed = true;
 
-    const map = ComponentInstanceMap.getMap(this.type);
-    map.removeNode(this.node, this);
-
     if (this.hasTraits) await this.traits.dispose();
 
-    (this as any).logic = null;
-    (this as any).data = null;
-    (this as any).schema = null;
+    this.componentPrototype.destory(this);
+
     delete this._traits;
     delete this._observers;
     delete this._pipelines;

@@ -1,5 +1,3 @@
-import { ContextInstance } from "./ContextInstance";
-
 /**
  * Interface representing the meta data of a context.
  */
@@ -18,13 +16,20 @@ export interface ContextStateData {
 /**
  * Type representing the data of a context.
  *
- * @template ContextSchema - The ContextSchema of the context.
  */
-export type ContextData = {
+export type ContextData<Schema extends Record<string, any> = {}> = {
   /**
    * The type of the context.
    */
   type: string;
+  /**
+   * The namespace of the context.
+   */
+  namespace?: string;
+  /**
+   * The schema of the context.
+   */
+  schema: Schema;
 };
 
 /**
@@ -33,38 +38,28 @@ export type ContextData = {
  * Used for serlization and creation.
  * @template Data - The runtime data of the context.
  */
-export type ContextRegisterData<Data extends Record<string, any> = {}> = {
+export type ContextRegisterData<
+  Schema extends Record<string, any> = {},
+  Data extends Record<string, any> = {}
+> = {
   /**
    * The type of the context.
    */
   type: string;
-
   /**
-   * The optional name of the context.
+   * The namespace of the context.
    */
-  name?: string;
-
+  namespace?: string;
+  /**
+   * The schema of the context.
+   */
+  schema?: Schema;
   /**
    * The runtime data of the context.
    */
-  data?: Data | ((component: ContextInstance<Data>) => Data);
-
+  data?: Data;
   /**
    * The shared meta data of all contexts.
    */
   meta?: ContextMetaData;
-
-  /**
-   * Optional initialization function for the context.
-   *
-   * @param component - The instance of the component being initialized.
-   */
-  init?(component: ContextInstance<Data>): Promise<void> | void;
-
-  /**
-   * Optional disposal function for the context.
-   *
-   * @param component - The instance of the component being disposed.
-   */
-  dispose?(component: ContextInstance<Data>): Promise<void> | void;
 };

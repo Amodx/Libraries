@@ -8,7 +8,13 @@ export interface TraitMetaData {
   name: string;
   [key: string]: any;
 }
-
+/**
+ * Interface representing the pool data of a component.
+ */
+export interface TraitPoolData {
+  maxSize: number;
+  [key: string]: any;
+}
 /**
  * Interface representing the state data of a trait.
  */
@@ -26,7 +32,10 @@ export type TraitData<TraitSchema extends object = any> = {
    * The type of the trait.
    */
   type: string;
-
+  /**
+   * The namespace of the trait.
+   */
+  namespace?: string;
   /**
    * The state data of the trait.
    */
@@ -62,11 +71,17 @@ export type TraitRegisterData<
    * The type of the trait.
    */
   type: string;
-
+  /**
+   * The namespace of the trait.
+   */
+  namespace?: string;
   /**
    * The optional name of the trait.
    */
   name?: string;
+
+
+  pool?: TraitPoolData;
 
   /**
    * The schema used to create an editable version of the trait.

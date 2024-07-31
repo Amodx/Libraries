@@ -1,5 +1,4 @@
 import { NodeInstance } from "../NodeInstance";
-import { NCS } from "../../NCS";
 import { ComponentData } from "../../Components/ComponentData";
 import { ComponentInstance } from "../../Components/ComponentInstance";
 import { NodeComponentObservers } from "./NodeComponentObservers";
@@ -25,14 +24,15 @@ export class NodeComponents {
     }
   }
 
-
-
   async add(
     comp: ComponentData,
     init = true
   ): Promise<ComponentInstance<any, any, any, any>> {
-    const compType = NCSRegister.getComponent(comp.type);
-    const newComponent = new ComponentInstance(this.node, compType, comp);
+    const compType = NCSRegister.components.get(
+      comp.type,
+      comp.namespace || "main"
+    );
+    const newComponent = compType.create(this.node, comp);
     this.components.push(newComponent);
     if (init) await newComponent.init();
     if (comp.traits.length) {

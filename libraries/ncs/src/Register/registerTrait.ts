@@ -1,4 +1,3 @@
-import { Schema } from "@amodx/schemas";
 import { ComponentInstance } from "../Components/ComponentInstance";
 import { NCS } from "../NCS";
 import {
@@ -7,7 +6,8 @@ import {
   TraitStateData,
 } from "../Traits/TraitData";
 import { TraitInstance } from "../Traits/TraitInstance";
-import { NCSRegister } from "../Register/NCSRegister";
+import { NCSRegister } from "./NCSRegister";
+import { TraitPrototype } from "../Traits/TraitPrototype";
 
 type RegisteredTrait<
   TraitSchema extends object = {},
@@ -33,6 +33,7 @@ type RegisteredTrait<
   removeAll: (
     parent: ComponentInstance | TraitInstance
   ) => Promise<TraitInstance<TraitSchema, Data, Logic, Shared>[] | null>;
+  prototype: TraitPrototype<TraitSchema, Data, Logic, Shared>;
   default: TraitInstance<TraitSchema, Data, Logic, Shared>;
 }) &
   ((
@@ -41,21 +42,14 @@ type RegisteredTrait<
     ...traits: TraitData[]
   ) => TraitData<TraitSchema>);
 
-
-
-
 export function registerTrait<
   TraitSchema extends object = {},
   Data extends object = {},
   Logic extends object = {},
   Shared extends object = {}
 >(data: TraitRegisterData<TraitSchema, Data, Logic, Shared>): RegisteredTrait {
-  NCSRegister._traits.set(data.type, data as any);
-
-  const baseComponentSchema =
-    Array.isArray(data.schema) && data.schema.length
-      ? Schema.Create(...data.schema).createData()
-      : {};
+  const prototype = new TraitPrototype<TraitSchema, Data, Logic, Shared>(data);
+  NCSRegister.traits.register(data.type, data.namespace || "main", prototype);
 
   const createTrait = (
     schema?: Partial<TraitSchema> | null | undefined,
@@ -67,7 +61,7 @@ export function registerTrait<
       state: state || {},
       traits: traits || [],
       schema: {
-        ...structuredClone(baseComponentSchema),
+        ...structuredClone(prototype.baseContextSchema),
         ...(schema || ({} as any)),
       },
     });
@@ -85,7 +79,7 @@ export function registerTrait<
           schema
             ? schema
             : data.schema
-            ? structuredClone(baseComponentSchema)
+            ? structuredClone(prototype.baseContextSchema)
             : ({} as any),
           state,
           ...traits
@@ -101,7 +95,7 @@ export function registerTrait<
     removeAll: (parent: ComponentInstance | TraitInstance) => {
       return parent.traits.removeAll(data.type);
     },
-    reove: (parent: ComponentInstance | TraitInstance) => {
+    remove: (parent: ComponentInstance | TraitInstance) => {
       return parent.traits.remove(data.type);
     },
   }) as any;

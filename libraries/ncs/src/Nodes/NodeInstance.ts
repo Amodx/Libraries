@@ -6,10 +6,7 @@ import { NodeObservers } from "./NodeObservers";
 import { NodePipelines } from "./NodePipelines";
 import { NodeContext } from "./Context/NodeContext";
 import { NodeComponents } from "./Components/NodeComponents";
-export interface NodeConstructor {
-  Create(overrides: Partial<NodeData>): NodeData;
-  new (parent: NodeInstance, data: NodeData, graph: Graph): NodeInstance;
-}
+import { NodeTags } from "./Tags/NodeTags";
 
 export interface NodeInstance {}
 
@@ -77,6 +74,17 @@ export class NodeInstance {
     return Boolean(this._components);
   }
 
+  private _tags?: NodeTags;
+  get tags() {
+    if (!this._tags) {
+      this._tags = new NodeTags(this);
+    }
+    return this._tags;
+  }
+  get hasTags() {
+    return Boolean(this._tags);
+  }
+
   children: NodeInstance[] = [];
   private nodeId: NodeId;
   constructor(
@@ -116,6 +124,8 @@ export class NodeInstance {
     this.parent?.removeChild(this.id);
 
     this.hasComponents && (await this.components.dispose());
+    this.hasTags && (await this.tags.dispose());
+    
     for (const child of this.children) {
       await child.dispose();
     }
@@ -129,6 +139,7 @@ export class NodeInstance {
     delete this._pipelines;
     delete this._events;
     delete this._context;
+    delete this._tags;
   }
 
   async addChildren(...nodes: NodeData[]) {
@@ -181,10 +192,12 @@ export class NodeInstance {
       name: this.name,
       state: this.state,
       children: this.children.map((_) => _.copy()),
+      tags:
+        (this.hasTags && this.tags.tags.map((_) => _.toJSON())) || undefined,
       components:
         (this.hasComponents &&
           this.components.components.map((_) => _.copy())) ||
-        [],
+        undefined,
     };
     return (
       (this.hasPipelines &&
@@ -199,10 +212,12 @@ export class NodeInstance {
       name: this.name,
       state: this.state,
       children: this.children.map((_) => _.copy()),
+      tags:
+        (this.hasTags && this.tags.tags.map((_) => _.toJSON())) || undefined,
       components:
         (this.hasComponents &&
           this.components.components.map((_) => _.copy())) ||
-        [],
+        undefined,
     };
     return (
       (this.hasPipelines &&

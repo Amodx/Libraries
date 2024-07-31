@@ -40,8 +40,11 @@ export class TraintContainer {
     }
   }
   async add(trait: TraitData): Promise<TraitInstance<any, any, any, any>> {
-    const traitType = NCSRegister.getTrait(trait.type);
-    const newTrait = new TraitInstance(this.parent, traitType, trait);
+    const traitType = NCSRegister.traits.get(
+      trait.type,
+      trait.namespace || "main"
+    );
+    const newTrait = traitType.create(this.parent,trait);
     this.traits.push(newTrait);
     await newTrait.init();
     if (trait.traits?.length) {
@@ -58,8 +61,11 @@ export class TraintContainer {
   async addTraits(...traits: TraitData[]) {
     const newTraits: TraitInstance<any, any, any, any>[] = [];
     for (const trait of traits) {
-      const traitType = NCSRegister.getTrait(trait.type);
-      const newTrait = new TraitInstance(this.parent, traitType, trait);
+      const traitType = NCSRegister.traits.get(
+        trait.type,
+        trait.namespace || "main"
+      );
+      const newTrait = traitType.create(this.parent,trait);
       this.traits.push(newTrait);
       newTraits.push(newTrait);
       await newTrait.init();

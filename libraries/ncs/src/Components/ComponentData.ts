@@ -3,10 +3,17 @@ import { ComponentInstance } from "./ComponentInstance";
 import { TraitData } from "../Traits/TraitData";
 
 /**
- * Interface representing the meta data of a trait.
+ * Interface representing the meta data of a component.
  */
 export interface ComponentMetaData {
   name: string;
+  [key: string]: any;
+}
+/**
+ * Interface representing the pool data of a component.
+ */
+export interface ComponentPoolData {
+  maxSize: number;
   [key: string]: any;
 }
 
@@ -27,7 +34,10 @@ export type ComponentData<ComponentSchema extends object = any> = {
    * The type of the component.
    */
   type: string;
-
+  /**
+   * The namespace of the component.
+   */
+  namespace?: string;
   /**
    * The state data of the component.
    */
@@ -64,6 +74,12 @@ export type ComponentRegisterData<
    * The type of the component.
    */
   type: string;
+  /**
+   * The namespace of the component.
+   */
+  namespace?: string;
+
+  pool?: ComponentPoolData;
 
   /**
    * The schema used to create an editable version of the component.

@@ -5,6 +5,7 @@ import { NodeInstance } from "../Nodes/NodeInstance";
 import { TraintContainer } from "./TraitContainer";
 import { TraitObservers } from "./TraitObservers";
 import { TraitPipelines } from "./TraitPipelines";
+import { TraitPrototype } from "./TraitPrototype";
 
 export class TraitInstance<
   TraitSchema extends object = {},
@@ -55,46 +56,10 @@ export class TraitInstance<
   get hasPipelines() {
     return Boolean(this._pipelines);
   }
-
-  constructor(
-    public parent: ComponentInstance<any, any, any, any> | TraitInstance,
-    private traitProotypeData: TraitRegisterData<
-      TraitSchema,
-      Data,
-      Logic,
-      Shared
-    >,
-    data: TraitData
-  ) {
-    this.type = traitProotypeData.type;
-    this.logic = traitProotypeData.logic
-      ? typeof traitProotypeData.logic == "function"
-        ? traitProotypeData.logic(this)
-        : structuredClone(traitProotypeData.logic)
-      : ({} as Logic);
-
-    this.data = traitProotypeData.data
-      ? typeof traitProotypeData.data == "function"
-        ? traitProotypeData.data(this)
-        : structuredClone(traitProotypeData.data)
-      : ({} as Data);
-
-    this.schema =
-      Array.isArray(traitProotypeData.schema) && traitProotypeData.schema.length
-        ? Schema.CreateInstance(...traitProotypeData.schema)
-        : ({} as any);
-
-    if (this.schema.getSchema) this.schema.getSchema().loadIn(data.schema);
-  
-
-    if (data.state) {
-      this.state = structuredClone(data.state);
-    }
-
-    this._shared = traitProotypeData.shared
-      ? traitProotypeData.shared
-      : ({} as any);
-  }
+  public parent:
+    | ComponentInstance<any, any, any, any>
+    | TraitInstance<any, any, any, any>;
+  public traitProotype: TraitPrototype<TraitSchema, Data, Logic, Shared>;
 
   getNode(): NodeInstance {
     let node: any = this.parent;
@@ -111,8 +76,8 @@ export class TraitInstance<
   }
 
   async init() {
-    if (!this.traitProotypeData.init) return;
-    await this.traitProotypeData.init(this);
+    if (!this.traitProotype.data.init) return;
+    await this.traitProotype.data.init(this);
   }
 
   private _disposed = false;
@@ -120,12 +85,24 @@ export class TraitInstance<
     return this._disposed;
   }
   async dispose() {
-    if (!this.traitProotypeData.dispose) return;
-    await this.traitProotypeData.dispose(this);
+    this.hasPipelines &&
+      this.pipelines.isDisposedSet() &&
+      this.pipelines.disposed.pipe(this);
+    this.hasObservers &&
+      this.observers.isDisposedSet() &&
+      this.observers.disposed.notify();
+    if (this.traitProotype.data.dispose)
+      await this.traitProotype.data.dispose(this);
+
     this._disposed = true;
+
     if (this.hasTraits) await this.traits.dispose();
-    this.hasPipelines && this.pipelines.disposed.pipe(this);
-    this.hasObservers && this.observers.disposed.notify();
+
+    this.traitProotype.destory(this);
+
+    delete this._traits;
+    delete this._observers;
+    delete this._pipelines;
   }
 
   copy(): TraitData {

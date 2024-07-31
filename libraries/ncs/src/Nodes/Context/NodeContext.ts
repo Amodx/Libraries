@@ -16,7 +16,7 @@ export class NodeContext {
     }
     const newContext = new ContextInstance(
       this.node,
-      NCSRegister.getContext(context.type),
+      NCSRegister.contexts.get(context.type, context.namespace || "main"),
       context
     );
     this.contexts.set(context.type, newContext);
@@ -31,16 +31,11 @@ export class NodeContext {
   }
 
   get(type: string): ContextInstance | ContextAnchorInstance | null {
-    console.log("LOOKING FOR CONTEXT", type, this.node.parent,this.node);
     if (this.contexts.has(type)) return this.contexts.get(type)!;
     if (this.anchors.has(type)) return this.anchors.get(type)!;
-
-    console.log("GOING UP TREE");
     for (const parent of this.node.traverseParents()) {
-      console.log(parent);
       if (parent.hasContexts) {
         const found = parent.context.get(type);
-        console.log(found);
         if (found) {
           const newAnchor =
             found instanceof ContextInstance
@@ -51,7 +46,6 @@ export class NodeContext {
         }
       }
     }
-
     return null;
   }
 }

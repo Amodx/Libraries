@@ -1,28 +1,18 @@
-import { ComponentRegisterData } from "../Components/ComponentData";
-import { ContextRegisterData } from "../Contexts/ContextData";
-import { TraitRegisterData } from "../Traits/TraitData";
+import { ContextPrototype } from "../Contexts/ContextPrototype";
+import { ComponentPrototype } from "../Components/ComponentPrototype";
+import { TraitPrototype } from "../Traits/TraitPrototype";
+import { ItemRegister } from "./ItemRegister";
+import { SystemPrototype } from "../Systems/SystemPrototype";
+import { TagPrototype } from "../Tags/TagPrototype";
 
 export class NCSRegister {
-  static _components = new Map<string, ComponentRegisterData>();
-  static _traits = new Map<string, TraitRegisterData>();
-  static _context = new Map<string, ContextRegisterData>();
-
-  static getComponent(type: string) {
-    const component = this._components.get(type);
-    if (!component)
-      throw new Error(`Component with type [ ${type} ] is not registered.`);
-    return component;
-  }
-  static getTrait(type: string) {
-    const trait = this._traits.get(type);
-    if (!trait)
-      throw new Error(`Trait with type [ ${type} ] is not registered.`);
-    return trait;
-  }
-  static getContext(type: string) {
-    const context = this._context.get(type);
-    if (!context)
-      throw new Error(`Context with type [ ${type} ] is not registered.`);
-    return context;
-  }
+  static components = new ItemRegister<ComponentPrototype<any, any, any, any>>(
+    "Components"
+  );
+  static traits = new ItemRegister<TraitPrototype<any, any, any, any>>(
+    "Traits"
+  );
+  static contexts = new ItemRegister<ContextPrototype<any, any>>("Context");
+  static tags = new ItemRegister<TagPrototype>("Tags");
+  static systems = new ItemRegister<SystemPrototype>("Systems");
 }

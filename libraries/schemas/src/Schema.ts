@@ -21,7 +21,48 @@ class SchemaData {
     public properties: Property<any, any>[]
   ) {}
 }
-
+const traverseInstantiate = (
+  objectSchema: ObjectSchema,
+  properties: TemplateNode,
+  schemaNode: SchemaNode,
+  parentObject: any
+) => {
+  for (const template of properties.children) {
+    schemaNode.children ??= [];
+    const node = new SchemaNode(
+      Property.Create(template.property),
+      objectSchema
+    );
+    schemaNode.children.push(node);
+    if (template.children && template.children.length) {
+      const parent = {};
+      traverseInstantiate(objectSchema, template, node, parent);
+      parentObject[template.property.id] = parent;
+      continue;
+    }
+    Object.defineProperty(parentObject, template.property.id, {
+      get() {
+        return node.get();
+      },
+      set(value: any) {
+        node.update(value);
+      },
+    });
+  }
+};
+const traverseCreateData = (properties: TemplateNode, parentObject: any) => {
+  for (const template of properties.children) {
+    if (template.children && template.children.length) {
+      const parent = {};
+      traverseCreateData(template, parent);
+      parentObject[template.property.id] = parent;
+      continue;
+    }
+    Object.defineProperty(parentObject, template.property.id, {
+      value: template.property.value,
+    });
+  }
+};
 export class Schema<DataInterface extends object = {}> {
   static Create<DataInterface extends object = {}>(
     ...properties: Property<any, any>[]
@@ -47,64 +88,23 @@ export class Schema<DataInterface extends object = {}> {
   private template: TemplateNode;
 
   createData(): DataInterface {
-    const traverse = (properties: TemplateNode, parentObject: any) => {
-      for (const template of properties.children) {
-        if (template.children && template.children.length) {
-          const parent = {};
-          traverse(template, parent);
-          parentObject[template.property.id] = parent;
-          continue;
-        }
-        Object.defineProperty(parentObject, template.property.id, {
-          value: template.property.value,
-        });
-      }
-    };
-
     const instance = {} as any;
-    traverse(this.template, instance);
+    traverseCreateData(this.template, instance);
     return instance as any;
   }
 
   instantiate(
     data?: Partial<DataInterface>
   ): ObjectSchemaInstance<DataInterface> {
-    const traverse = (
-      properties: TemplateNode,
-      schemaNode: SchemaNode,
-      parentObject: any
-    ) => {
-      for (const template of properties.children) {
-        schemaNode.children ??= [];
-        const node = new SchemaNode(
-          Property.Create(template.property),
-          objectSchema
-        );
-        schemaNode.children.push(node);
-        if (template.children && template.children.length) {
-          const parent = {};
-          traverse(template, node, parent);
-          parentObject[template.property.id] = parent;
-          continue;
-        }
-        Object.defineProperty(parentObject, template.property.id, {
-          get() {
-            return node.get();
-          },
-          set(value: any) {
-            node.update(value);
-          },
-        });
-      }
-    };
-
     const objectSchema = new ObjectSchema(this);
     const instance = new ObjectSchemaInstanceBase(this, objectSchema);
-    traverse(this.template, objectSchema.__root, instance);
+    traverseInstantiate(
+      objectSchema,
+      this.template,
+      objectSchema.__root,
+      instance
+    );
 
-    objectSchema.traverse((node) => {
-      if (node.property.initialize) node.property.initialize(node);
-    });
     if (data) objectSchema.loadIn(data);
 
     objectSchema.init();

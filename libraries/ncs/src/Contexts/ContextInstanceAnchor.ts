@@ -1,62 +1,44 @@
-import { Pipeline } from "@amodx/core/Pipelines";
-import { ContextData } from "./ContextData";
-import { Observable } from "@amodx/core/Observers";
 import { NodeInstance } from "../Nodes/NodeInstance";
 import { ContextInstance } from "./ContextInstance";
-
-export interface ContextAnchorObservers {}
-
-export class ContextAnchorObservers<Data extends object = {}> {
-  disposed = new Observable();
-}
-
-export interface ContextAnchorPipelines {}
-
-class ContextBasePipelines<Data extends object = {}> {
-  disposed = new Pipeline<ContextAnchorInstance<Data>>();
-  toJSON = new Pipeline<ContextData>();
-  copy = new Pipeline<ContextData>();
-}
-
-export class ContextAnchorInstance<Data extends object = {}> {
+import { ObjectPath, QueryPath } from "@amodx/schemas";
+import { SchemaNode } from "@amodx/schemas/Schemas/SchemaNode";
+export class ContextAnchorInstance<
+  ContextSchema extends {} = {},
+  Data extends {} = {}
+> {
   get type() {
     return this.context.type;
+  }
+  get schema() {
+    return this.context.schema;
   }
   get data() {
     return this.context.data;
   }
-  isAnchor: true = true;
 
-  observers = new ContextAnchorObservers<Data>();
-  pipelines = new ContextBasePipelines<Data>();
   constructor(
     public node: NodeInstance,
     private context: ContextInstance<Data>
   ) {}
-
   getContext() {
     return this.context;
   }
-
-  private _disposed = false;
-  isDisposed() {
-    return this._disposed;
+  addOnSchemaUpdate(
+    path: QueryPath<ContextSchema>,
+    listener: (node: SchemaNode) => void
+  ) {
+    this.schema
+      .getSchema()
+      .getNode(ObjectPath.Create<ContextSchema>(path as unknown as any))
+      ?.observers.updatedOrLoadedIn.subscribe(listener);
   }
-
-  async dispose() {
-    this._disposed = true;
-    this.pipelines.disposed.pipe(this);
-    this.observers.disposed.notify();
-  }
-
-  copy(): ContextData {
-    return this.pipelines.toJSON.pipe({
-      type: this.type,
-    });
-  }
-  toJSON(): ContextData {
-    return this.pipelines.toJSON.pipe({
-      type: this.type,
-    });
+  removeOnSchemaUpdate(
+    path: QueryPath<ContextSchema>,
+    listener: (node: SchemaNode) => void
+  ) {
+    this.schema
+      .getSchema()
+      .getNode(ObjectPath.Create<ContextSchema>(path as unknown as any))
+      ?.observers.updatedOrLoadedIn.unsubscribe(listener);
   }
 }

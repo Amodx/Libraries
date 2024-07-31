@@ -78,10 +78,17 @@ export class Graph {
   }
 
   update() {
-    const updating = GraphUpdate.getUpdating(this);
-    if (!updating) return;
-    for (const component of updating) {
-      component.componentPrototype.update!(component);
+    {
+      const updating = GraphUpdate.getUpdatingComponents(this);
+      for (const component of updating) {
+        component.componentPrototype.data.update!(component);
+      }
+    }
+    {
+      const updating = GraphUpdate.getUpdatingSystems(this);
+      for (const system of updating) {
+        system.systemPrototype.update!(system);
+      }
     }
   }
 

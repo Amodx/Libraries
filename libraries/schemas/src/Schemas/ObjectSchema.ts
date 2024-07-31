@@ -10,6 +10,7 @@ export class ObjectSchema<DataInterface extends object = {}> {
 
   init() {
     this.traverse((_) => {
+      _.property.initialize && _.property.initialize(_);
       _.init(this);
     });
 
@@ -23,7 +24,7 @@ export class ObjectSchema<DataInterface extends object = {}> {
       _.observers.evaluate.notify();
     });
   }
-  
+
   validate() {
     this.traverse((_) => {
       _.observers.evaluate.notify();

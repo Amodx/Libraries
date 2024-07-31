@@ -1,4 +1,3 @@
-import { Schema } from "@amodx/schemas";
 import {
   ComponentData,
   ComponentRegisterData,
@@ -11,7 +10,8 @@ import { NCS } from "../NCS";
 import { NodeInstance } from "../Nodes/NodeInstance";
 import { TraitData } from "../Traits/TraitData";
 import { NodeData } from "../Nodes/NodeData";
-import { NCSRegister } from "../Register/NCSRegister";
+import { NCSRegister } from "./NCSRegister";
+import { ComponentPrototype } from "../Components/ComponentPrototype";
 
 type RegisteredComponent<
   ComponentSchema extends object = {},
@@ -62,6 +62,7 @@ type RegisteredComponent<
     removeAll: (node: NodeData) => ComponentData<ComponentSchema>[] | null;
   };
 
+  prototype: ComponentPrototype<ComponentSchema, Data, Logic, Shared>;
   default: ComponentInstance<ComponentSchema, Data, Logic, Shared>;
 }) &
   ((
@@ -78,16 +79,19 @@ export const registerComponent = <
 >(
   data: ComponentRegisterData<ComponentSchema, Data, Logic, Shared>
 ): RegisteredComponent<ComponentSchema, Data, Logic, Shared> => {
-  if (NCSRegister._components.has(data.type))
-    throw new Error(`Component already registered: ${data.type}`);
-  NCSRegister._components.set(data.type, data as any);
+  const prototype = new ComponentPrototype<
+    ComponentSchema,
+    Data,
+    Logic,
+    Shared
+  >(data);
+  NCSRegister.components.register(
+    data.type,
+    data.namespace || "main",
+    prototype
+  );
 
   const componentMap = ComponentInstanceMap.registerComponent(data.type);
-
-  const baseComponentSchema =
-    Array.isArray(data.schema) && data.schema.length
-      ? Schema.Create(...data.schema).createData()
-      : {};
 
   const createComponent = (
     schema?: Partial<ComponentSchema> | null | undefined,
@@ -99,13 +103,14 @@ export const registerComponent = <
       state: state || {},
       traits: traits || [],
       schema: {
-        ...structuredClone(baseComponentSchema),
+        ...structuredClone(prototype.baseContextSchema),
         ...(schema || ({} as any)),
       },
     });
   };
 
   return Object.assign(createComponent, data, {
+    prototype,
     set: (
       node: NodeInstance,
       schema?: Partial<ComponentSchema> | null,
@@ -117,14 +122,14 @@ export const registerComponent = <
           schema
             ? schema
             : data.schema
-            ? structuredClone(baseComponentSchema)
+            ? structuredClone(prototype.baseContextSchema)
             : ({} as any),
           state,
           ...traits
         )
       ),
     getNodes: (graph: Graph) => componentMap.getNodes(graph),
-    getComponents: (graph: Graph) => componentMap.getComponents(graph),
+    getComponents: (graph: Graph) => componentMap.getItems(graph),
     get: (node: NodeInstance) => node.components.get(data.type),
     getChild: (node: NodeInstance) => node.components.getChild(data.type),
     getParent: (node: NodeInstance) => node.components.getParent(data.type),
@@ -133,36 +138,38 @@ export const registerComponent = <
     remove: (node: NodeInstance) => node.components.remove(data.type),
     nodeData: {
       get: (node: NodeData) =>
-        node.components.find((_) => _.type == data.type) || null,
+        node.components?.find((_) => _.type == data.type) || null,
       getAll: (node: NodeData) =>
-        node.components.filter((_) => _.type == data.type),
+        node.components?.filter((_) => _.type == data.type),
       remove: (node: NodeData) =>
-        node.components.splice(
-          node.components.findIndex((_) => _.type == data.type)
+        node.components?.splice(
+          node.components?.findIndex((_) => _.type == data.type)
         )[0] || null,
       removeAll(node: NodeData) {
         const all = this.getAll(node);
-        node.components = node.components.filter((_) => _.type != data.type);
-        return all.length ? all : null;
+        node.components = node.components?.filter((_) => _.type != data.type);
+        return all?.length ? all : null;
       },
       set: (
         node: NodeData,
         schema?: Partial<ComponentSchema> | null,
         state?: ComponentStateData | null,
         ...traits: TraitData[]
-      ) =>
+      ) => {
+        node.components ??= [];
         node.components.push(
           createComponent(
             schema
               ? schema
               : data.schema
-              ? structuredClone(baseComponentSchema)
+              ? structuredClone(prototype.baseContextSchema)
               : ({} as any),
             state,
 
             ...traits
           )
-        ),
+        );
+      },
     },
   }) as any;
 };

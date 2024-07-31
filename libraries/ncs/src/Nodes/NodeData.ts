@@ -1,3 +1,4 @@
+import { TagData } from "../Tags/TagData";
 import { ComponentData } from "../Components/ComponentData";
 
 /**
@@ -6,7 +7,6 @@ import { ComponentData } from "../Components/ComponentData";
 export interface NodeStateData {
   [key: string]: any;
 }
-
 /**
  * Type representing the data of a node.
  *
@@ -18,26 +18,24 @@ export type NodeData = {
    *
    */
   id: string;
-
   /**
    * The name of the node.
    */
   name: string;
-
   /**
    * The state data of the node.
    */
   state: NodeStateData;
-
+  /**
+   * The components of the node.
+   */
+  components?: ComponentData[];
+  /**
+   * The tags of the node.
+   */
+  tags?: TagData[];
   /**
    * The children nodes of the node.
    */
   children: NodeData[];
-
-
-
-  /**
-   * The components of the node.
-   */
-  components: ComponentData[];
 };

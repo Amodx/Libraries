@@ -1,6 +1,5 @@
 import { Observable } from "@amodx/core/Observers";
 import { NodeInstance } from "./NodeInstance";
-import { ComponentInstance } from "Components/ComponentInstance";
 
 export interface NodeObservers {}
 
