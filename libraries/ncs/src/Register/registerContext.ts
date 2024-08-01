@@ -10,7 +10,11 @@ type RegisteredContext<
   ContextSchema extends {} = {},
   Data extends object = {}
 > = (ContextRegisterData<ContextSchema, Data> & {
-  set: (parent: NodeInstance, data?: Data) => Promise<void>;
+  set: (
+    parent: NodeInstance,
+    schema?: ContextSchema,
+    data?: Data
+  ) => Promise<void>;
   get: (parent: NodeInstance) => ContextInstance<ContextSchema, Data> | null;
   getRequired: (parent: NodeInstance) => ContextInstance<ContextSchema, Data>;
   remove: (

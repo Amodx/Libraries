@@ -38,7 +38,8 @@ export class Graph {
   async addNode(data: NodeData, parent: NodeInstance = this.root) {
     const newNode = new NodeInstance(parent, data, this);
 
-    parent.addChild(newNode);
+    newNode.parent = parent;
+    parent.children.push(newNode);
 
     let high = this._nodeMap.get(newNode.id.low);
     if (!high) {
@@ -51,6 +52,9 @@ export class Graph {
       await newNode.components.addComponents(...data.components);
     }
 
+    parent.hasObservers &&
+      parent.observers.isChildAddedSet() &&
+      parent.observers.childAdded.notify(newNode);
     this.observers.nodeAdded.notify(newNode);
     this.observers.nodesUpdated.notify();
 

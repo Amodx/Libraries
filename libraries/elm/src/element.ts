@@ -33,23 +33,25 @@ function appendChildern(
   el: HTMLElement | DocumentFragment,
   children: ElementChildren[]
 ) {
-  children.forEach((child) => {
-    if (child === null) return;
-    if (child === false) return;
+  const tempFrag = document.createDocumentFragment();
+  for (const child of children) {
+    if (child === null) continue;
+    if (child === false) continue;
     if (typeof child === "string") {
-      el.textContent = child;
+      tempFrag.textContent = child;
     } else {
       if (Array.isArray(child)) {
         child.forEach((_) =>
           Array.isArray(_)
-            ? _.forEach((_) => el.appendChild(_))
-            : el.appendChild(_)
+            ? _.forEach((_) => tempFrag.appendChild(_))
+            : tempFrag.appendChild(_)
         );
       } else {
-        el.appendChild(child);
+        tempFrag.appendChild(child);
       }
     }
-  });
+  }
+  el.appendChild(tempFrag);
 }
 
 function applyProps<Tag extends keyof HTMLElementTagNameMap>(

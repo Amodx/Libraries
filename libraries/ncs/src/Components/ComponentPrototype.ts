@@ -58,11 +58,11 @@ export class ComponentPrototype<
   create(node: NodeInstance, data: ComponentData) {
     const instance = this.getPooled();
     instance.node = node;
-
+    instance.componentPrototype = this;
     if (this.data.schema && !instance.schema) {
       instance.schema = this.getSchema(data.schema);
     }
-    if (this.data.schema && instance.schema) {
+    if (this.data.schema && instance.schema?.getSchema) {
       instance.schema.getSchema().loadIn(this.data.schema);
     }
 
