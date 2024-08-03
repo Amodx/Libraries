@@ -3,6 +3,7 @@ import { ComponentData } from "../../Components/ComponentData";
 import { ComponentInstance } from "../../Components/ComponentInstance";
 import { NodeComponentObservers } from "./NodeComponentObservers";
 import { NCSRegister } from "../../Register/NCSRegister";
+import { ComponentInstanceMap } from "../../Components/ComponentInstanceMap";
 
 export class NodeComponents {
   private _observers?: NodeComponentObservers;
@@ -34,6 +35,8 @@ export class NodeComponents {
     );
     const newComponent = compType.create(this.node, comp);
     this.components.push(newComponent);
+    const map = ComponentInstanceMap.getMap(newComponent.type);
+    map.addNode(this.node, newComponent);
     if (init) await newComponent.init();
     if (comp.traits.length) {
       await newComponent.traits.addTraits(...comp.traits);

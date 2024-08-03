@@ -84,10 +84,7 @@ export class TraitPrototype<
     if (data.state) {
       instance.state = structuredClone(data.state);
     }
-    const node = instance.getNode();
 
-    const map = TraitInstanceMap.getMap(data.type);
-    map.addNode(node, instance);
     return instance;
   }
 

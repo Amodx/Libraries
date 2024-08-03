@@ -86,8 +86,6 @@ export class ComponentPrototype<
       instance.state = structuredClone(data.state);
     }
 
-    const map = ComponentInstanceMap.getMap(data.type);
-    map.addNode(node, instance);
     return instance;
   }
 

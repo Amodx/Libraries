@@ -3,6 +3,7 @@ import { NodeTagObservers } from "./NodeTagObservers";
 import { NCSRegister } from "../../Register/NCSRegister";
 import { TagInstance } from "../../Tags/TagInstance";
 import { TagData } from "../../Tags/TagData";
+import { TagInstanceMap } from "../../Tags/TagInstanceMap";
 
 export class NodeTags {
   private _observers?: NodeTagObservers;
@@ -27,6 +28,8 @@ export class NodeTags {
   add(tag: TagData): TagInstance {
     const tagType = NCSRegister.tags.get(tag.id, tag.namespace || "main");
     const newTag = tagType.create(this.node, tag);
+    const map = TagInstanceMap.getMap(newTag.id);
+    map.addNode(this.node, newTag);
     this.tags.push(newTag);
 
     this.hasObservers &&

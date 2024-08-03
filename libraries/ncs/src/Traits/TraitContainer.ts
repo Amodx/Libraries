@@ -3,6 +3,7 @@ import { ComponentInstance } from "../Components/ComponentInstance";
 import { TraitData } from "./TraitData";
 import { TraitContainerObservers } from "./TraitContaienrObservers";
 import { NCSRegister } from "../Register/NCSRegister";
+import { TraitInstanceMap } from "./TraitInstanceMap";
 
 export class TraintContainer {
   private _observers?: TraitContainerObservers;
@@ -44,8 +45,12 @@ export class TraintContainer {
       trait.type,
       trait.namespace || "main"
     );
-    const newTrait = traitType.create(this.parent,trait);
+    const newTrait = traitType.create(this.parent, trait);
     this.traits.push(newTrait);
+    const node = newTrait.getNode();
+
+    const map = TraitInstanceMap.getMap(newTrait.type);
+    map.addNode(node, newTrait);
     await newTrait.init();
     if (trait.traits?.length) {
       newTrait.traits.addTraits(...trait.traits);
@@ -65,7 +70,7 @@ export class TraintContainer {
         trait.type,
         trait.namespace || "main"
       );
-      const newTrait = traitType.create(this.parent,trait);
+      const newTrait = traitType.create(this.parent, trait);
       this.traits.push(newTrait);
       newTraits.push(newTrait);
       await newTrait.init();

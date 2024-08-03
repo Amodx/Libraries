@@ -16,6 +16,22 @@ export type BinaryTypedNumberProperty = {
   type: "typed-number";
   numberType: BinaryNumberTypes;
 };
+export type BinaryTypedVector2Property = {
+  id: string;
+  type: "vector-2";
+  numberType: BinaryNumberTypes;
+};
+export type BinaryTypedVector3Property = {
+  id: string;
+  type: "vector-3";
+  numberType: BinaryNumberTypes;
+};
+export type BinaryTypedVector4Property = {
+  id: string;
+  type: "vector-4";
+  numberType: BinaryNumberTypes;
+};
+
 export type BinaryTypedNumberArrayProperty = {
   id: string;
   type: "typed-number-array";
@@ -26,7 +42,7 @@ export type BinaryBitArrayProperty = {
   id: string;
   type: "bit-array";
   length: number;
-}; 
+};
 export type BinaryHeaderProperty = {
   id: string;
   type: "header";
@@ -39,6 +55,9 @@ export type BinaryPropertyNodes =
   | BinaryBitArrayProperty
   | BinaryTypedNumberProperty
   | BinaryTypedNumberArrayProperty
-  | BinaryHeaderProperty;
+  | BinaryHeaderProperty
+  | BinaryTypedVector2Property
+  | BinaryTypedVector3Property
+  | BinaryTypedVector4Property
 
 export type BinaryPropertySchema = Map<string, BinaryPropertyNodes>;

@@ -25,8 +25,7 @@ export class TagPrototype {
     instance.tag = this.tag;
     instance.tagPrototype = this;
 
-    const map = TagInstanceMap.getMap(data.id);
-    map.addNode(node, instance);
+
     return instance;
   }
 

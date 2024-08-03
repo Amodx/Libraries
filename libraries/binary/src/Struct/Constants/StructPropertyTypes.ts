@@ -3,4 +3,7 @@ export enum StructPropertyTypes {
   TypedNumber,
   TypedNumberArray,
   BitArray,
+  Vector2,
+  Vector3,
+  Vector4,
 }
