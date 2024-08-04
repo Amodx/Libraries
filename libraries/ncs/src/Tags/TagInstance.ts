@@ -7,13 +7,13 @@ export class TagInstance {
   get id() {
     return this.tag.id;
   }
-  public tagPrototype: TagPrototype;
+  public proto: TagPrototype;
   public node: NodeInstance;
   public tag: Tag;
   constructor() {}
 
   dispose() {
-    this.tagPrototype.destory(this);
+    this.proto.destory(this);
   }
 
   toJSON(): TagData {

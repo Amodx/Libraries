@@ -15,6 +15,14 @@ export class ItemRegister<Item extends any> {
 
     return item;
   }
+  has(id: string, namespace: string): boolean {
+    const namespaceMap = this.namespaces.get(namespace);
+    if (!namespaceMap) return false;
+
+    const item = namespaceMap.get(id);
+    if (!item) return false;
+    return true;
+  }
   register(id: string, namespace: string, item: Item) {
     let itemMap = this.namespaces.get(namespace);
     if (!itemMap) {

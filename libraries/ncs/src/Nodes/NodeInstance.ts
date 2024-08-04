@@ -117,17 +117,17 @@ export class NodeInstance {
   isDisposed() {
     return this._disposed;
   }
-  async dispose() {
+  dispose() {
     if (this._disposed) return;
     this._disposed = true;
     this.graph.removeNode(this.id);
     this.parent?.removeChild(this.id);
 
-    this.hasComponents && (await this.components.dispose());
-    this.hasTags && (await this.tags.dispose());
-    
+    this.hasComponents && this.components.dispose();
+    this.hasTags && this.tags.dispose();
+
     for (const child of this.children) {
-      await child.dispose();
+      child.dispose();
     }
     this.hasPipelines &&
       this.pipelines.isDisposedSet() &&
@@ -142,9 +142,9 @@ export class NodeInstance {
     delete this._tags;
   }
 
-  async addChildren(...nodes: NodeData[]) {
+  addChildren(...nodes: NodeData[]) {
     for (const node of nodes) {
-      const newNode = await this.graph.addNode(node, this);
+      const newNode = this.graph.addNode(node, this);
       this.addChild(newNode);
     }
   }
@@ -192,8 +192,7 @@ export class NodeInstance {
       name: this.name,
       state: this.state,
       children: this.children.map((_) => _.copy()),
-      tags:
-        (this.hasTags && this.tags.tags.map((_) => _.toJSON())) || undefined,
+      tags: (this.hasTags && this.tags.tags.map((_) => _.toJSON())) || undefined,
       components:
         (this.hasComponents &&
           this.components.components.map((_) => _.copy())) ||
@@ -211,12 +210,12 @@ export class NodeInstance {
       id: NodeId.Create().idString,
       name: this.name,
       state: this.state,
-      children: this.children.map((_) => _.copy()),
+      children: this.children.map((_) => _.toJSON()),
       tags:
         (this.hasTags && this.tags.tags.map((_) => _.toJSON())) || undefined,
       components:
         (this.hasComponents &&
-          this.components.components.map((_) => _.copy())) ||
+          this.components.components.map((_) => _.toJSON())) ||
         undefined,
     };
     return (

@@ -38,14 +38,14 @@ const setIndexData = (
 
 export function CreateIndex(
   schemaNodes: BinaryPropertyNodes[],
-  indexes = 1,
+  structArrayIndexes = 1,
   shared = false
 ) {
   const schema: BinaryPropertySchema = new Map();
   for (const node of schemaNodes) {
     schema.set(node.id, node);
   }
-
+  const propertyDefaults: Record<string, any> = {};
   /*
 [Process Propertys]
 */
@@ -65,67 +65,68 @@ export function CreateIndex(
   const vector4s: Map<BinaryNumberTypes, BinaryTypedVector4Property[]> =
     new Map();
   const bitArrays: BinaryBitArrayProperty[] = [];
-  schema.forEach((Property) => {
-    if (Property.type == "header") {
-      let Propertys = headers.get(Property.numberType);
+  schema.forEach((property) => {
+    if (property.default) propertyDefaults[property.id] = property.default;
+    if (property.type == "header") {
+      let Propertys = headers.get(property.numberType);
       if (!Propertys) {
         Propertys = [];
-        headers.set(Property.numberType, Propertys);
+        headers.set(property.numberType, Propertys);
       }
-      Propertys.push(Property);
+      Propertys.push(property);
     }
-    if (Property.type == "boolean") {
-      booleans.push(Property);
+    if (property.type == "boolean") {
+      booleans.push(property);
     }
-    if (Property.type == "number") {
-      const range = (Property as BinaryNumberProperty).range;
+    if (property.type == "number") {
+      const range = (property as BinaryNumberProperty).range;
       const bitSize = BinaryUtil.calculateBitsNeeded(range[0], range[1]);
 
       numbers[bitSize] ??= [];
-      numbers[bitSize].push(Property);
+      numbers[bitSize].push(property);
     }
-    if (Property.type == "typed-number") {
-      let Propertys = typedNumbers.get(Property.numberType);
+    if (property.type == "typed-number") {
+      let Propertys = typedNumbers.get(property.numberType);
       if (!Propertys) {
         Propertys = [];
-        typedNumbers.set(Property.numberType, Propertys);
+        typedNumbers.set(property.numberType, Propertys);
       }
-      Propertys.push(Property);
+      Propertys.push(property);
     }
-    if (Property.type == "typed-number-array") {
-      let arrayPropertys = typedNumbersArrays.get(Property.numberType);
+    if (property.type == "typed-number-array") {
+      let arrayPropertys = typedNumbersArrays.get(property.numberType);
       if (!arrayPropertys) {
         arrayPropertys = [];
-        typedNumbersArrays.set(Property.numberType, arrayPropertys);
+        typedNumbersArrays.set(property.numberType, arrayPropertys);
       }
-      arrayPropertys.push(Property);
+      arrayPropertys.push(property);
     }
-    if (Property.type == "vector-2") {
-      let vectorProperties = vector2s.get(Property.numberType);
+    if (property.type == "vector-2") {
+      let vectorProperties = vector2s.get(property.numberType);
       if (!vectorProperties) {
         vectorProperties = [];
-        vector2s.set(Property.numberType, vectorProperties);
+        vector2s.set(property.numberType, vectorProperties);
       }
-      vectorProperties.push(Property);
+      vectorProperties.push(property);
     }
-    if (Property.type == "vector-3") {
-      let vectorProperties = vector3s.get(Property.numberType);
+    if (property.type == "vector-3") {
+      let vectorProperties = vector3s.get(property.numberType);
       if (!vectorProperties) {
         vectorProperties = [];
-        vector3s.set(Property.numberType, vectorProperties);
+        vector3s.set(property.numberType, vectorProperties);
       }
-      vectorProperties.push(Property);
+      vectorProperties.push(property);
     }
-    if (Property.type == "vector-4") {
-      let vectorProperties = vector4s.get(Property.numberType);
+    if (property.type == "vector-4") {
+      let vectorProperties = vector4s.get(property.numberType);
       if (!vectorProperties) {
         vectorProperties = [];
-        vector4s.set(Property.numberType, vectorProperties);
+        vector4s.set(property.numberType, vectorProperties);
       }
-      vectorProperties.push(Property);
+      vectorProperties.push(property);
     }
-    if (Property.type == "bit-array") {
-      bitArrays.push(Property);
+    if (property.type == "bit-array") {
+      bitArrays.push(property);
     }
   });
 
@@ -137,13 +138,12 @@ export function CreateIndex(
   if (shared) {
     indexBuffer = new SharedArrayBuffer(indexSize);
   }
-  const indexMap = new Map<string, number>();
+  const indexMap: Record<string, number> = {};
   const index = new DataView(indexBuffer);
-
 
   let indexBufferIndex = 0;
 
-  let byteIndex = 0;
+  let structSize = 0;
   let bitIndex = 0;
   let bitSize = 1;
   /*
@@ -153,16 +153,16 @@ export function CreateIndex(
     const byteSise = BinaryUtil.getTypedSize(type);
     for (let i = 0; i < Propertys.length; i++) {
       const Property = Propertys[i];
-      indexMap.set(Property.id, indexBufferIndex);
+      indexMap[Property.id] = indexBufferIndex;
       indexBufferIndex = setIndexData(
         index,
         indexBufferIndex,
-        byteIndex,
+        structSize,
         0,
         Property.numberType,
         StructPropertyTypes.TypedNumber
       );
-      byteIndex += byteSise;
+      structSize += byteSise;
     }
   });
 
@@ -172,18 +172,18 @@ export function CreateIndex(
   bitSize = 1;
   for (let i = 0; i < booleans.length; i++) {
     const bool = booleans[i];
-    indexMap.set(bool.id, indexBufferIndex);
+    indexMap[bool.id] = indexBufferIndex;
     indexBufferIndex = setIndexData(
       index,
       indexBufferIndex,
-      byteIndex,
+      structSize,
       bitIndex,
       bitSize,
       StructPropertyTypes.Boolean
     );
     bitIndex++;
     if (bitIndex >= 8) {
-      byteIndex++;
+      structSize++;
       bitIndex = 0;
     }
   }
@@ -192,134 +192,135 @@ export function CreateIndex(
 [Typed Numbers]
 */
   bitIndex = 0;
-  byteIndex++;
+  structSize++;
   typedNumbers.forEach((Propertys, type) => {
     const byteSise = BinaryUtil.getTypedSize(type);
     for (let i = 0; i < Propertys.length; i++) {
       const Property = Propertys[i];
-      indexMap.set(Property.id, indexBufferIndex);
+      indexMap[Property.id] = indexBufferIndex;
       indexBufferIndex = setIndexData(
         index,
         indexBufferIndex,
-        byteIndex,
+        structSize,
         0,
         Property.numberType,
         StructPropertyTypes.TypedNumber
       );
-      byteIndex += byteSise;
+      structSize += byteSise;
     }
   });
   /*
 [Typed Numbers Arrays]
 */
-  byteIndex++;
+  structSize++;
   typedNumbersArrays.forEach((Propertys, type) => {
     const byteSise = BinaryUtil.getTypedSize(type);
     for (let i = 0; i < Propertys.length; i++) {
       const Property = Propertys[i];
-      indexMap.set(Property.id, indexBufferIndex);
+      indexMap[Property.id] = indexBufferIndex;
       indexBufferIndex = setIndexData(
         index,
         indexBufferIndex,
-        byteIndex,
+        structSize,
         0,
         Property.numberType,
         StructPropertyTypes.TypedNumberArray
       );
-      byteIndex += byteSise * Property.length;
+      structSize += byteSise * Property.length;
     }
   });
 
   /*
 [vector 2s]
 */
-  byteIndex++;
+  structSize++;
   vector2s.forEach((Propertys, type) => {
     const byteSise = BinaryUtil.getTypedSize(type);
     for (let i = 0; i < Propertys.length; i++) {
       const Property = Propertys[i];
-      indexMap.set(Property.id, indexBufferIndex);
+      indexMap[Property.id] = indexBufferIndex;
       indexBufferIndex = setIndexData(
         index,
         indexBufferIndex,
-        byteIndex,
+        structSize,
         0,
         Property.numberType,
         StructPropertyTypes.Vector2
       );
-      byteIndex += byteSise * 2;
+      structSize += byteSise * 2;
     }
   });
 
   /*
 [vector 3s]
 */
-  byteIndex++;
+  structSize++;
   vector3s.forEach((Propertys, type) => {
     const byteSise = BinaryUtil.getTypedSize(type);
     for (let i = 0; i < Propertys.length; i++) {
       const Property = Propertys[i];
-      indexMap.set(Property.id, indexBufferIndex);
+      indexMap[Property.id] = indexBufferIndex;
       indexBufferIndex = setIndexData(
         index,
         indexBufferIndex,
-        byteIndex,
+        structSize,
         0,
         Property.numberType,
         StructPropertyTypes.Vector3
       );
-      byteIndex += byteSise * 3;
+      structSize += byteSise * 3;
     }
   });
 
   /*
 [vector 4s]
 */
-  byteIndex++;
+  structSize++;
   vector4s.forEach((Propertys, type) => {
     const byteSise = BinaryUtil.getTypedSize(type);
     for (let i = 0; i < Propertys.length; i++) {
       const Property = Propertys[i];
-      indexMap.set(Property.id, indexBufferIndex);
+      indexMap[Property.id] = indexBufferIndex;
       indexBufferIndex = setIndexData(
         index,
         indexBufferIndex,
-        byteIndex,
+        structSize,
         0,
         Property.numberType,
         StructPropertyTypes.Vector4
       );
-      byteIndex += byteSise * 4;
+      structSize += byteSise * 4;
     }
   });
   /*
 [bit arrays]
 */
-  byteIndex++;
+  structSize++;
   bitArrays.forEach((Property) => {
     const byteSise = Math.ceil(Property.length / 8) + 1;
-    indexMap.set(Property.id, indexBufferIndex);
+    indexMap[Property.id] = indexBufferIndex;
     indexBufferIndex = setIndexData(
       index,
       indexBufferIndex,
-      byteIndex,
+      structSize,
       0,
       byteSise,
       StructPropertyTypes.BitArray
     );
-    byteIndex += byteSise;
+    structSize += byteSise;
   });
 
   /*
 [Create Remote Property Manager Data]
 */
   const remoteData: BinaryStructData = {
-    bufferSize: byteIndex * indexes,
+    bufferSize: structSize * structArrayIndexes,
     buffer: new ArrayBuffer(0),
-    indexBuffer: indexBuffer,
-    indexMap: indexMap,
-    structSize: byteIndex,
-    structArrayIndexes: indexes,
+    indexBuffer,
+    indexMap,
+    propertyDefaults,
+    structSize,
+    structArrayIndexes,
   };
   return remoteData;
 }

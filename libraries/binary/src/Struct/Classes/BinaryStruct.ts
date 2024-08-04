@@ -2,7 +2,7 @@ import type {
   BinaryPropertySchema,
   BinaryPropertyNodes,
 } from "../Types/BinaryStructSchema.types";
-import type { BinaryStructData } from "../Types/RemoveBinaryStructData.types";
+import type { BinaryStructData } from "../Types/BinaryStructData.types";
 import { BinraryStructBase } from "./BinraryStructBase";
 import { CreateIndex } from "../Functions/CreateIndex";
 

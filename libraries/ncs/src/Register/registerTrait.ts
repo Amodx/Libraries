@@ -8,6 +8,9 @@ import {
 import { TraitInstance } from "../Traits/TraitInstance";
 import { NCSRegister } from "./NCSRegister";
 import { TraitPrototype } from "../Traits/TraitPrototype";
+import { TraitInstanceMap } from "../Traits/TraitInstanceMap";
+import { Graph } from "../Graphs/Graph";
+import { NodeInstance } from "../Nodes/NodeInstance";
 
 type RegisteredTrait<
   TraitSchema extends object = {},
@@ -15,24 +18,39 @@ type RegisteredTrait<
   Logic extends object = {},
   Shared extends object = {}
 > = (TraitRegisterData<TraitSchema, Data, Logic, Shared> & {
+  
+  getNodes: (grpah: Graph) => Set<NodeInstance>;
+  getTraits: (
+    grpah: Graph
+  ) => Set<TraitInstance<TraitSchema, Data, Logic, Shared>>;
   set: (
-    parent: ComponentInstance | TraitInstance,
+    parent:
+      | ComponentInstance<any, any, any, any>
+      | TraitInstance<any, any, any, any>,
     ComponentSchema?: Partial<TraitSchema>,
     traits?: TraitData[],
     state?: TraitStateData
-  ) => Promise<void>;
+  ) => TraitInstance<TraitSchema, Data, Logic, Shared>;
   get: (
-    parent: ComponentInstance | TraitInstance
+    parent:
+      | ComponentInstance<any, any, any, any>
+      | TraitInstance<any, any, any, any>
   ) => TraitInstance<TraitSchema, Data, Logic, Shared> | null;
   getAll: (
-    parent: ComponentInstance | TraitInstance
+    parent:
+      | ComponentInstance<any, any, any, any>
+      | TraitInstance<any, any, any, any>
   ) => TraitInstance<TraitSchema, Data, Logic, Shared>[] | null;
   remove: (
-    parent: ComponentInstance | TraitInstance
-  ) => Promise<TraitInstance<TraitSchema, Data, Logic, Shared> | null>;
+    parent:
+      | ComponentInstance<any, any, any, any>
+      | TraitInstance<any, any, any, any>
+  ) => TraitInstance<TraitSchema, Data, Logic, Shared> | null;
   removeAll: (
-    parent: ComponentInstance | TraitInstance
-  ) => Promise<TraitInstance<TraitSchema, Data, Logic, Shared>[] | null>;
+    parent:
+      | ComponentInstance<any, any, any, any>
+      | TraitInstance<any, any, any, any>
+  ) => TraitInstance<TraitSchema, Data, Logic, Shared>[] | null;
   prototype: TraitPrototype<TraitSchema, Data, Logic, Shared>;
   default: TraitInstance<TraitSchema, Data, Logic, Shared>;
 }) &
@@ -47,7 +65,9 @@ export function registerTrait<
   Data extends object = {},
   Logic extends object = {},
   Shared extends object = {}
->(data: TraitRegisterData<TraitSchema, Data, Logic, Shared>): RegisteredTrait {
+>(
+  data: TraitRegisterData<TraitSchema, Data, Logic, Shared>
+): RegisteredTrait<TraitSchema, Data, Logic, Shared> {
   const prototype = new TraitPrototype<TraitSchema, Data, Logic, Shared>(data);
   NCSRegister.traits.register(data.type, data.namespace || "main", prototype);
 
@@ -66,15 +86,19 @@ export function registerTrait<
       },
     });
   };
+  const traitMap = TraitInstanceMap.registerTrait(data.type);
 
   return Object.assign(createTrait, data, {
+    prototype,
+    getNodes: (graph: Graph) => traitMap.getNodes(graph),
+    getTraits: (graph: Graph) => traitMap.getItems(graph),
     set: (
       parent: ComponentInstance | TraitInstance,
       schema?: Partial<TraitSchema> | null,
       state?: TraitStateData | null,
       ...traits: TraitData[]
     ) => {
-      return parent.traits.addTraits(
+      return parent.traits.add(
         createTrait(
           schema
             ? schema

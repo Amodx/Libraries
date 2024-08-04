@@ -4,7 +4,8 @@ export type BinaryStructData = {
   buffer: BufferTypes;
   bufferSize: number;
   indexBuffer: BufferTypes;
-  indexMap: Map<string, number>;
+  indexMap: Record<string, number>;
+  propertyDefaults: Record<string, any>;
   structArrayIndexes: number;
   structSize: number;
 };

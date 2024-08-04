@@ -1,49 +1,27 @@
-import { SystemInstance } from "../Systems/SystemInstance";
-import { ComponentInstance } from "../Components/ComponentInstance";
 import { Graph } from "./Graph";
 
+export interface GraphUpdtable<> {
+  update(): void;
+}
+
 export class GraphUpdate {
-  private static updatingComponents = new Map<Graph, Set<ComponentInstance>>();
+  private static updatingComponents = new Map<Graph, Set<GraphUpdtable>>();
 
-  static addComponentToUpdate(
-    component: ComponentInstance<any, any, any, any>
-  ) {
-    let updating = this.updatingComponents.get(component.node.graph);
+  static addITem(graph: Graph, item: GraphUpdtable) {
+    let updating = this.updatingComponents.get(graph);
     if (!updating) {
       updating = new Set();
-      this.updatingComponents.set(component.node.graph, updating);
+      this.updatingComponents.set(graph, updating);
     }
-    updating.add(component);
+    updating.add(item);
   }
-  static removeComponentFromUpate(
-    component: ComponentInstance<any, any, any, any>
-  ) {
-    let updating = this.updatingComponents.get(component.node.graph);
+  static removeItem(graph: Graph, item: GraphUpdtable) {
+    let updating = this.updatingComponents.get(graph);
     if (!updating) return;
-    updating.delete(component);
+    updating.delete(item);
   }
 
-  static getUpdatingComponents(graph: Graph) {
+  static getItems(graph: Graph) {
     return this.updatingComponents.get(graph)!;
-  }
-
-  private static updatingSystems = new Map<Graph, Set<SystemInstance>>();
-
-  static addSystemToUpdate(system: SystemInstance) {
-    let updating = this.updatingSystems.get(system.graph);
-    if (!updating) {
-      updating = new Set();
-      this.updatingSystems.set(system.graph, updating);
-    }
-    updating.add(system);
-  }
-  static removeSystemFromUpdate(system: SystemInstance) {
-    let updating = this.updatingSystems.get(system.graph);
-    if (!updating) return;
-    updating.delete(system);
-  }
-
-  static getUpdatingSystems(graph: Graph) {
-    return this.updatingSystems.get(graph)!;
   }
 }

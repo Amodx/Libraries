@@ -4,7 +4,7 @@ import { BufferTypes } from "../../Util/BufferTypes.js";
 import { InstantiatedStruct } from "./InstantiatedStruct.js";
 import { GetIndexData } from "../../Struct/Functions/GetIndexData.js";
 import { CreateInstance } from "../Functions/CreateInstance.js";
-import { BinaryStructData } from "../Types/RemoveBinaryStructData.types.js";
+import { BinaryStructData } from "../Types/BinaryStructData.types.js";
 
 export class BinraryStructBase {
   byteOffSet = 0;
@@ -14,7 +14,7 @@ export class BinraryStructBase {
   structData: BinaryStructData;
   data = new DataView(new ArrayBuffer(0));
 
-  indexMap: Map<string, number> = new Map();
+  indexMap: Record<string, number> = {};
   index = new DataView(new ArrayBuffer(0));
 
   constructor(public id: string) {}
@@ -40,7 +40,7 @@ export class BinraryStructBase {
   }
 
   getProperty(id: string): number {
-    const byteIndex = this.indexMap.get(id);
+    const byteIndex = this.indexMap[id];
     if (byteIndex === undefined) {
       throw new Error(`Tag with id: ${id} does not exist.`);
     }
@@ -63,7 +63,7 @@ export class BinraryStructBase {
   }
 
   setProperty(id: string, value: number) {
-    const byteIndex = this.indexMap.get(id);
+    const byteIndex = this.indexMap[id];
 
     if (byteIndex === undefined) {
       throw new Error(`Tag with id: ${id} does not exist.`);
@@ -95,7 +95,7 @@ export class BinraryStructBase {
   }
 
   getArrayPropertyValue(id: string, index: number) {
-    const byteIndex = this.indexMap.get(id);
+    const byteIndex = this.indexMap[id];
     if (byteIndex === undefined) {
       throw new Error(`Tag with id: ${id} does not exist.`);
     }
@@ -126,7 +126,7 @@ export class BinraryStructBase {
    * @returns
    */
   getArrayPropertyByteIndex(id: string, index: number) {
-    const byteIndex = this.indexMap.get(id);
+    const byteIndex = this.indexMap[id];
     if (byteIndex === undefined) {
       throw new Error(`Tag with id: ${id} does not exist.`);
     }
@@ -142,7 +142,7 @@ export class BinraryStructBase {
   }
 
   setArrayPropertyValue(id: string, index: number, value: number) {
-    const byteIndex = this.indexMap.get(id);
+    const byteIndex = this.indexMap[id];
     if (byteIndex === undefined) {
       throw new Error(`Tag with id: ${id} does not exist.`);
     }
@@ -166,28 +166,6 @@ export class BinraryStructBase {
       );
     }
     return -Infinity;
-  }
-
-  loopThroughProperties(run: (id: string, value: number) => void) {
-    this.indexMap.forEach((i, id) => {
-      run(id, this.getProperty(id));
-    });
-  }
-  loopThroughIndex(run: (data: number[]) => void) {
-    this.indexMap.forEach((index, id) => {
-      const indexData = GetIndexData(this.index, index);
-      run(indexData);
-    });
-  }
-  loopThroughAllIndexAndProperties(
-    run: (id: string, value: number, index: number) => void
-  ) {
-    for (let index = 0; index < this.structArrayIndexes; index++) {
-      this.setStructArrayIndex(index);
-      this.indexMap.forEach((i, id) => {
-        run(id, this.getProperty(id), index);
-      });
-    }
   }
 
   /**## instantiate

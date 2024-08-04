@@ -3,11 +3,12 @@ import { StructPropertyTypes } from "../Constants/StructPropertyTypes";
 import { BinaryStructData } from "../Types";
 import { BinaryUtil } from "../../Util/BinaryUtil";
 import { GetIndexData } from "./GetIndexData";
-
+const vector2Indexes = { x: 0, y: 1 };
+const vector3Indexes = { x: 0, y: 1, z: 2 };
+const vector4Indexes = { x: 0, y: 1, z: 2, w: 3 };
 export function CreateInstance<T extends any>(
   data: BinaryStructData
 ): T & InstantiatedStruct<T> {
-
   const index = new DataView(data.indexBuffer);
   const GeneratedClass = class extends InstantiatedStruct<T> {
     constructor() {
@@ -20,21 +21,46 @@ export function CreateInstance<T extends any>(
     _typedArrays: Map<string, number[]>;
     _vector2s: Map<string, { x: number; y: number }>;
     _vector3s: Map<string, { x: number; y: number; z: number }>;
-    _vector4s: Map<string, { x: number; y: number; w: number }>;
+    _vector4s: Map<string, { x: number; y: number; z: number; w: number }>;
   };
 
   Object.defineProperty(GeneratedClass.prototype, "clone", {
     get() {
       return () => {
         const clone = new GeneratedClass();
-        if (this.data?.buffer) clone.setBuffer(this.data.buffer);
+        if (this.structData?.buffer) clone.setBuffer(this.structData.buffer);
         clone.setIndex(this.structArrayIndex);
         return clone;
       };
     },
   });
 
-  for (const [key, propertyByteIndex] of data.indexMap) {
+  Object.defineProperty(GeneratedClass.prototype, "setDefaults", {
+    get() {
+      return () => {
+        for (const [id, value] of Object.entries(data.propertyDefaults)) {
+          const v = this[id];
+          if (Array.isArray(v) && Array.isArray(value)) {
+            for (let i = 0; i < value.length; i++) {
+              v[i] = value[i];
+            }
+            continue;
+          }
+          if (typeof v == "object" && typeof value == "object") {
+            for (const key of Object.keys(value)) {
+              v[key] = value[key];
+            }
+            continue;
+          }
+          if (typeof v == "number" && typeof value == "number") {
+            this[id] = value;
+          }
+        }
+      };
+    },
+  });
+
+  for (const [key, propertyByteIndex] of Object.entries(data.indexMap)) {
     const [byteIndex, bitOffSet, bitSize, type] = GetIndexData(
       index,
       propertyByteIndex
@@ -44,16 +70,16 @@ export function CreateInstance<T extends any>(
       Object.defineProperty(GeneratedClass.prototype, key, {
         get() {
           return BinaryUtil.getBitValue(
-            this.data.getUint8(byteIndex + this.byteOffSet),
+            this.structData.getUint8(byteIndex + this.structByteOffSet),
             bitOffSet,
             bitSize
           );
         },
         set(value: number) {
-          this.data.setUint8(
-            byteIndex + this.byteOffSet,
+          this.structData.setUint8(
+            byteIndex + this.structByteOffSet,
             BinaryUtil.setBitValue(
-              this.data.getUint8(byteIndex + this.byteOffSet),
+              this.structData.getUint8(byteIndex + this.structByteOffSet),
               bitOffSet,
               value,
               bitSize
@@ -66,15 +92,15 @@ export function CreateInstance<T extends any>(
       Object.defineProperty(GeneratedClass.prototype, key, {
         get() {
           return BinaryUtil.getTypedNumber(
-            this.data,
-            byteIndex + this.byteOffSet,
+            this.structData,
+            byteIndex + this.structByteOffSet,
             bitSize
           );
         },
         set(value: number) {
           BinaryUtil.setTypedNumber(
-            this.data,
-            byteIndex + this.byteOffSet,
+            this.structData,
+            byteIndex + this.structByteOffSet,
             bitSize,
             value
           );
@@ -90,14 +116,14 @@ export function CreateInstance<T extends any>(
               get(target, index) {
                 return BinaryUtil.getBitArrayIndex(
                   self.data,
-                  byteIndex + self.byteOffSet,
+                  byteIndex + self.structByteOffSet,
                   +(index as string)
                 );
               },
               set(target, index, value) {
                 BinaryUtil.setBitArrayIndex(
                   self.data,
-                  byteIndex + self.byteOffSet,
+                  byteIndex + self.structByteOffSet,
                   +(index as string),
                   value
                 );
@@ -123,18 +149,18 @@ export function CreateInstance<T extends any>(
             const proxy = new Proxy([], {
               get(target, index) {
                 return BinaryUtil.getTypedNumber(
-                  self.data,
+                  self.structData,
                   byteIndex +
-                    self.byteOffSet +
+                    self.structByteOffSet +
                     +(index as string) * typedNumberSize,
                   bitSize
                 );
               },
               set(target, index, value) {
                 BinaryUtil.setTypedNumber(
-                  self.data,
+                  self.structData,
                   byteIndex +
-                    self.byteOffSet +
+                    self.structByteOffSet +
                     +(index as string) * typedNumberSize,
                   bitSize,
                   value
@@ -151,7 +177,7 @@ export function CreateInstance<T extends any>(
     }
     if (type == StructPropertyTypes.Vector2) {
       const typedNumberSize = BinaryUtil.getTypedSize(bitSize);
-      const vectorIndexes = { x: 0, y: 1 };
+
       Object.defineProperty(GeneratedClass.prototype, key, {
         get() {
           if (!this._vector2s) this._vector2s = new Map();
@@ -162,20 +188,20 @@ export function CreateInstance<T extends any>(
               {
                 get(target, property) {
                   return BinaryUtil.getTypedNumber(
-                    self.data,
+                    self.structData,
                     byteIndex +
-                      self.byteOffSet +
-                      vectorIndexes[property as keyof typeof vectorIndexes] *
+                      self.structByteOffSet +
+                      vector2Indexes[property as keyof typeof vector2Indexes] *
                         typedNumberSize,
                     bitSize
                   );
                 },
                 set(target, property, value) {
                   BinaryUtil.setTypedNumber(
-                    self.data,
+                    self.structData,
                     byteIndex +
-                      self.byteOffSet +
-                      vectorIndexes[property as keyof typeof vectorIndexes] *
+                      self.structByteOffSet +
+                      vector2Indexes[property as keyof typeof vector2Indexes] *
                         typedNumberSize,
                     bitSize,
                     value
@@ -193,7 +219,7 @@ export function CreateInstance<T extends any>(
     }
     if (type == StructPropertyTypes.Vector3) {
       const typedNumberSize = BinaryUtil.getTypedSize(bitSize);
-      const vectorIndexes = { x: 0, y: 1, z: 2 };
+
       Object.defineProperty(GeneratedClass.prototype, key, {
         get() {
           if (!this._vector3s) this._vector3s = new Map();
@@ -204,20 +230,20 @@ export function CreateInstance<T extends any>(
               {
                 get(target, property) {
                   return BinaryUtil.getTypedNumber(
-                    self.data,
+                    self.structData,
                     byteIndex +
-                      self.byteOffSet +
-                      vectorIndexes[property as keyof typeof vectorIndexes] *
+                      self.structByteOffSet +
+                      vector3Indexes[property as keyof typeof vector3Indexes] *
                         typedNumberSize,
                     bitSize
                   );
                 },
                 set(target, property, value) {
                   BinaryUtil.setTypedNumber(
-                    self.data,
+                    self.structData,
                     byteIndex +
-                      self.byteOffSet +
-                      vectorIndexes[property as keyof typeof vectorIndexes] *
+                      self.structByteOffSet +
+                      vector3Indexes[property as keyof typeof vector3Indexes] *
                         typedNumberSize,
                     bitSize,
                     value
@@ -235,7 +261,7 @@ export function CreateInstance<T extends any>(
     }
     if (type == StructPropertyTypes.Vector4) {
       const typedNumberSize = BinaryUtil.getTypedSize(bitSize);
-      const vectorIndexes = { x: 0, y: 1, z: 2, w: 3 };
+
       Object.defineProperty(GeneratedClass.prototype, key, {
         get() {
           if (!this._vector4s) this._vector4s = new Map();
@@ -246,20 +272,20 @@ export function CreateInstance<T extends any>(
               {
                 get(target, property) {
                   return BinaryUtil.getTypedNumber(
-                    self.data,
+                    self.structData,
                     byteIndex +
-                      self.byteOffSet +
-                      vectorIndexes[property as keyof typeof vectorIndexes] *
+                      self.structByteOffSet +
+                      vector4Indexes[property as keyof typeof vector4Indexes] *
                         typedNumberSize,
                     bitSize
                   );
                 },
                 set(target, property, value) {
                   BinaryUtil.setTypedNumber(
-                    self.data,
+                    self.structData,
                     byteIndex +
-                      self.byteOffSet +
-                      vectorIndexes[property as keyof typeof vectorIndexes] *
+                      self.structByteOffSet +
+                      vector4Indexes[property as keyof typeof vector4Indexes] *
                         typedNumberSize,
                     bitSize,
                     value

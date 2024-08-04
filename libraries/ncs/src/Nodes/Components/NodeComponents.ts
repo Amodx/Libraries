@@ -19,16 +19,13 @@ export class NodeComponents {
   components: ComponentInstance[] = [];
   constructor(public node: NodeInstance) {}
 
-  async dispose() {
+  dispose() {
     for (const comp of this.components) {
-      await comp.dispose();
+      comp.dispose();
     }
   }
 
-  async add(
-    comp: ComponentData,
-    init = true
-  ): Promise<ComponentInstance<any, any, any, any>> {
+  add(comp: ComponentData, init = true): ComponentInstance<any, any, any, any> {
     const compType = NCSRegister.components.get(
       comp.type,
       comp.namespace || "main"
@@ -37,9 +34,9 @@ export class NodeComponents {
     this.components.push(newComponent);
     const map = ComponentInstanceMap.getMap(newComponent.type);
     map.addNode(this.node, newComponent);
-    if (init) await newComponent.init();
-    if (comp.traits.length) {
-      await newComponent.traits.addTraits(...comp.traits);
+
+    if (comp.traits?.length) {
+      newComponent.traits.addTraits(...comp.traits);
     }
     this.hasObservers &&
       this.observers.isComponentAddedSet() &&
@@ -47,20 +44,18 @@ export class NodeComponents {
       this.observers.componentAdded.notify(newComponent);
     return newComponent;
   }
-  async addComponents(...components: ComponentData[]) {
+  addComponents(...components: ComponentData[]) {
     const newComponents: ComponentInstance[] = [];
     for (const comp of components) {
-      newComponents.push(await this.add(comp, false));
+      newComponents.push(this.add(comp, false));
     }
-    for (const comp of newComponents) {
-      await comp.init();
-    }
+
     this.hasObservers &&
       this.observers.isComponentsUpdatedSet() &&
       this.observers.componentsUpdated.notify();
   }
 
-  async removeByIndex(index: number) {
+  removeByIndex(index: number) {
     const component = this.components[index];
     if (component) {
       const child = this.components.splice(index, 1)![0];
@@ -70,7 +65,7 @@ export class NodeComponents {
       this.hasObservers &&
         this.observers.isComponentsUpdatedSet() &&
         this.observers.componentsUpdated.notify();
-      await component.dispose();
+      component.dispose();
       return true;
     }
     return false;
@@ -85,13 +80,11 @@ export class NodeComponents {
   getAll(type: string): ComponentInstance<any, any, any, any>[] {
     return this.components.filter((_) => _.type == type);
   }
-  async removeAll(
-    type: string
-  ): Promise<ComponentInstance<any, any, any, any>[]> {
+  removeAll(type: string): ComponentInstance<any, any, any, any>[] {
     const filtered = this.getAll(type);
     this.components = this.components.filter((_) => _.type != type);
     for (const comp of filtered) {
-      await comp.dispose();
+      comp.dispose();
     }
     for (const comp of filtered) {
       this.hasObservers &&

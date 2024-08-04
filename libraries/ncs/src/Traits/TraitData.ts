@@ -8,13 +8,15 @@ export interface TraitMetaData {
   name: string;
   [key: string]: any;
 }
+
 /**
- * Interface representing the pool data of a component.
+ * Interface representing the pool data of a trait.
  */
 export interface TraitPoolData {
   maxSize: number;
   [key: string]: any;
 }
+
 /**
  * Interface representing the state data of a trait.
  */
@@ -32,10 +34,12 @@ export type TraitData<TraitSchema extends object = any> = {
    * The type of the trait.
    */
   type: string;
+
   /**
    * The namespace of the trait.
    */
   namespace?: string;
+
   /**
    * The state data of the trait.
    */
@@ -49,7 +53,7 @@ export type TraitData<TraitSchema extends object = any> = {
   /**
    * The traits associated with the trait.
    */
-  traits: TraitData[];
+  traits?: TraitData[];
 };
 
 /**
@@ -71,15 +75,16 @@ export type TraitRegisterData<
    * The type of the trait.
    */
   type: string;
+
   /**
    * The namespace of the trait.
    */
   namespace?: string;
+
   /**
    * The optional name of the trait.
    */
   name?: string;
-
 
   pool?: TraitPoolData;
 
@@ -94,14 +99,14 @@ export type TraitRegisterData<
    */
   logic?:
     | Logic
-    | ((component: TraitInstance<TraitSchema, Data, Logic, Shared>) => Logic);
+    | ((trait: TraitInstance<TraitSchema, Data, Logic, Shared>) => Logic);
 
   /**
    * The runtime data of the trait.
    */
   data?:
     | Data
-    | ((component: TraitInstance<TraitSchema, Data, Logic, Shared>) => Data);
+    | ((trait: TraitInstance<TraitSchema, Data, Logic, Shared>) => Data);
 
   /**
    * The shared data of all traits.
@@ -116,18 +121,23 @@ export type TraitRegisterData<
   /**
    * Optional initialization function for the trait.
    *
-   * @param component - The instance of the component being initialized.
+   * @param trait - The instance of the trait being initialized.
    */
-  init?(
-    component: TraitInstance<TraitSchema, Data, Logic>
-  ): Promise<void> | void;
+  init?(trait: TraitInstance<TraitSchema, Data, Logic, Shared>): void;
+
+  /**
+   * Optional update function for the trait.
+   * The update function is usually called once per frame.
+   * It is up to the graph though when it gets called.
+   *
+   * @param trait - The instance of the trait being updated.
+   */
+  update?(trait: TraitInstance<TraitSchema, Data, Logic, Shared>): void;
 
   /**
    * Optional disposal function for the trait.
    *
-   * @param component - The instance of the component being disposed.
+   * @param trait - The instance of the trait being disposed.
    */
-  dispose?(
-    component: TraitInstance<TraitSchema, Data, Logic>
-  ): Promise<void> | void;
+  dispose?(trait: TraitInstance<TraitSchema, Data, Logic, Shared>): void;
 };

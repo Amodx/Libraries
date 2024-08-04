@@ -10,6 +10,39 @@ export interface GraphDependencies {
   [key: string]: any;
 }
 export interface Graph {}
+
+const create = (graph: Graph, data: NodeData, parent: NodeInstance) => {
+  const newNode = new NodeInstance(parent, data, graph);
+
+  newNode.parent = parent;
+  parent.children.push(newNode);
+
+  let high = graph._nodeMap.get(newNode.id.low);
+  if (!high) {
+    high = new Map<BigInt, NodeInstance>();
+    graph._nodeMap.set(newNode.id.low, high);
+  }
+  high.set(newNode.id.high, newNode);
+
+  if (data.components?.length) {
+    newNode.components.addComponents(...data.components);
+  }
+
+  parent.hasObservers &&
+    parent.observers.isChildAddedSet() &&
+    parent.observers.childAdded.notify(newNode);
+  graph.observers.nodeAdded.notify(newNode);
+  graph.observers.nodesUpdated.notify();
+
+  if (data.children?.length) {
+    for (const child of data.children) {
+      create(graph, child, newNode);
+    }
+  }
+
+  return newNode;
+};
+
 export class Graph {
   _nodeMap = new Map<BigInt, Map<BigInt, NodeInstance>>();
   events = new GraphEvents();
@@ -28,42 +61,27 @@ export class Graph {
     return node;
   }
 
-  async loadInRoot(data: NodeData) {
+  loadInRoot(data: NodeData) {
     if (this.root) this.root.dispose();
     const root = new NodeInstance({} as any, data, this);
-    await root.addChildren(...data.children);
+    root.addChildren(...data.children);
     this.root = root;
   }
 
-  async addNode(data: NodeData, parent: NodeInstance = this.root) {
-    const newNode = new NodeInstance(parent, data, this);
-
-    newNode.parent = parent;
-    parent.children.push(newNode);
-
-    let high = this._nodeMap.get(newNode.id.low);
-    if (!high) {
-      high = new Map<BigInt, NodeInstance>();
-      this._nodeMap.set(newNode.id.low, high);
-    }
-    high.set(newNode.id.high, newNode);
-
-    if (data.components?.length) {
-      await newNode.components.addComponents(...data.components);
-    }
-
-    parent.hasObservers &&
-      parent.observers.isChildAddedSet() &&
-      parent.observers.childAdded.notify(newNode);
-    this.observers.nodeAdded.notify(newNode);
-    this.observers.nodesUpdated.notify();
-
-    if (data.children?.length) {
-      for (const child of data.children) {
-        await this.addNode(child, newNode);
+  addNode(data: NodeData, parent: NodeInstance = this.root) {
+    const newNode = create(this, data, parent);
+    if (newNode.hasComponents) {
+      for (const comp of newNode.components.components) {
+        comp.init();
       }
     }
-
+    for (const child of newNode.traverseChildren()) {
+      if (child.hasComponents) {
+        for (const comp of child.components.components) {
+          comp.init();
+        }
+      }
+    }
     return newNode;
   }
 
@@ -82,20 +100,10 @@ export class Graph {
   }
 
   update() {
-    {
-      const updating = GraphUpdate.getUpdatingComponents(this);
-      if (updating) {
-        for (const component of updating) {
-          component.componentPrototype.data.update!(component);
-        }
-      }
-    }
-    {
-      const updating = GraphUpdate.getUpdatingSystems(this);
-      if (updating) {
-        for (const system of updating) {
-          system.systemPrototype.update!(system);
-        }
+    const updating = GraphUpdate.getItems(this);
+    if (updating) {
+      for (const item of updating) {
+        item.update();
       }
     }
   }

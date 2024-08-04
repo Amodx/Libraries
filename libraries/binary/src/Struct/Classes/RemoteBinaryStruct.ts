@@ -1,4 +1,4 @@
-import type { BinaryStructData } from "../Types/RemoveBinaryStructData.types.js";
+import type { BinaryStructData } from "../Types/BinaryStructData.types.js";
 import { BinraryStructBase } from "./BinraryStructBase.js";
 
 export class RemoteBinaryStruct extends BinraryStructBase {

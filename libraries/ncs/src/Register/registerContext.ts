@@ -14,12 +14,10 @@ type RegisteredContext<
     parent: NodeInstance,
     schema?: ContextSchema,
     data?: Data
-  ) => Promise<void>;
+  ) => ContextInstance<ContextSchema, Data>;
   get: (parent: NodeInstance) => ContextInstance<ContextSchema, Data> | null;
   getRequired: (parent: NodeInstance) => ContextInstance<ContextSchema, Data>;
-  remove: (
-    parent: NodeInstance
-  ) => Promise<ContextInstance<ContextSchema, Data> | null>;
+  remove: (parent: NodeInstance) => ContextInstance<ContextSchema, Data> | null;
 
   prototype: ContextPrototype<ContextSchema, Data>;
   default: ContextInstance<Data>;
@@ -56,6 +54,7 @@ export function registerContext<
       if (data) {
         newContext.data = data;
       }
+      return newContext;
     },
     get: (parent: NodeInstance) => {
       return parent.context.get(data.type);

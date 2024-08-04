@@ -30,28 +30,29 @@ export class TraintContainer {
     }
   }
 
-  async dispose() {
+  dispose() {
     for (const child of this.traits) {
       child.dispose();
     }
   }
-  async initAllTraits() {
+  initAllTraits() {
     for (const trait of this.traits) {
-      await trait.init();
+      trait.init();
     }
   }
-  async add(trait: TraitData): Promise<TraitInstance<any, any, any, any>> {
+  add(trait: TraitData): TraitInstance<any, any, any, any> {
     const traitType = NCSRegister.traits.get(
       trait.type,
       trait.namespace || "main"
     );
     const newTrait = traitType.create(this.parent, trait);
+
     this.traits.push(newTrait);
     const node = newTrait.getNode();
 
     const map = TraitInstanceMap.getMap(newTrait.type);
     map.addNode(node, newTrait);
-    await newTrait.init();
+    newTrait.init();
     if (trait.traits?.length) {
       newTrait.traits.addTraits(...trait.traits);
     }
@@ -63,7 +64,7 @@ export class TraintContainer {
       this.observers.traitsUpdated.notify();
     return newTrait;
   }
-  async addTraits(...traits: TraitData[]) {
+  addTraits(...traits: TraitData[]) {
     const newTraits: TraitInstance<any, any, any, any>[] = [];
     for (const trait of traits) {
       const traitType = NCSRegister.traits.get(
@@ -73,7 +74,7 @@ export class TraintContainer {
       const newTrait = traitType.create(this.parent, trait);
       this.traits.push(newTrait);
       newTraits.push(newTrait);
-      await newTrait.init();
+      newTrait.init();
       if (trait.traits?.length) {
         newTrait.traits.addTraits(...trait.traits);
       }
@@ -86,7 +87,7 @@ export class TraintContainer {
       this.observers.traitsUpdated.notify();
     return newTraits;
   }
-  async removeByIndex(index: number) {
+  removeByIndex(index: number) {
     const trait = this.traits[index];
     if (trait) {
       const child = this.traits.splice(index, 1)![0];
@@ -96,7 +97,7 @@ export class TraintContainer {
       this.hasObservers &&
         this.observers.isTraitsUpdatedSet() &&
         this.observers.traitsUpdated.notify();
-      await trait.dispose();
+      trait.dispose();
       return true;
     }
     return false;
@@ -111,10 +112,10 @@ export class TraintContainer {
   getAll(type: string): TraitInstance<any, any, any, any>[] {
     return this.traits.filter((_) => _.type == type);
   }
-  async removeAll(type: string): Promise<TraitInstance<any, any, any, any>[]> {
+  removeAll(type: string): TraitInstance<any, any, any, any>[] {
     const filtered = this.getAll(type);
     for (const trait of filtered) {
-      await trait.dispose();
+      trait.dispose();
     }
     this.traits = this.traits.filter((_) => _.type != type);
     for (const comp of filtered) {

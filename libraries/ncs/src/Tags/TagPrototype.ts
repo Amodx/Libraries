@@ -23,7 +23,7 @@ export class TagPrototype {
     const instance = this.getPooled();
     instance.node = node;
     instance.tag = this.tag;
-    instance.tagPrototype = this;
+    instance.proto = this;
 
 
     return instance;

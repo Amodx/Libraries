@@ -28,7 +28,7 @@ type RegisteredComponent<
     componentSchema?: Partial<ComponentSchema>,
     traits?: TraitData[],
     state?: ComponentStateData
-  ) => Promise<ComponentInstance<ComponentSchema, Data, Logic, Shared>>;
+  ) => ComponentInstance<ComponentSchema, Data, Logic, Shared>;
   get: (
     node: NodeInstance
   ) => ComponentInstance<ComponentSchema, Data, Logic, Shared> | null;
@@ -43,12 +43,11 @@ type RegisteredComponent<
   ) => ComponentInstance<ComponentSchema, Data, Logic, Shared>[] | null;
   remove: (
     node: NodeInstance
-  ) => Promise<ComponentInstance<ComponentSchema, Data, Logic, Shared> | null>;
+  ) => ComponentInstance<ComponentSchema, Data, Logic, Shared> | null;
   removeAll: (
     node: NodeInstance
-  ) => Promise<
-    ComponentInstance<ComponentSchema, Data, Logic, Shared>[] | null
-  >;
+  ) => ComponentInstance<ComponentSchema, Data, Logic, Shared>[] | null;
+
   nodeData: {
     get: (node: NodeData) => ComponentData<ComponentSchema> | null;
     set: (
@@ -111,13 +110,15 @@ export const registerComponent = <
 
   return Object.assign(createComponent, data, {
     prototype,
+    getNodes: (graph: Graph) => componentMap.getNodes(graph),
+    getComponents: (graph: Graph) => componentMap.getItems(graph),
     set: (
       node: NodeInstance,
       schema?: Partial<ComponentSchema> | null,
       state?: ComponentStateData | null,
       ...traits: TraitData[]
-    ) =>
-      node.components.add(
+    ) => {
+      const newComponent = node.components.add(
         createComponent(
           schema
             ? schema
@@ -127,9 +128,10 @@ export const registerComponent = <
           state,
           ...traits
         )
-      ),
-    getNodes: (graph: Graph) => componentMap.getNodes(graph),
-    getComponents: (graph: Graph) => componentMap.getItems(graph),
+      );
+      newComponent.init();
+      return newComponent;
+    },
     get: (node: NodeInstance) => node.components.get(data.type),
     getChild: (node: NodeInstance) => node.components.getChild(data.type),
     getParent: (node: NodeInstance) => node.components.getParent(data.type),

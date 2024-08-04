@@ -51,7 +51,7 @@ export type ComponentData<ComponentSchema extends object = any> = {
   /**
    * The traits associated with the component.
    */
-  traits: TraitData[];
+  traits?: TraitData[];
 };
 
 /**
@@ -122,7 +122,7 @@ export type ComponentRegisterData<
    */
   init?(
     component: ComponentInstance<ComponentSchema, Data, Logic, Shared>
-  ): Promise<void> | void;
+  ): void;
 
   /**
    * Optional update function for the component.
@@ -133,7 +133,7 @@ export type ComponentRegisterData<
    */
   update?(
     component: ComponentInstance<ComponentSchema, Data, Logic, Shared>
-  ): Promise<void> | void;
+  ): void;
 
   /**
    * Optional disposal function for the component.
@@ -142,5 +142,5 @@ export type ComponentRegisterData<
    */
   dispose?(
     component: ComponentInstance<ComponentSchema, Data, Logic, Shared>
-  ): Promise<void> | void;
+  ): void;
 };

@@ -1,28 +1,35 @@
-import { TraitData, TraitRegisterData, TraitStateData } from "./TraitData";
-import { ObjectSchemaInstance, Schema } from "@amodx/schemas";
+import { TraitData, TraitStateData } from "./TraitData";
+import { ObjectSchemaInstance } from "@amodx/schemas";
 import { ComponentInstance } from "../Components/ComponentInstance";
 import { NodeInstance } from "../Nodes/NodeInstance";
 import { TraintContainer } from "./TraitContainer";
 import { TraitObservers } from "./TraitObservers";
 import { TraitPipelines } from "./TraitPipelines";
 import { TraitPrototype } from "./TraitPrototype";
+import { GraphUpdtable, GraphUpdate } from "../Graphs/GraphUpdate";
 
 export class TraitInstance<
   TraitSchema extends object = {},
   Data extends object = {},
   Logic extends object = {},
   Shared extends object = {}
-> {
-  type: string;
+> implements GraphUpdtable
+{
+  get type() {
+    return this.proto.data.type;
+  }
+  get shared() {
+    return this.proto.data.shared as Shared;
+  }
+  parent:
+    | ComponentInstance<any, any, any, any>
+    | TraitInstance<any, any, any, any>;
+  proto: TraitPrototype<TraitSchema, Data, Logic, Shared>;
+
   schema: ObjectSchemaInstance<TraitSchema>;
   data: Data;
   logic: Logic;
   state: TraitStateData;
-
-  private _shared: Shared;
-  get shared() {
-    return this._shared;
-  }
 
   private _traits?: TraintContainer;
   get traits() {
@@ -56,10 +63,6 @@ export class TraitInstance<
   get hasPipelines() {
     return Boolean(this._pipelines);
   }
-  public parent:
-    | ComponentInstance<any, any, any, any>
-    | TraitInstance<any, any, any, any>;
-  public traitProotype: TraitPrototype<TraitSchema, Data, Logic, Shared>;
 
   getNode(): NodeInstance {
     let node: any = this.parent;
@@ -74,35 +77,56 @@ export class TraitInstance<
     }
     return node;
   }
-
-  async init() {
-    if (!this.traitProotype.data.init) return;
-    await this.traitProotype.data.init(this);
+  getComponent(): ComponentInstance<{}, any, any, any> {
+    let node: any = this.parent;
+    while (!(node instanceof NodeInstance)) {
+      if ((node as any) instanceof ComponentInstance) {
+        break;
+      }
+      if ((node as any) instanceof TraitInstance) {
+        node = (node as any).parent;
+      }
+    }
+    return node;
+  }
+  init() {
+    if (this.proto.data.update) {
+      GraphUpdate.addITem(this.getNode().graph, this);
+    }
+    if (this.proto.data.init) {
+      this.proto.data.init(this);
+    }
   }
 
   private _disposed = false;
   isDisposed() {
     return this._disposed;
   }
-  async dispose() {
+  dispose() {
+    if (this.proto.data.update) {
+      GraphUpdate.removeItem(this.getNode().graph, this);
+    }
     this.hasPipelines &&
       this.pipelines.isDisposedSet() &&
       this.pipelines.disposed.pipe(this);
     this.hasObservers &&
       this.observers.isDisposedSet() &&
       this.observers.disposed.notify();
-    if (this.traitProotype.data.dispose)
-      await this.traitProotype.data.dispose(this);
+    if (this.proto.data.dispose) this.proto.data.dispose(this);
 
     this._disposed = true;
 
-    if (this.hasTraits) await this.traits.dispose();
+    if (this.hasTraits) this.traits.dispose();
 
-    this.traitProotype.destory(this);
+    this.proto.destory(this);
 
     delete this._traits;
     delete this._observers;
     delete this._pipelines;
+  }
+
+  update() {
+    this.proto.data.update && this.proto.data.update(this);
   }
 
   copy(): TraitData {
@@ -113,7 +137,7 @@ export class TraitInstance<
       type: this.type,
       state: this.state,
       traits:
-        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) || [],
+        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) || undefined,
     };
     return (
       (this.hasPipelines &&
@@ -130,7 +154,7 @@ export class TraitInstance<
       type: this.type,
       state: this.state,
       traits:
-        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) || [],
+        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) || undefined,
     };
     return (
       (this.hasPipelines &&

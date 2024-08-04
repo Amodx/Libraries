@@ -3,7 +3,7 @@ import { ObjectPath, ObjectSchemaInstance, QueryPath } from "@amodx/schemas";
 import { SchemaNode } from "@amodx/schemas/Schemas/SchemaNode";
 import { NodeInstance } from "../Nodes/NodeInstance";
 
-import { GraphUpdate } from "../Graphs/GraphUpdate";
+import { GraphUpdate, GraphUpdtable } from "../Graphs/GraphUpdate";
 import { ComponentObservers } from "./ComponentObservers";
 import { ComponentPipelines } from "./ComponentPipelines";
 import { TraintContainer } from "../Traits/TraitContainer";
@@ -14,14 +14,15 @@ export class ComponentInstance<
   Data extends object = {},
   Logic extends object = {},
   Shared extends object = {}
-> {
+> implements GraphUpdtable
+{
   get type() {
-    return this.componentPrototype.data.type;
+    return this.proto.data.type;
   }
   get shared() {
-    return this.componentPrototype.data.shared as Shared;
+    return this.proto.data.shared as Shared;
   }
-  componentPrototype: ComponentPrototype<ComponentSchema, Data, Logic, Shared>;
+  proto: ComponentPrototype<ComponentSchema, Data, Logic, Shared>;
 
   schema: ObjectSchemaInstance<ComponentSchema>;
   data: Data;
@@ -81,11 +82,12 @@ export class ComponentInstance<
       ?.observers.updatedOrLoadedIn.unsubscribe(listener);
   }
 
-  async init() {
-    if (!this.componentPrototype.data.init) return;
-    await this.componentPrototype.data.init(this);
-    if (this.componentPrototype.data.update) {
-      GraphUpdate.addComponentToUpdate(this);
+  init() {
+    if (this.proto.data.update) {
+      GraphUpdate.addITem(this.node.graph, this);
+    }
+    if (this.proto.data.init) {
+      this.proto.data.init(this);
     }
   }
 
@@ -93,9 +95,9 @@ export class ComponentInstance<
   isDisposed() {
     return this._disposed;
   }
-  async dispose() {
-    if (this.componentPrototype.data.update) {
-      GraphUpdate.removeComponentFromUpate(this);
+  dispose() {
+    if (this.proto.data.update) {
+      GraphUpdate.removeItem(this.node.graph, this);
     }
     this.hasPipelines &&
       this.pipelines.isDisposedSet() &&
@@ -103,14 +105,13 @@ export class ComponentInstance<
     this.hasObservers &&
       this.observers.isDisposedSet() &&
       this.observers.disposed.notify();
-    if (this.componentPrototype.data.dispose)
-      await this.componentPrototype.data.dispose(this);
+    if (this.proto.data.dispose) this.proto.data.dispose(this);
 
     this._disposed = true;
 
-    if (this.hasTraits) await this.traits.dispose();
+    if (this.hasTraits) this.traits.dispose();
 
-    this.componentPrototype.destory(this);
+    this.proto.destory(this);
 
     delete this._traits;
     delete this._observers;
@@ -122,6 +123,10 @@ export class ComponentInstance<
     return false;
   }
 
+  update() {
+    this.proto.data.update && this.proto.data.update(this);
+  }
+
   copy(): ComponentData {
     const data: ComponentData = {
       schema: this.schema?.getSchema
@@ -130,7 +135,7 @@ export class ComponentInstance<
       type: this.type,
       state: this.state,
       traits:
-        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) || [],
+        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) || undefined,
     };
     return (
       (this.hasPipelines &&
@@ -147,7 +152,7 @@ export class ComponentInstance<
       type: this.type,
       state: this.state,
       traits:
-        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) || [],
+        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) || undefined,
     };
     return (
       (this.hasPipelines &&

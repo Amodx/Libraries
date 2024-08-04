@@ -12,15 +12,14 @@ export class ContextInstance<
   schema: ObjectSchemaInstance<ContextSchema>;
   constructor(
     public node: NodeInstance,
-    contextPrototypeData: ContextPrototype<ContextSchema, Data>,
+    proto: ContextPrototype<ContextSchema, Data>,
     data: ContextData
   ) {
-    this.schema = contextPrototypeData.getSchema(data.schema);
+    this.schema = proto.getSchema(data.schema);
 
-    this.type = contextPrototypeData.data.type;
+    this.type = proto.data.type;
 
-    contextPrototypeData.data.data &&
-      (this.data = contextPrototypeData.data.data);
+    proto.data.data && (this.data = proto.data.data);
   }
 
   addOnSchemaUpdate(
