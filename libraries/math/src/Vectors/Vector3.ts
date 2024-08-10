@@ -154,10 +154,11 @@ export class Vector3Like {
     ref.z = v1.z - v2.z;
   }
 
-  static SubtractInPlace(v1: Vector3Like, v2: Vector3Like): void {
+  static SubtractInPlace(v1: Vector3Like, v2: Vector3Like): Vector3Like {
     v1.x -= v2.x;
     v1.y -= v2.y;
     v1.z -= v2.z;
+    return v1;
   }
 
   static SubtractArray(v1: Vec3Array, v2: Vec3Array): Vec3Array {
@@ -198,6 +199,7 @@ export class Vector3Like {
     v.x -= scalar;
     v.y -= scalar;
     v.z -= scalar;
+
   }
 
   static SubtractScalarArray(v: Vec3Array, scalar: number): Vec3Array {
@@ -310,10 +312,11 @@ export class Vector3Like {
     ref.z = v1.z / v2.z;
   }
 
-  static DivideInPlace(v1: Vector3Like, v2: Vector3Like): void {
+  static DivideInPlace(v1: Vector3Like, v2: Vector3Like): Vector3Like {
     v1.x /= v2.x;
     v1.y /= v2.y;
     v1.z /= v2.z;
+    return v1;
   }
 
   static DivideArray(v1: Vec3Array, v2: Vec3Array): Vec3Array {

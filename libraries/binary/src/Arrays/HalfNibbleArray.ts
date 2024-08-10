@@ -7,7 +7,7 @@ export class HalfNibbleArray {
   private data: DataView;
 
   constructor(public buffer: ArrayBufferLike) {
-    this.data = new DataView(buffer);
+    this.data = new DataView(ArrayBuffer.isView(buffer) ? buffer.buffer : buffer);
     return new Proxy(this, {
       get: (target, property) => {
         if (typeof property === "string" && !isNaN(Number(property))) {
@@ -29,7 +29,7 @@ export class HalfNibbleArray {
   }
 
   get length() {
-    return this.buffer.byteLength * 2;
+    return this.buffer.byteLength * 4;
   }
 
   get(index: number): number {

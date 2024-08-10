@@ -4,8 +4,9 @@ import { BinaryStructData } from "../Types";
 import { BinaryUtil } from "../../Util/BinaryUtil";
 import { GetIndexData } from "./GetIndexData";
 import { TypedArrayClassMap } from "../../Util/TypedArrayMap";
-import { BinaryNumberTypes } from "Constants/BinaryTypes";
+import { BinaryNumberTypes } from "../../Constants/BinaryTypes";
 import { BinaryArrays } from "../../Util/BinaryArrays";
+import { BitArray } from "../../Arrays/BitArray";
 const vector2Indexes = { x: 0, y: 1 };
 const vector3Indexes = { x: 0, y: 1, z: 2 };
 const vector4Indexes = { x: 0, y: 1, z: 2, w: 3 };
@@ -39,63 +40,120 @@ export function CreateInstance<T extends any>(
       return () => keys;
     },
   });
-  Object.defineProperty(GeneratedClass.prototype, "serialize", {
-    get() {
-      const object: any = {};
 
-      for (const [key, propertyByteIndex] of Object.entries(data.indexMap)) {
-        object[key];
-        const [byteIndex, bitOffSet, bitSize, length, type] = GetIndexData(
-          index,
-          propertyByteIndex
+  const seralize = (parent: any) => {
+    const object: any = {};
+
+    for (const [key, propertyByteIndex] of Object.entries(data.indexMap)) {
+      const [byteIndex, bitOffSet, bitSize, length, type] = GetIndexData(
+        index,
+        propertyByteIndex
+      );
+      if (type == StructPropertyTypes.Boolean) {
+        object[key] = Boolean(parent[key]);
+      }
+      if (type == StructPropertyTypes.TypedNumber) {
+        object[key] = Number(parent[key]);
+      }
+      if (type == StructPropertyTypes.TypedNumberArray) {
+        const array = new TypedArrayClassMap[bitSize as BinaryNumberTypes](
+          length
         );
-        if (type == StructPropertyTypes.Boolean) {
-          object[key] = Boolean(this[key]);
+        for (let i = 0; i < length; i++) {
+          array[i] = parent[key][i];
         }
-        if (type == StructPropertyTypes.TypedNumber) {
-          object[key] = Number(this[key]);
+        object[key] = array;
+      }
+      if (type == StructPropertyTypes.BitArray) {
+        const array = new Uint8Array(Math.ceil(length / 8));
+        const view = new DataView(array.buffer);
+        for (let i = 0; i < length; i++) {
+          BinaryArrays.setBitArrayIndex(view, 0, i, parent[key][i]);
         }
-        if (type == StructPropertyTypes.TypedNumberArray) {
-          const array = new TypedArrayClassMap[bitSize as BinaryNumberTypes](
-            length
-          );
-          for (let i = 0; i < length; i++) {
-            array[i] = this[key][i];
-          }
-          object[key] = array;
-        }
-        if (type == StructPropertyTypes.BitArray) {
-          const array = new Uint8Array(Math.ceil(length / 8));
-          const view = new DataView(array.buffer);
-          for (let i = 0; i < length; i++) {
-            BinaryArrays.setBitArrayIndex(view, 0, i, this[key][i]);
-          }
-          object[key] = array;
-        }
-        if (type == StructPropertyTypes.Vector2) {
-          object[key] = {
-            x: this[key].x,
-            y: this[key].y,
-          };
-        }
-        if (type == StructPropertyTypes.Vector3) {
-          object[key] = {
-            x: this[key].x,
-            y: this[key].y,
-            z: this[key].z,
-          };
-        }
-        if (type == StructPropertyTypes.Vector4) {
-          object[key] = {
-            x: this[key].x,
-            y: this[key].y,
-            z: this[key].z,
-            w: this[key].w,
-          };
+        object[key] = array;
+      }
+      if (type == StructPropertyTypes.Vector2) {
+        object[key] = {
+          x: parent[key].x,
+          y: parent[key].y,
+        };
+      }
+      if (type == StructPropertyTypes.Vector3) {
+        object[key] = {
+          x: parent[key].x,
+          y: parent[key].y,
+          z: parent[key].z,
+        };
+      }
+      if (type == StructPropertyTypes.Vector4) {
+        object[key] = {
+          x: parent[key].x,
+          y: parent[key].y,
+          z: parent[key].z,
+          w: parent[key].w,
+        };
+      }
+    }
+    return object;
+  };
+
+  const deserialize = (parent: any, seralized: any) => {
+    for (const [key, propertyByteIndex] of Object.entries(data.indexMap)) {
+      const [byteIndex, bitOffSet, bitSize, length, type] = GetIndexData(
+        index,
+        propertyByteIndex
+      );
+      if (seralized[key] === undefined) continue;
+      if (type == StructPropertyTypes.Boolean) {
+        parent[key] = seralized[key] ? 1 : 0;
+      }
+      if (type == StructPropertyTypes.TypedNumber) {
+        parent[key] = Number(seralized[key]);
+      }
+      if (type == StructPropertyTypes.TypedNumberArray) {
+        for (let i = 0; i < seralized[key].length; i++) {
+          parent[key][i] = seralized[key][i];
         }
       }
+      if (type == StructPropertyTypes.BitArray) {
+        const bitArray = new BitArray(seralized[key]);
 
-      return () => keys;
+        const t1: number[] = [];
+        const t2: number[] = [];
+
+        for (let i = 0; i < length; i++) {
+          parent[key][i] = bitArray[i];
+          t1[i] = parent[key][i];
+          t2[i] = bitArray[i];
+        }
+
+      }
+      if (type == StructPropertyTypes.Vector2) {
+        parent[key].x = seralized[key].x;
+        parent[key].y = seralized[key].y;
+      }
+      if (type == StructPropertyTypes.Vector3) {
+        parent[key].x = seralized[key].x;
+        parent[key].y = seralized[key].y;
+        parent[key].z = seralized[key].z;
+      }
+      if (type == StructPropertyTypes.Vector4) {
+        parent[key].x = seralized[key].x;
+        parent[key].y = seralized[key].y;
+        parent[key].z = seralized[key].z;
+        parent[key].w = seralized[key].w;
+      }
+    }
+  };
+
+  Object.defineProperty(GeneratedClass.prototype, "serialize", {
+    get() {
+      return () => seralize(this);
+    },
+  });
+  Object.defineProperty(GeneratedClass.prototype, "deserialize", {
+    get() {
+      return (data: T) => deserialize(this, data);
     },
   });
   Object.defineProperty(GeneratedClass.prototype, "setDefaults", {
@@ -179,14 +237,14 @@ export function CreateInstance<T extends any>(
             const proxy = new Proxy(new Array(length), {
               get(target, index) {
                 return BinaryArrays.getBitArrayIndex(
-                  self.data,
+                  self.structData,
                   byteIndex + self.structByteOffSet,
                   +(index as string)
                 );
               },
               set(target, index, value) {
                 BinaryArrays.setBitArrayIndex(
-                  self.data,
+                  self.structData,
                   byteIndex + self.structByteOffSet,
                   +(index as string),
                   value

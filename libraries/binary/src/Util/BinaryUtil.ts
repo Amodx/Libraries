@@ -27,20 +27,18 @@ export class BinaryUtil {
     return MappedByteCounts[type];
   }
 
-  static getBitValue(data: number, index: number, bitSize: number) {
-    index *= bitSize;
+  static getBitValue(data: number, bitIndex: number, bitSize: number) {
     const mask = 2 ** bitSize - 1;
-    return ((mask << index) & data) >>> index;
+    return ((mask << bitIndex) & data) >>> bitIndex;
   }
   static setBitValue(
     data: number,
-    index: number,
+    bitIndex: number,
     value: number,
     bitSize: number
   ) {
-    index *= bitSize;
     const mask = 2 ** bitSize - 1;
-    return (data & ~(mask << index)) | ((value & mask) << index);
+    return (data & ~(mask << bitIndex)) | ((value & mask) << bitIndex);
   }
 
 }

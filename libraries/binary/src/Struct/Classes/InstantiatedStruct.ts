@@ -22,6 +22,9 @@ export class InstantiatedStruct<Properties> {
   serialize(): Properties {
     throw new Error("Not implemented");
   }
+  deserialize(data:Properties) {
+    throw new Error("Not implemented");
+  }
   createClone(): InstantiatedStruct<Properties> & Properties {
     throw new Error("Not implemented");
   }
