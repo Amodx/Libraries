@@ -5,6 +5,7 @@ import { InstantiatedStruct } from "./InstantiatedStruct.js";
 import { GetIndexData } from "../../Struct/Functions/GetIndexData.js";
 import { CreateInstance } from "../Functions/CreateInstance.js";
 import { BinaryStructData } from "../Types/BinaryStructData.types.js";
+import { BinaryArrays } from "../../Util/BinaryArrays.js";
 
 export class BinraryStructBase {
   byteOffSet = 0;
@@ -45,14 +46,14 @@ export class BinraryStructBase {
       throw new Error(`Tag with id: ${id} does not exist.`);
     }
     const indexData = GetIndexData(this.index, byteIndex);
-    if (indexData[3] == StructPropertyTypes.Boolean) {
+    if (indexData[4] == StructPropertyTypes.Boolean) {
       return BinaryUtil.getBitValue(
         this.data.getUint8(indexData[0] + this.byteOffSet),
         indexData[1],
         indexData[2]
       );
     }
-    if (indexData[3] == StructPropertyTypes.TypedNumber) {
+    if (indexData[4] == StructPropertyTypes.TypedNumber) {
       return BinaryUtil.getTypedNumber(
         this.data,
         indexData[0] + this.byteOffSet,
@@ -70,7 +71,7 @@ export class BinraryStructBase {
     }
     const indexData = GetIndexData(this.index, byteIndex);
 
-    if (indexData[3] == StructPropertyTypes.Boolean) {
+    if (indexData[4] == StructPropertyTypes.Boolean) {
       this.data.setUint8(
         indexData[0] + this.byteOffSet,
         BinaryUtil.setBitValue(
@@ -82,7 +83,7 @@ export class BinraryStructBase {
       );
       return true;
     }
-    if (indexData[3] == StructPropertyTypes.TypedNumber) {
+    if (indexData[4] == StructPropertyTypes.TypedNumber) {
       BinaryUtil.setTypedNumber(
         this.data,
         indexData[0] + this.byteOffSet,
@@ -100,7 +101,7 @@ export class BinraryStructBase {
       throw new Error(`Tag with id: ${id} does not exist.`);
     }
     const indexData = GetIndexData(this.index, byteIndex);
-    if (indexData[3] == StructPropertyTypes.TypedNumberArray) {
+    if (indexData[4] == StructPropertyTypes.TypedNumberArray) {
       return BinaryUtil.getTypedNumber(
         this.data,
         indexData[0] +
@@ -109,8 +110,8 @@ export class BinraryStructBase {
         indexData[2]
       );
     }
-    if (indexData[3] == StructPropertyTypes.BitArray) {
-      return BinaryUtil.getBitArrayIndex(
+    if (indexData[4] == StructPropertyTypes.BitArray) {
+      return BinaryArrays.getBitArrayIndex(
         this.data,
         indexData[0] + this.byteOffSet,
         index
@@ -131,7 +132,7 @@ export class BinraryStructBase {
       throw new Error(`Tag with id: ${id} does not exist.`);
     }
     const indexData = GetIndexData(this.index, byteIndex);
-    if (indexData[3] == StructPropertyTypes.TypedNumberArray) {
+    if (indexData[4] == StructPropertyTypes.TypedNumberArray) {
       return (
         indexData[0] +
         this.byteOffSet +
@@ -147,7 +148,7 @@ export class BinraryStructBase {
       throw new Error(`Tag with id: ${id} does not exist.`);
     }
     const indexData = GetIndexData(this.index, byteIndex);
-    if (indexData[3] == StructPropertyTypes.TypedNumberArray) {
+    if (indexData[4] == StructPropertyTypes.TypedNumberArray) {
       return BinaryUtil.setTypedNumber(
         this.data,
         indexData[0] +
@@ -157,8 +158,8 @@ export class BinraryStructBase {
         value
       );
     }
-    if (indexData[3] == StructPropertyTypes.BitArray) {
-      return BinaryUtil.setBitArrayIndex(
+    if (indexData[4] == StructPropertyTypes.BitArray) {
+      return BinaryArrays.setBitArrayIndex(
         this.data,
         indexData[0] + this.byteOffSet,
         index,

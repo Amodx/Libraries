@@ -43,29 +43,4 @@ export class BinaryUtil {
     return (data & ~(mask << index)) | ((value & mask) << index);
   }
 
-  static getBitArrayIndex(
-    data: DataView,
-    byteIndex: number,
-    arrayIndex: number
-  ) {
-    const arrayByteIndex = (arrayIndex / 8) >> 0;
-    const arrayBitIndex = arrayIndex - arrayByteIndex * 8;
-    const arrayByte = data.getUint8(arrayByteIndex + byteIndex);
-    return this.getBitValue(arrayByte, arrayBitIndex, 1);
-  }
-
-  static setBitArrayIndex(
-    data: DataView,
-    byteIndex: number,
-    arrayIndex: number,
-    value: number
-  ) {
-    const arrayByteIndex = (arrayIndex / 8) >> 0;
-    const arrayBitIndex = arrayIndex - arrayByteIndex * 8;
-    const arrayByte = data.getUint8(arrayByteIndex + byteIndex);
-    data.setUint8(
-      arrayByteIndex + byteIndex,
-      this.setBitValue(arrayByte, arrayBitIndex, value, 1)
-    );
-  }
 }

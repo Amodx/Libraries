@@ -12,11 +12,11 @@ import { QueryPrototype } from "./Queries/QueryPrototype";
 import { ComponentData } from "./Components/ComponentData";
 import { TraitData } from "./Traits/TraitData";
 import { ContextData } from "./Contexts/ContextData";
-import { TagData } from "./Tags/TagData";
+import { TagData, TagRegisterData } from "./Tags/TagData";
 import { registerContext } from "./Register/registerContext";
 import { registerComponent } from "./Register/registerComponent";
 import { registerTrait } from "./Register/registerTrait";
-import { registerTag } from "./Register/registerTag";
+import { RegisteredTag, registerTag } from "./Register/registerTag";
 import { registerSystem } from "./Register/registerSystem";
 
 export class NCS {
@@ -35,12 +35,14 @@ export class NCS {
   static createNode(
     name?: string | null,
     state?: NodeStateData | null,
-    components: ComponentData[] = [],
+    tags?: TagData[],
+    components?: ComponentData[],
     children: NodeData[] = []
   ): NodeData {
     return NCS.Pipelines.OnNodeDataCreate.pipe({
       id: NodeId.Create().idString,
       components,
+      tags,
       children,
       name: name ? name : "",
       state: state ? state : {},
@@ -58,9 +60,18 @@ export class NCS {
 }
 
 export function Node(
-  data: { name?: string; state?: NodeStateData },
+  data: { name?: string; state?: NodeStateData; tags?: TagData[] },
   components?: ComponentData[],
   ...children: NodeData[]
 ): NodeData {
-  return NCS.createNode(data.name, data.state, components, children);
+  return NCS.createNode(data.name, data.state, data.tags, components, children);
+}
+
+export function Tag(id: string, ...children: RegisteredTag[]) {
+  const tag = NCS.registerTag({ id });
+
+  children.forEach((_) => {
+    tag.tag.addChild(_.tag);
+  });
+  return tag;
 }

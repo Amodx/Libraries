@@ -119,8 +119,7 @@ export class ComponentInstance<
   }
 
   getDependencies() {
-    //  return this.node.graph.dependencies;
-    return false;
+    return this.node.graph.dependencies;
   }
 
   update() {
@@ -135,7 +134,8 @@ export class ComponentInstance<
       type: this.type,
       state: this.state,
       traits:
-        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) || undefined,
+        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) ||
+        undefined,
     };
     return (
       (this.hasPipelines &&
@@ -152,7 +152,8 @@ export class ComponentInstance<
       type: this.type,
       state: this.state,
       traits:
-        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) || undefined,
+        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) ||
+        undefined,
     };
     return (
       (this.hasPipelines &&

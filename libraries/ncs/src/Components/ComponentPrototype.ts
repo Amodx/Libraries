@@ -80,6 +80,8 @@ export class ComponentPrototype<
           ? this.data.data(instance)
           : structuredClone(this.data.data)
         : ({} as Data);
+    } else {
+      instance.data = Object.create(null);
     }
 
     if (data.state) {

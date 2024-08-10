@@ -5,7 +5,7 @@ export class Tag {
     return this.tagData.id;
   }
 
-  children: Tag[];
+  children: Tag[] = [];
 
   constructor(public parent: Tag | null, private tagData: TagRegisterData) {}
 

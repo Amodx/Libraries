@@ -9,7 +9,7 @@ import { TagPrototype } from "../Tags/TagPrototype";
 import { Graph } from "../Graphs/Graph";
 import { TagInstanceMap } from "../Tags/TagInstanceMap";
 
-type RegisteredTag = (TagRegisterData & {
+export type RegisteredTag = (TagRegisterData & {
   tag: Tag;
   prototype: TagPrototype;
   set: (parent: NodeInstance) => TagInstance;
@@ -28,7 +28,7 @@ export function registerTag(data: TagRegisterData): RegisteredTag {
   const tag = new Tag(null, data);
   const prototype = new TagPrototype(data, tag);
   NCSRegister.tags.register(data.id, data.namespace || "main", prototype);
-  const map = TagInstanceMap.getMap(tag.id);
+  const map = TagInstanceMap.registerTag(tag.id);
   const createTag = (): TagData => {
     return NCS.Pipelines.OnTagDataCreate.pipe({
       id: data.id,

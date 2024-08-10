@@ -15,7 +15,7 @@ import { ControlAction } from "./ControlAction";
 
 export class Control {
   constructor(public user: User, public data: ControlAction) {
-    this.registerEvents(data.input)
+    this.registerEvents(data.input);
   }
   _events = new Map<string, ControlEvent>();
 
@@ -38,23 +38,23 @@ export class Control {
       keyBoardControl.mode == "down" &&
         this._events.set(
           key,
-          new (ControlEventManager.getEvent(
-            ControlEventTypes.KeyBoardDown
-          )!)(this)
+          new (ControlEventManager.getEvent(ControlEventTypes.KeyBoardDown)!)(
+            this
+          )
         );
       keyBoardControl.mode == "up" &&
         this._events.set(
           key,
-          new (ControlEventManager.getEvent(
-            ControlEventTypes.KeyBoardUp
-          )!)(this)
+          new (ControlEventManager.getEvent(ControlEventTypes.KeyBoardUp)!)(
+            this
+          )
         );
       keyBoardControl.mode == "hold" &&
         this._events.set(
           key,
-          new (ControlEventManager.getEvent(
-            ControlEventTypes.KeyBoardHold
-          )!)(this)
+          new (ControlEventManager.getEvent(ControlEventTypes.KeyBoardHold)!)(
+            this
+          )
         );
     }
     if (control[ControlInputTypes.Mouse]) {
@@ -66,23 +66,17 @@ export class Control {
       mouseControl.mode == "down" &&
         this._events.set(
           key,
-          new (ControlEventManager.getEvent(
-            ControlEventTypes.MouseDown
-          )!)(this)
+          new (ControlEventManager.getEvent(ControlEventTypes.MouseDown)!)(this)
         );
       mouseControl.mode == "up" &&
         this._events.set(
           key,
-          new (ControlEventManager.getEvent(
-            ControlEventTypes.MouseHold
-          )!)(this)
+          new (ControlEventManager.getEvent(ControlEventTypes.MouseHold)!)(this)
         );
       mouseControl.mode == "hold" &&
         this._events.set(
           key,
-          new (ControlEventManager.getEvent(
-            ControlEventTypes.MouseHold
-          )!)(this)
+          new (ControlEventManager.getEvent(ControlEventTypes.MouseHold)!)(this)
         );
     }
     if (control[ControlInputTypes.GamePadButton]) {
@@ -115,35 +109,27 @@ export class Control {
     }
     if (control[ControlInputTypes.GamePadAxes]) {
       const gamePadButtonControl = control[ControlInputTypes.GamePadAxes];
-      const key = ControlsMap.getGamePadAxeusId(
-        gamePadButtonControl.stick
-      );
+      const key = ControlsMap.getGamePadAxeusId(gamePadButtonControl.stick);
 
       this._events.set(
         key,
-        new (ControlEventManager.getEvent(
-          ControlEventTypes.GamePadAxesMove
-        )!)(this)
+        new (ControlEventManager.getEvent(ControlEventTypes.GamePadAxesMove)!)(
+          this
+        )
       );
     }
     if (control[ControlInputTypes.Scroll]) {
       const scrollControl = control[ControlInputTypes.Scroll];
-      const key = ControlsMap.getGamePadAxeusId(
-        scrollControl.mode
-      );
+      const key = ControlsMap.getScrollId(scrollControl.mode);
       scrollControl.mode == "up" &&
         this._events.set(
           key,
-          new (ControlEventManager.getEvent(ControlEventTypes.WheelUp)!)(
-            this
-          )
+          new (ControlEventManager.getEvent(ControlEventTypes.WheelUp)!)(this)
         );
       scrollControl.mode == "down" &&
         this._events.set(
           key,
-          new (ControlEventManager.getEvent(
-            ControlEventTypes.WheelDown
-          )!)(this)
+          new (ControlEventManager.getEvent(ControlEventTypes.WheelDown)!)(this)
         );
     }
   }

@@ -10,7 +10,7 @@ export class TagInstanceMap {
   }
   static getMap(type: string) {
     const map = this.types.get(type);
-    if (!map) throw new Error(`Map for component ${type} does not exist`);
+    if (!map) throw new Error(`Map for tag ${type} does not exist`);
     return map;
   }
 }

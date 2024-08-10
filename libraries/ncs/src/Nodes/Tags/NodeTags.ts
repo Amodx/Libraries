@@ -39,9 +39,9 @@ export class NodeTags {
     return newTag;
   }
 
-  addTags(...components: TagData[]) {
-    for (const comp of components) {
-      this.add(comp);
+  addTags(...tags: TagData[]) {
+    for (const tag of tags) {
+      this.add(tag);
     }
     this.hasObservers &&
       this.observers.isTagsUpdatedSet() &&

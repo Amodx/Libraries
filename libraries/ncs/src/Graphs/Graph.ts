@@ -27,7 +27,9 @@ const create = (graph: Graph, data: NodeData, parent: NodeInstance) => {
   if (data.components?.length) {
     newNode.components.addComponents(...data.components);
   }
-
+  if (data.tags?.length) {
+    newNode.tags.addTags(...data.tags);
+  }
   parent.hasObservers &&
     parent.observers.isChildAddedSet() &&
     parent.observers.childAdded.notify(newNode);

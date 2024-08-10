@@ -19,10 +19,16 @@ export class InstantiatedStruct<Properties> {
     this.structByteOffSet = index * this.structSize;
   }
 
-  clone(): InstantiatedStruct<Properties> & Properties {
+  serialize(): Properties {
+    throw new Error("Not implemented");
+  }
+  createClone(): InstantiatedStruct<Properties> & Properties {
     throw new Error("Not implemented");
   }
   setDefaults(): void {
+    throw new Error("Not implemented");
+  }
+  getKeys(): string[] {
     throw new Error("Not implemented");
   }
 }

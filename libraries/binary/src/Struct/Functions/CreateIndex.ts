@@ -15,26 +15,8 @@ import { BinaryUtil } from "../../Util/BinaryUtil.js";
 import { BinaryNumberTypes, ByteCounts } from "../../Constants/BinaryTypes";
 import { StructPropertyTypes } from "../Constants/StructPropertyTypes";
 import { BinaryStructData } from "../Types";
-const PropertyIndexSize = ByteCounts.Uint32 + ByteCounts.Uint8 * 3;
-
-const setIndexData = (
-  data: DataView,
-  indexBufferIndex: number,
-  byteIndex: number,
-  bitOffSet: number,
-  bitSize: number,
-  type: number
-) => {
-  data.setUint32(indexBufferIndex, byteIndex);
-  indexBufferIndex += ByteCounts.Uint32;
-  data.setUint8(indexBufferIndex, bitOffSet);
-  indexBufferIndex += ByteCounts.Uint8;
-  data.setUint8(indexBufferIndex, bitSize);
-  indexBufferIndex += ByteCounts.Uint8;
-  data.setUint8(indexBufferIndex, type);
-  indexBufferIndex += ByteCounts.Uint8;
-  return indexBufferIndex;
-};
+import { SetIndexData } from "./GetIndexData";
+const PropertyIndexSize = ByteCounts.Uint32 * 2 + ByteCounts.Uint8 * 3;
 
 export function CreateIndex(
   schemaNodes: BinaryPropertyNodes[],
@@ -47,7 +29,7 @@ export function CreateIndex(
   }
   const propertyDefaults: Record<string, any> = {};
   /*
-[Process Propertys]
+[Process properties]
 */
   const headers: Map<BinaryNumberTypes, BinaryHeaderProperty[]> = new Map();
   const booleans: BinaryBooleanProperty[] = [];
@@ -68,12 +50,12 @@ export function CreateIndex(
   schema.forEach((property) => {
     if (property.default) propertyDefaults[property.id] = property.default;
     if (property.type == "header") {
-      let Propertys = headers.get(property.numberType);
-      if (!Propertys) {
-        Propertys = [];
-        headers.set(property.numberType, Propertys);
+      let properties = headers.get(property.numberType);
+      if (!properties) {
+        properties = [];
+        headers.set(property.numberType, properties);
       }
-      Propertys.push(property);
+      properties.push(property);
     }
     if (property.type == "boolean") {
       booleans.push(property);
@@ -86,20 +68,20 @@ export function CreateIndex(
       numbers[bitSize].push(property);
     }
     if (property.type == "typed-number") {
-      let Propertys = typedNumbers.get(property.numberType);
-      if (!Propertys) {
-        Propertys = [];
-        typedNumbers.set(property.numberType, Propertys);
+      let properties = typedNumbers.get(property.numberType);
+      if (!properties) {
+        properties = [];
+        typedNumbers.set(property.numberType, properties);
       }
-      Propertys.push(property);
+      properties.push(property);
     }
     if (property.type == "typed-number-array") {
-      let arrayPropertys = typedNumbersArrays.get(property.numberType);
-      if (!arrayPropertys) {
-        arrayPropertys = [];
-        typedNumbersArrays.set(property.numberType, arrayPropertys);
+      let arrayproperties = typedNumbersArrays.get(property.numberType);
+      if (!arrayproperties) {
+        arrayproperties = [];
+        typedNumbersArrays.set(property.numberType, arrayproperties);
       }
-      arrayPropertys.push(property);
+      arrayproperties.push(property);
     }
     if (property.type == "vector-2") {
       let vectorProperties = vector2s.get(property.numberType);
@@ -149,17 +131,18 @@ export function CreateIndex(
   /*
 [Headers]
 */
-  headers.forEach((Propertys, type) => {
+  headers.forEach((structProperties, type) => {
     const byteSise = BinaryUtil.getTypedSize(type);
-    for (let i = 0; i < Propertys.length; i++) {
-      const Property = Propertys[i];
-      indexMap[Property.id] = indexBufferIndex;
-      indexBufferIndex = setIndexData(
+    for (let i = 0; i < structProperties.length; i++) {
+      const headerProperties = structProperties[i];
+      indexMap[headerProperties.id] = indexBufferIndex;
+      indexBufferIndex = SetIndexData(
         index,
         indexBufferIndex,
         structSize,
         0,
-        Property.numberType,
+        headerProperties.numberType,
+        0,
         StructPropertyTypes.TypedNumber
       );
       structSize += byteSise;
@@ -171,14 +154,15 @@ export function CreateIndex(
 */
   bitSize = 1;
   for (let i = 0; i < booleans.length; i++) {
-    const bool = booleans[i];
-    indexMap[bool.id] = indexBufferIndex;
-    indexBufferIndex = setIndexData(
+    const booleanProperty = booleans[i];
+    indexMap[booleanProperty.id] = indexBufferIndex;
+    indexBufferIndex = SetIndexData(
       index,
       indexBufferIndex,
       structSize,
       bitIndex,
       bitSize,
+      0,
       StructPropertyTypes.Boolean
     );
     bitIndex++;
@@ -193,17 +177,18 @@ export function CreateIndex(
 */
   bitIndex = 0;
   structSize++;
-  typedNumbers.forEach((Propertys, type) => {
+  typedNumbers.forEach((properties, type) => {
     const byteSise = BinaryUtil.getTypedSize(type);
-    for (let i = 0; i < Propertys.length; i++) {
-      const Property = Propertys[i];
-      indexMap[Property.id] = indexBufferIndex;
-      indexBufferIndex = setIndexData(
+    for (let i = 0; i < properties.length; i++) {
+      const typedNumberProperty = properties[i];
+      indexMap[typedNumberProperty.id] = indexBufferIndex;
+      indexBufferIndex = SetIndexData(
         index,
         indexBufferIndex,
         structSize,
         0,
-        Property.numberType,
+        typedNumberProperty.numberType,
+        0,
         StructPropertyTypes.TypedNumber
       );
       structSize += byteSise;
@@ -213,20 +198,21 @@ export function CreateIndex(
 [Typed Numbers Arrays]
 */
   structSize++;
-  typedNumbersArrays.forEach((Propertys, type) => {
+  typedNumbersArrays.forEach((properties, type) => {
     const byteSise = BinaryUtil.getTypedSize(type);
-    for (let i = 0; i < Propertys.length; i++) {
-      const Property = Propertys[i];
-      indexMap[Property.id] = indexBufferIndex;
-      indexBufferIndex = setIndexData(
+    for (let i = 0; i < properties.length; i++) {
+      const typedNumberArrayProperty = properties[i];
+      indexMap[typedNumberArrayProperty.id] = indexBufferIndex;
+      indexBufferIndex = SetIndexData(
         index,
         indexBufferIndex,
         structSize,
         0,
-        Property.numberType,
+        typedNumberArrayProperty.numberType,
+        typedNumberArrayProperty.length,
         StructPropertyTypes.TypedNumberArray
       );
-      structSize += byteSise * Property.length;
+      structSize += byteSise * typedNumberArrayProperty.length;
     }
   });
 
@@ -234,17 +220,18 @@ export function CreateIndex(
 [vector 2s]
 */
   structSize++;
-  vector2s.forEach((Propertys, type) => {
+  vector2s.forEach((properties, type) => {
     const byteSise = BinaryUtil.getTypedSize(type);
-    for (let i = 0; i < Propertys.length; i++) {
-      const Property = Propertys[i];
-      indexMap[Property.id] = indexBufferIndex;
-      indexBufferIndex = setIndexData(
+    for (let i = 0; i < properties.length; i++) {
+      const vector2Propeerty = properties[i];
+      indexMap[vector2Propeerty.id] = indexBufferIndex;
+      indexBufferIndex = SetIndexData(
         index,
         indexBufferIndex,
         structSize,
         0,
-        Property.numberType,
+        vector2Propeerty.numberType,
+        2,
         StructPropertyTypes.Vector2
       );
       structSize += byteSise * 2;
@@ -255,17 +242,18 @@ export function CreateIndex(
 [vector 3s]
 */
   structSize++;
-  vector3s.forEach((Propertys, type) => {
+  vector3s.forEach((properties, type) => {
     const byteSise = BinaryUtil.getTypedSize(type);
-    for (let i = 0; i < Propertys.length; i++) {
-      const Property = Propertys[i];
+    for (let i = 0; i < properties.length; i++) {
+      const Property = properties[i];
       indexMap[Property.id] = indexBufferIndex;
-      indexBufferIndex = setIndexData(
+      indexBufferIndex = SetIndexData(
         index,
         indexBufferIndex,
         structSize,
         0,
         Property.numberType,
+        3,
         StructPropertyTypes.Vector3
       );
       structSize += byteSise * 3;
@@ -276,17 +264,18 @@ export function CreateIndex(
 [vector 4s]
 */
   structSize++;
-  vector4s.forEach((Propertys, type) => {
+  vector4s.forEach((properties, type) => {
     const byteSise = BinaryUtil.getTypedSize(type);
-    for (let i = 0; i < Propertys.length; i++) {
-      const Property = Propertys[i];
+    for (let i = 0; i < properties.length; i++) {
+      const Property = properties[i];
       indexMap[Property.id] = indexBufferIndex;
-      indexBufferIndex = setIndexData(
+      indexBufferIndex = SetIndexData(
         index,
         indexBufferIndex,
         structSize,
         0,
         Property.numberType,
+        4,
         StructPropertyTypes.Vector4
       );
       structSize += byteSise * 4;
@@ -296,15 +285,16 @@ export function CreateIndex(
 [bit arrays]
 */
   structSize++;
-  bitArrays.forEach((Property) => {
-    const byteSise = Math.ceil(Property.length / 8) + 1;
-    indexMap[Property.id] = indexBufferIndex;
-    indexBufferIndex = setIndexData(
+  bitArrays.forEach((properties) => {
+    const byteSise = Math.ceil(properties.length / 8) + 1;
+    indexMap[properties.id] = indexBufferIndex;
+    indexBufferIndex = SetIndexData(
       index,
       indexBufferIndex,
       structSize,
       0,
       byteSise,
+      properties.length,
       StructPropertyTypes.BitArray
     );
     structSize += byteSise;

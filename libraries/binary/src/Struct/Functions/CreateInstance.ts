@@ -3,6 +3,9 @@ import { StructPropertyTypes } from "../Constants/StructPropertyTypes";
 import { BinaryStructData } from "../Types";
 import { BinaryUtil } from "../../Util/BinaryUtil";
 import { GetIndexData } from "./GetIndexData";
+import { TypedArrayClassMap } from "../../Util/TypedArrayMap";
+import { BinaryNumberTypes } from "Constants/BinaryTypes";
+import { BinaryArrays } from "../../Util/BinaryArrays";
 const vector2Indexes = { x: 0, y: 1 };
 const vector3Indexes = { x: 0, y: 1, z: 2 };
 const vector4Indexes = { x: 0, y: 1, z: 2, w: 3 };
@@ -17,14 +20,11 @@ export function CreateInstance<T extends any>(
       this.structArrayIndexes = data.structArrayIndexes;
     }
 
-    _bitArrays: Map<string, number[]>;
-    _typedArrays: Map<string, number[]>;
-    _vector2s: Map<string, { x: number; y: number }>;
-    _vector3s: Map<string, { x: number; y: number; z: number }>;
-    _vector4s: Map<string, { x: number; y: number; z: number; w: number }>;
+    _props = new Map<string, any>();
   };
 
-  Object.defineProperty(GeneratedClass.prototype, "clone", {
+  const keys: string[] = [];
+  Object.defineProperty(GeneratedClass.prototype, "createClone", {
     get() {
       return () => {
         const clone = new GeneratedClass();
@@ -34,7 +34,70 @@ export function CreateInstance<T extends any>(
       };
     },
   });
+  Object.defineProperty(GeneratedClass.prototype, "getKeys", {
+    get() {
+      return () => keys;
+    },
+  });
+  Object.defineProperty(GeneratedClass.prototype, "serialize", {
+    get() {
+      const object: any = {};
 
+      for (const [key, propertyByteIndex] of Object.entries(data.indexMap)) {
+        object[key];
+        const [byteIndex, bitOffSet, bitSize, length, type] = GetIndexData(
+          index,
+          propertyByteIndex
+        );
+        if (type == StructPropertyTypes.Boolean) {
+          object[key] = Boolean(this[key]);
+        }
+        if (type == StructPropertyTypes.TypedNumber) {
+          object[key] = Number(this[key]);
+        }
+        if (type == StructPropertyTypes.TypedNumberArray) {
+          const array = new TypedArrayClassMap[bitSize as BinaryNumberTypes](
+            length
+          );
+          for (let i = 0; i < length; i++) {
+            array[i] = this[key][i];
+          }
+          object[key] = array;
+        }
+        if (type == StructPropertyTypes.BitArray) {
+          const array = new Uint8Array(Math.ceil(length / 8));
+          const view = new DataView(array.buffer);
+          for (let i = 0; i < length; i++) {
+            BinaryArrays.setBitArrayIndex(view, 0, i, this[key][i]);
+          }
+          object[key] = array;
+        }
+        if (type == StructPropertyTypes.Vector2) {
+          object[key] = {
+            x: this[key].x,
+            y: this[key].y,
+          };
+        }
+        if (type == StructPropertyTypes.Vector3) {
+          object[key] = {
+            x: this[key].x,
+            y: this[key].y,
+            z: this[key].z,
+          };
+        }
+        if (type == StructPropertyTypes.Vector4) {
+          object[key] = {
+            x: this[key].x,
+            y: this[key].y,
+            z: this[key].z,
+            w: this[key].w,
+          };
+        }
+      }
+
+      return () => keys;
+    },
+  });
   Object.defineProperty(GeneratedClass.prototype, "setDefaults", {
     get() {
       return () => {
@@ -61,7 +124,8 @@ export function CreateInstance<T extends any>(
   });
 
   for (const [key, propertyByteIndex] of Object.entries(data.indexMap)) {
-    const [byteIndex, bitOffSet, bitSize, type] = GetIndexData(
+    keys.push(key);
+    const [byteIndex, bitOffSet, bitSize, length, type] = GetIndexData(
       index,
       propertyByteIndex
     );
@@ -111,17 +175,17 @@ export function CreateInstance<T extends any>(
       Object.defineProperty(GeneratedClass.prototype, key, {
         get() {
           const self = this as any;
-          if (!self._bitArrays.has(key)) {
-            const proxy = new Proxy([], {
+          if (!self._props.has(key)) {
+            const proxy = new Proxy(new Array(length), {
               get(target, index) {
-                return BinaryUtil.getBitArrayIndex(
+                return BinaryArrays.getBitArrayIndex(
                   self.data,
                   byteIndex + self.structByteOffSet,
                   +(index as string)
                 );
               },
               set(target, index, value) {
-                BinaryUtil.setBitArrayIndex(
+                BinaryArrays.setBitArrayIndex(
                   self.data,
                   byteIndex + self.structByteOffSet,
                   +(index as string),
@@ -130,10 +194,10 @@ export function CreateInstance<T extends any>(
                 return true;
               },
             });
-            self._bitArrays.set(key, proxy);
+            self._props.set(key, proxy);
           }
 
-          return self._bitArrays.get(key)!;
+          return self._props.get(key)!;
         },
       });
     }
@@ -142,11 +206,11 @@ export function CreateInstance<T extends any>(
 
       Object.defineProperty(GeneratedClass.prototype, key, {
         get() {
-          if (!this._typedArrays) this._typedArrays = new Map();
+          if (!this._props) this._props = new Map();
           const self = this as InstantiatedStruct<T>;
 
-          if (!(self as any)._typedArrays.has(key)) {
-            const proxy = new Proxy([], {
+          if (!(self as any)._props.has(key)) {
+            const proxy = new Proxy(new Array(length), {
               get(target, index) {
                 return BinaryUtil.getTypedNumber(
                   self.structData,
@@ -168,10 +232,10 @@ export function CreateInstance<T extends any>(
                 return true;
               },
             });
-            (self as any)._typedArrays.set(key, proxy);
+            (self as any)._props.set(key, proxy);
           }
 
-          return (self as any)._typedArrays.get(key);
+          return (self as any)._props.get(key);
         },
       });
     }
@@ -180,9 +244,9 @@ export function CreateInstance<T extends any>(
 
       Object.defineProperty(GeneratedClass.prototype, key, {
         get() {
-          if (!this._vector2s) this._vector2s = new Map();
+          if (!this._props) this._props = new Map();
           const self = this as InstantiatedStruct<T>;
-          if (!(self as any)._vector2s.has(key)) {
+          if (!(self as any)._props.has(key)) {
             const proxy = new Proxy(
               {},
               {
@@ -210,10 +274,10 @@ export function CreateInstance<T extends any>(
                 },
               }
             );
-            (self as any)._vector2s.set(key, proxy);
+            (self as any)._props.set(key, proxy);
           }
 
-          return (self as any)._vector2s.get(key);
+          return (self as any)._props.get(key);
         },
       });
     }
@@ -222,9 +286,9 @@ export function CreateInstance<T extends any>(
 
       Object.defineProperty(GeneratedClass.prototype, key, {
         get() {
-          if (!this._vector3s) this._vector3s = new Map();
+          if (!this._props) this._props = new Map();
           const self = this as InstantiatedStruct<T>;
-          if (!(self as any)._vector3s.has(key)) {
+          if (!(self as any)._props.has(key)) {
             const proxy = new Proxy(
               {},
               {
@@ -252,10 +316,10 @@ export function CreateInstance<T extends any>(
                 },
               }
             );
-            (self as any)._vector3s.set(key, proxy);
+            (self as any)._props.set(key, proxy);
           }
 
-          return (self as any)._vector3s.get(key);
+          return (self as any)._props.get(key);
         },
       });
     }
@@ -264,9 +328,9 @@ export function CreateInstance<T extends any>(
 
       Object.defineProperty(GeneratedClass.prototype, key, {
         get() {
-          if (!this._vector4s) this._vector4s = new Map();
+          if (!this._props) this._props = new Map();
           const self = this as InstantiatedStruct<T>;
-          if (!(self as any)._vector4s.has(key)) {
+          if (!(self as any)._props.has(key)) {
             const proxy = new Proxy(
               {},
               {
@@ -294,10 +358,10 @@ export function CreateInstance<T extends any>(
                 },
               }
             );
-            (self as any)._vector4s.set(key, proxy);
+            (self as any)._props.set(key, proxy);
           }
 
-          return (self as any)._vector4s.get(key);
+          return (self as any)._props.get(key);
         },
       });
     }

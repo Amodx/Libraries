@@ -59,7 +59,7 @@ export class User {
     }
     if (control[ControlInputTypes.Scroll]) {
       const scrollControl = control[ControlInputTypes.Scroll];
-      const key = ControlsMap.getGamePadAxeusId(scrollControl.mode);
+      const key = ControlsMap.getScrollId(scrollControl.mode);
       this._controlsMapped.set(key, controler);
     }
   }
