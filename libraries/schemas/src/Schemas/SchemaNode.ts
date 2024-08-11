@@ -21,6 +21,7 @@ class SchemaNodeObservers<
 > {
   stateUpdated = new Observable<SchemaNode<Value, Input>>();
   updated = new Observable<SchemaNode<Value, Input>>();
+  set = new Observable<SchemaNode<Value, Input>>();
   loadedIn = new Observable<SchemaNode<Value, Input>>();
   updatedOrLoadedIn = new Observable<SchemaNode<Value, Input>>();
   evaluate = new Observable<void>();
@@ -33,6 +34,7 @@ class SchemaNodePipelines<
 > {
   onStore = new Pipeline<Property<Value, Input["data"]>>();
   updated = new Pipeline<{ newValue: any; node: SchemaNode<Value, Input> }>();
+  
   loadedIn = new Pipeline<{ value: any; node: SchemaNode<Value, Input> }>();
 }
 
@@ -173,22 +175,22 @@ export class SchemaNode<
 
   update(newValue: any) {
     const oldValue = this.getValue();
-    this.setValue(
-      this.pipelines.updated.pipe({
-        node: this,
-        newValue,
-      }).newValue
-    );
-    const newFinalValue = this.getValue();
+    const finalNewValue = this.pipelines.updated.pipe({
+      node: this,
+      newValue,
+    }).newValue;
+    this.setValue(finalNewValue);
+    this.observers.set.notify(this);
+
     if (this.input) {
-      if (!this.input.compare(oldValue, newFinalValue)) {
+      if (!this.input.compare(oldValue, finalNewValue)) {
         this.observers.updated.notify(this);
         this.observers.updatedOrLoadedIn.notify(this);
       }
       return;
     }
 
-    if (oldValue != newFinalValue) {
+    if (oldValue != finalNewValue) {
       this.observers.updated.notify(this);
       this.observers.updatedOrLoadedIn.notify(this);
     }
