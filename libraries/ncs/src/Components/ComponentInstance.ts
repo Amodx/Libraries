@@ -89,6 +89,11 @@ export class ComponentInstance<
     if (this.proto.data.init) {
       this.proto.data.init(this);
     }
+    if (this.hasTraits) {
+      for (const trait of this.traits.traits) {
+        trait.init();
+      }
+    }
   }
 
   private _disposed = false;

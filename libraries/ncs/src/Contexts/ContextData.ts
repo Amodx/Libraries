@@ -1,3 +1,5 @@
+import { Property } from "@amodx/schemas";
+
 /**
  * Interface representing the meta data of a context.
  */
@@ -51,9 +53,11 @@ export type ContextRegisterData<
    */
   namespace?: string;
   /**
-   * The schema of the context.
+   * The schema used to create an editable version of the component.
+   * For the actual ComponentInstance the schema is created into an object.
    */
-  schema?: Schema;
+  schema?: Property<any, any>[];
+
   /**
    * The runtime data of the context.
    */

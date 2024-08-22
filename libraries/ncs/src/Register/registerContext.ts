@@ -20,7 +20,7 @@ type RegisteredContext<
   remove: (parent: NodeInstance) => ContextInstance<ContextSchema, Data> | null;
 
   prototype: ContextPrototype<ContextSchema, Data>;
-  default: ContextInstance<Data>;
+  default: ContextInstance<ContextSchema,Data>;
   schemaController: ObjectSchemaInstance<ContextSchema>;
 }) &
   (() => ContextData);

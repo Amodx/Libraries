@@ -25,7 +25,7 @@ export class NodeComponents {
     }
   }
 
-  add(comp: ComponentData, init = true): ComponentInstance<any, any, any, any> {
+  add(comp: ComponentData, init = false): ComponentInstance<any, any, any, any> {
     const compType = NCSRegister.components.get(
       comp.type,
       comp.namespace || "main"
@@ -36,7 +36,7 @@ export class NodeComponents {
     map.addNode(this.node, newComponent);
 
     if (comp.traits?.length) {
-      newComponent.traits.addTraits(...comp.traits);
+      newComponent.traits.addTraits(init,...comp.traits);
     }
     this.hasObservers &&
       this.observers.isComponentAddedSet() &&

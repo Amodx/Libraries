@@ -40,7 +40,7 @@ export class TraintContainer {
       trait.init();
     }
   }
-  add(trait: TraitData): TraitInstance<any, any, any, any> {
+  add(trait: TraitData,init = false): TraitInstance<any, any, any, any> {
     const traitType = NCSRegister.traits.get(
       trait.type,
       trait.namespace || "main"
@@ -52,9 +52,9 @@ export class TraintContainer {
 
     const map = TraitInstanceMap.getMap(newTrait.type);
     map.addNode(node, newTrait);
-    newTrait.init();
+  if(init)  newTrait.init();
     if (trait.traits?.length) {
-      newTrait.traits.addTraits(...trait.traits);
+      newTrait.traits.addTraits(init,...trait.traits);
     }
     this.hasObservers &&
       this.observers.isTraitAddedSet() &&
@@ -64,7 +64,7 @@ export class TraintContainer {
       this.observers.traitsUpdated.notify();
     return newTrait;
   }
-  addTraits(...traits: TraitData[]) {
+  addTraits(init:boolean,...traits: TraitData[]) {
     const newTraits: TraitInstance<any, any, any, any>[] = [];
     for (const trait of traits) {
       const traitType = NCSRegister.traits.get(
@@ -74,9 +74,9 @@ export class TraintContainer {
       const newTrait = traitType.create(this.parent, trait);
       this.traits.push(newTrait);
       newTraits.push(newTrait);
-      newTrait.init();
+    if(init)  newTrait.init();
       if (trait.traits?.length) {
-        newTrait.traits.addTraits(...trait.traits);
+        newTrait.traits.addTraits(init,...trait.traits);
       }
       this.hasObservers &&
         this.observers.isTraitAddedSet() &&
