@@ -15,7 +15,7 @@ export type Mat3Array = [
 
 export class Matrix3x3Like {
   static Create(): Mat3Array {
-    return [1, 0, 0, 0, 1, 0, 0, 0, 1]; // Identity matrix
+    return [1, 0, 0, 0, 1, 0, 0, 0, 1]; 
   }
 
   static Add(m1: Mat3Array, m2: Mat3Array): Mat3Array {

@@ -21,7 +21,7 @@ export type Mat4Array = [
 
 export class Matrix4x4Like {
   static Create(): Mat4Array {
-    return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]; // Identity matrix
+    return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]; 
   }
 
   static Add(m1: Mat4Array, m2: Mat4Array): Mat4Array {

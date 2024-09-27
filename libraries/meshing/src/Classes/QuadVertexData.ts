@@ -1,14 +1,14 @@
 import { QuadVerticies } from "../Geometry.types.js";
-import { Vector3Like, Vector2Like } from "@amodx/math";
+import { Vector3Like, Vector2Like, Vec3Array } from "@amodx/math";
 export class QuadVertexData<Data> {
   constructor(public vertices: Record<QuadVerticies, Data>) {}
 
   getAsArray() {
     return [
-      this.vertices[1],
-      this.vertices[2],
-      this.vertices[3],
-      this.vertices[4],
+      this.vertices[QuadVerticies.TopRight],
+      this.vertices[QuadVerticies.TopLeft],
+      this.vertices[QuadVerticies.BottomLeft],
+      this.vertices[QuadVerticies.BottomRight],
     ];
   }
 
@@ -21,32 +21,32 @@ export class QuadVertexData<Data> {
   }
 
   setAll(value: Data) {
-    this.vertices[1] = value;
-    this.vertices[2] = value;
-    this.vertices[3] = value;
-    this.vertices[4] = value;
+    this.vertices[QuadVerticies.TopRight] = value;
+    this.vertices[QuadVerticies.TopLeft] = value;
+    this.vertices[QuadVerticies.BottomLeft] = value;
+    this.vertices[QuadVerticies.BottomRight] = value;
   }
 
   set(v1: Data, v2: Data, v3: Data, v4: Data) {
-    this.vertices[1] = v1;
-    this.vertices[2] = v2;
-    this.vertices[3] = v3;
-    this.vertices[4] = v4;
+    this.vertices[QuadVerticies.TopRight] = v1;
+    this.vertices[QuadVerticies.TopLeft] = v2;
+    this.vertices[QuadVerticies.BottomLeft] = v3;
+    this.vertices[QuadVerticies.BottomRight] = v4;
   }
 
   isEqualTo(v1: Data, v2: Data, v3: Data, v4: Data) {
-    if (this.vertices[1] != v1) return false;
-    if (this.vertices[2] != v2) return false;
-    if (this.vertices[3] != v3) return false;
-    if (this.vertices[4] != v4) return false;
+    if (this.vertices[QuadVerticies.TopRight] != v1) return false;
+    if (this.vertices[QuadVerticies.TopLeft] != v2) return false;
+    if (this.vertices[QuadVerticies.BottomLeft] != v3) return false;
+    if (this.vertices[QuadVerticies.BottomRight] != v4) return false;
     return true;
   }
 
   isAllEqualTo(value: Data) {
-    if (this.vertices[1] != value) return false;
-    if (this.vertices[2] != value) return false;
-    if (this.vertices[3] != value) return false;
-    if (this.vertices[4] != value) return false;
+    if (this.vertices[QuadVerticies.TopRight] != value) return false;
+    if (this.vertices[QuadVerticies.TopLeft] != value) return false;
+    if (this.vertices[QuadVerticies.BottomLeft] != value) return false;
+    if (this.vertices[QuadVerticies.BottomRight] != value) return false;
     return true;
   }
 
@@ -82,6 +82,87 @@ export class QuadVertexData<Data> {
     });
   }
 }
+export class QuadVec3ArrayVertexData extends QuadVertexData<Vec3Array> {
+  constructor(
+    public vertices: Record<QuadVerticies, Vec3Array> = {
+      [QuadVerticies.TopRight]: [0, 0, 0],
+      [QuadVerticies.TopLeft]: [0, 0, 0],
+      [QuadVerticies.BottomLeft]: [0, 0, 0],
+      [QuadVerticies.BottomRight]: [0, 0, 0],
+    }
+  ) {
+    super(vertices);
+  }
+
+  setFromQuadData(vertexData: QuadVertexData<Vec3Array>) {
+    Vector3Like.CopyArray(
+      this.vertices[QuadVerticies.TopRight],
+      vertexData.vertices[QuadVerticies.TopRight]
+    );
+    Vector3Like.CopyArray(
+      this.vertices[QuadVerticies.TopLeft],
+      vertexData.vertices[QuadVerticies.TopLeft]
+    );
+    Vector3Like.CopyArray(
+      this.vertices[QuadVerticies.BottomLeft],
+      vertexData.vertices[QuadVerticies.BottomLeft]
+    );
+    Vector3Like.CopyArray(
+      this.vertices[QuadVerticies.BottomRight],
+      vertexData.vertices[QuadVerticies.BottomRight]
+    );
+  }
+
+  addToVertex(vertex: QuadVerticies, value: Vec3Array) {
+    Vector3Like.AddArrayInPlace(this.vertices[vertex], value);
+  }
+
+  subtractFromVertex(vertex: QuadVerticies, value: Vec3Array) {
+    Vector3Like.SubtractArrayInPlace(this.vertices[vertex], value);
+  }
+
+  addAll(value: Vec3Array) {
+    this.addToVertex(QuadVerticies.TopRight, value);
+    this.addToVertex(QuadVerticies.TopLeft, value);
+    this.addToVertex(QuadVerticies.BottomLeft, value);
+    this.addToVertex(QuadVerticies.BottomRight, value);
+  }
+
+  subtractAll(value: Vec3Array) {
+    this.subtractFromVertex(QuadVerticies.TopRight, value);
+    this.subtractFromVertex(QuadVerticies.TopLeft, value);
+    this.subtractFromVertex(QuadVerticies.BottomLeft, value);
+    this.subtractFromVertex(QuadVerticies.BottomRight, value);
+  }
+
+  isEqualTo(v1: Vec3Array, v2: Vec3Array, v3: Vec3Array, v4: Vec3Array) {
+    return (
+      Vector3Like.EqualsArray(this.vertices[QuadVerticies.TopRight], v1) &&
+      Vector3Like.EqualsArray(this.vertices[QuadVerticies.TopLeft], v2) &&
+      Vector3Like.EqualsArray(this.vertices[QuadVerticies.BottomLeft], v3) &&
+      Vector3Like.EqualsArray(this.vertices[QuadVerticies.BottomRight], v4)
+    );
+  }
+
+  isAllEqualTo(v1: Vec3Array) {
+    return (
+      Vector3Like.EqualsArray(this.vertices[QuadVerticies.TopRight], v1) &&
+      Vector3Like.EqualsArray(this.vertices[QuadVerticies.TopLeft], v1) &&
+      Vector3Like.EqualsArray(this.vertices[QuadVerticies.BottomLeft], v1) &&
+      Vector3Like.EqualsArray(this.vertices[QuadVerticies.BottomRight], v1)
+    );
+  }
+  clone() {
+    return new QuadVec3ArrayVertexData({
+      [QuadVerticies.TopRight]: [...this.vertices[QuadVerticies.TopRight]],
+      [QuadVerticies.TopLeft]: [...this.vertices[QuadVerticies.TopLeft]],
+      [QuadVerticies.BottomLeft]: [...this.vertices[QuadVerticies.BottomLeft]],
+      [QuadVerticies.BottomRight]: [
+        ...this.vertices[QuadVerticies.BottomRight],
+      ],
+    });
+  }
+}
 
 export class QuadVector3VertexData extends QuadVertexData<Vector3Like> {
   constructor(
@@ -96,10 +177,22 @@ export class QuadVector3VertexData extends QuadVertexData<Vector3Like> {
   }
 
   setFromQuadData(vertexData: QuadVertexData<Vector3Like>) {
-    Vector3Like.Copy(this.vertices[1], vertexData.vertices[1]);
-    Vector3Like.Copy(this.vertices[2], vertexData.vertices[2]);
-    Vector3Like.Copy(this.vertices[3], vertexData.vertices[3]);
-    Vector3Like.Copy(this.vertices[4], vertexData.vertices[4]);
+    Vector3Like.Copy(
+      this.vertices[QuadVerticies.TopRight],
+      vertexData.vertices[QuadVerticies.TopRight]
+    );
+    Vector3Like.Copy(
+      this.vertices[QuadVerticies.TopLeft],
+      vertexData.vertices[QuadVerticies.TopLeft]
+    );
+    Vector3Like.Copy(
+      this.vertices[QuadVerticies.BottomLeft],
+      vertexData.vertices[QuadVerticies.BottomLeft]
+    );
+    Vector3Like.Copy(
+      this.vertices[QuadVerticies.BottomRight],
+      vertexData.vertices[QuadVerticies.BottomRight]
+    );
   }
 
   addToVertex(vertex: QuadVerticies, value: Vector3Like) {
@@ -177,10 +270,22 @@ export class QuadVector2VertexData extends QuadVertexData<Vector2Like> {
   }
 
   setFromQuadData(vertexData: QuadVertexData<Vector3Like>) {
-    Vector2Like.Copy(this.vertices[1], vertexData.vertices[1]);
-    Vector2Like.Copy(this.vertices[2], vertexData.vertices[2]);
-    Vector2Like.Copy(this.vertices[3], vertexData.vertices[3]);
-    Vector2Like.Copy(this.vertices[4], vertexData.vertices[4]);
+    Vector2Like.Copy(
+      this.vertices[QuadVerticies.TopRight],
+      vertexData.vertices[QuadVerticies.TopRight]
+    );
+    Vector2Like.Copy(
+      this.vertices[QuadVerticies.TopLeft],
+      vertexData.vertices[QuadVerticies.TopLeft]
+    );
+    Vector2Like.Copy(
+      this.vertices[QuadVerticies.BottomLeft],
+      vertexData.vertices[QuadVerticies.BottomLeft]
+    );
+    Vector2Like.Copy(
+      this.vertices[QuadVerticies.BottomRight],
+      vertexData.vertices[QuadVerticies.BottomRight]
+    );
   }
 
   addToVertex(vertex: QuadVerticies, value: Vector2Like) {
@@ -257,10 +362,14 @@ export class QuadScalarVertexData extends QuadVertexData<number> {
   }
 
   setFromQuadData(vertexData: QuadVertexData<number>) {
-    this.vertices[1] = vertexData.vertices[1];
-    this.vertices[2] = vertexData.vertices[2];
-    this.vertices[3] = vertexData.vertices[3];
-    this.vertices[4] = vertexData.vertices[4];
+    this.vertices[QuadVerticies.TopRight] =
+      vertexData.vertices[QuadVerticies.TopRight];
+    this.vertices[QuadVerticies.TopLeft] =
+      vertexData.vertices[QuadVerticies.TopLeft];
+    this.vertices[QuadVerticies.BottomLeft] =
+      vertexData.vertices[QuadVerticies.BottomLeft];
+    this.vertices[QuadVerticies.BottomRight] =
+      vertexData.vertices[QuadVerticies.BottomRight];
   }
 
   subtractFromVertex(vertex: QuadVerticies, value: number) {
@@ -268,64 +377,65 @@ export class QuadScalarVertexData extends QuadVertexData<number> {
   }
 
   addAll(value: number) {
-    this.vertices[1] += value;
-    this.vertices[2] += value;
-    this.vertices[3] += value;
-    this.vertices[4] += value;
+    this.vertices[QuadVerticies.TopRight] += value;
+    this.vertices[QuadVerticies.TopLeft] += value;
+    this.vertices[QuadVerticies.BottomLeft] += value;
+    this.vertices[QuadVerticies.BottomRight] += value;
   }
 
   add(v1: number, v2: number, v3: number, v4: number) {
-    this.vertices[1] += v1;
-    this.vertices[2] += v2;
-    this.vertices[3] += v3;
-    this.vertices[4] += v4;
+    this.vertices[QuadVerticies.TopRight] += v1;
+    this.vertices[QuadVerticies.TopLeft] += v2;
+    this.vertices[QuadVerticies.BottomLeft] += v3;
+    this.vertices[QuadVerticies.BottomRight] += v4;
   }
 
   subtractAll(value: number) {
-    this.vertices[1] -= value;
-    this.vertices[2] -= value;
-    this.vertices[3] -= value;
-    this.vertices[4] -= value;
+    this.vertices[QuadVerticies.TopRight] -= value;
+    this.vertices[QuadVerticies.TopLeft] -= value;
+    this.vertices[QuadVerticies.BottomLeft] -= value;
+    this.vertices[QuadVerticies.BottomRight] -= value;
   }
 
   subtract(v1: number, v2: number, v3: number, v4: number) {
-    this.vertices[1] += v1;
-    this.vertices[2] += v2;
-    this.vertices[3] += v3;
-    this.vertices[4] += v4;
+    this.vertices[QuadVerticies.TopRight] += v1;
+    this.vertices[QuadVerticies.TopLeft] += v2;
+    this.vertices[QuadVerticies.BottomLeft] += v3;
+    this.vertices[QuadVerticies.BottomRight] += v4;
   }
 
   isGreaterThan(v1: number, v2: number, v3: number, v4: number) {
-    if (this.vertices[1] < v1) return false;
-    if (this.vertices[2] < v2) return false;
-    if (this.vertices[3] < v3) return false;
-    if (this.vertices[4] < v4) return false;
+    if (this.vertices[QuadVerticies.TopRight] < v1) return false;
+    if (this.vertices[QuadVerticies.TopLeft] < v2) return false;
+    if (this.vertices[QuadVerticies.BottomLeft] < v3) return false;
+    if (this.vertices[QuadVerticies.BottomRight] < v4) return false;
     return true;
   }
 
   isAllGreaterThan(value: number) {
-    if (this.vertices[1] < value) return false;
-    if (this.vertices[2] < value) return false;
-    if (this.vertices[3] < value) return false;
-    if (this.vertices[4] < value) return false;
+    if (this.vertices[QuadVerticies.TopRight] < value) return false;
+    if (this.vertices[QuadVerticies.TopLeft] < value) return false;
+    if (this.vertices[QuadVerticies.BottomLeft] < value) return false;
+    if (this.vertices[QuadVerticies.BottomRight] < value) return false;
     return true;
   }
 
   isLessThan(v1: number, v2: number, v3: number, v4: number) {
-    if (this.vertices[1] > v1) return false;
-    if (this.vertices[2] > v2) return false;
-    if (this.vertices[3] > v3) return false;
-    if (this.vertices[4] > v4) return false;
+    if (this.vertices[QuadVerticies.TopRight] > v1) return false;
+    if (this.vertices[QuadVerticies.TopLeft] > v2) return false;
+    if (this.vertices[QuadVerticies.BottomLeft] > v3) return false;
+    if (this.vertices[QuadVerticies.BottomRight] > v4) return false;
     return true;
   }
 
   isAllLessThan(value: number) {
-    if (this.vertices[1] > value) return false;
-    if (this.vertices[2] > value) return false;
-    if (this.vertices[3] > value) return false;
-    if (this.vertices[4] > value) return false;
+    if (this.vertices[QuadVerticies.TopRight] > value) return false;
+    if (this.vertices[QuadVerticies.TopLeft] > value) return false;
+    if (this.vertices[QuadVerticies.BottomLeft] > value) return false;
+    if (this.vertices[QuadVerticies.BottomRight] > value) return false;
     return true;
   }
+
   clone() {
     return new QuadScalarVertexData({
       [QuadVerticies.TopRight]: this.vertices[QuadVerticies.TopRight],

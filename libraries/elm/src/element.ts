@@ -62,11 +62,18 @@ function applyProps<Tag extends keyof HTMLElementTagNameMap>(
     if (props.hasOwnProperty(key)) {
       const value = props[key as keyof ElementProps<Tag>];
       if (key in el) {
+        if (key == "dataset" && typeof value == "object" && value !== null) {
+          for (const key in value) {
+            el.dataset[key] = String(value[key]);
+          }
+          continue;
+        }
         if (typeof value === "object" && key == "style" && value !== null) {
           deepMerge((el as any)[key], value);
-        } else {
-          (el as any)[key] = value;
+          continue;
         }
+
+        (el as any)[key] = value;
       } else {
         if (
           typeof value === "string" ||

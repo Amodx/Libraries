@@ -78,7 +78,12 @@ export class MesherDataTool {
     const arrays: any[] = [];
     const strides: number[] = [];
     const trasnfers: any[] = [];
-    for (const [key, [value, stride, type]] of this.attributes) {
+    for (let [key, [value, stride, type]] of this.attributes) {
+      if (key == MeshDefaultAttributes.Indices) {
+        if (value.length > 60_000) {
+          type = BinaryNumberTypes.Uint32;
+        }
+      }
       //@ts-ignore
       const newArray: Uint8Array = TypedArrayClassMap[type].from(value);
       arrays.push(newArray);
@@ -96,7 +101,12 @@ export class MesherDataTool {
   getAllAttributes(): [MeshAttributes, ArrayBuffer[]] {
     const data: MeshAttributes = [];
     const trasnfers: ArrayBuffer[] = [];
-    for (const [key, [value, stride, type]] of this.attributes) {
+    for (let [key, [value, stride, type]] of this.attributes) {
+      if (key == MeshDefaultAttributes.Indices) {
+        if (value.length > 60_000) {
+          type = BinaryNumberTypes.Uint32;
+        }
+      }
       //@ts-ignore
       const newArray: Uint8Array = TypedArrayClassMap[type].from(value);
       trasnfers.push(newArray.buffer);

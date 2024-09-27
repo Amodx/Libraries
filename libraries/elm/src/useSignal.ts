@@ -16,7 +16,7 @@ type SignalObject<T = any> = {
 export type Signal<T = any> = SignalAddFunction<T> & SignalObject<T>;
 
 export function useSignal<T = any>(value: T = 0 as T): Signal<T> {
-  const origin = Symbol();
+  const origin = Object(Symbol());
   const broadcast = () => {
     SignalsController.run(origin);
   };

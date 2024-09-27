@@ -1,8 +1,53 @@
 import { Mat3Array, Matrix3x3Like } from "../Matrices/Matrix3x3Like";
 import { Vec3Array } from "../Vector.types";
+const encodeZigZag = (n: number) => {
+  return n >= 0 ? 2 * n : -2 * n - 1;
+};
+
+const cantorPair = (a: number, b: number) => {
+  return ((a + b) * (a + b + 1)) / 2 + b;
+};
+
 export class Vector3Like {
   static Create(x = 0, y = 0, z = 0): Vector3Like {
     return new Vector3Like(x, y, z);
+  }
+
+  /**
+   * Creates a unique number hash from 3D coordinates (x, y, z) using ZigZag encoding
+   * and Cantor pairing. The hash is guaranteed to be unique for each (x, y, z) combination,
+   * including negative values.
+   *
+   * @param x - The x-coordinate (can be a negative or positive integer)
+   * @param y - The y-coordinate (can be a negative or positive integer)
+   * @param z - The z-coordinate (can be a negative or positive integer)
+   * @returns A unique non-negative integer hash representing the (x, y, z) vector
+   */
+  static HashXYZ(x: number, y: number, z: number): number {
+    // ZigZag encoding ensures that both negative and positive numbers
+    // are mapped to unique non-negative integers.
+    const a = encodeZigZag(x);
+    const b = encodeZigZag(y);
+    const c = encodeZigZag(z);
+
+    // Cantor pairing function combines the two encoded numbers (a, b)
+    // into a single unique number.
+    const paired = cantorPair(a, b);
+
+    // Cantor pairing is applied again to combine the previous result
+    // with the third encoded number (c) to get the final unique hash.
+    const finalHash = cantorPair(paired, c);
+
+    // Return the final unique hash value.
+    return finalHash;
+  }
+
+  static Hash(vector: Vector3Like) {
+    return this.HashXYZ(vector.x, vector.y, vector.z);
+  }
+
+  static HashArray(vector: Vec3Array) {
+    return this.HashXYZ(vector[0], vector[1], vector[2]);
   }
 
   static ApplyMatrix(matrix: Mat3Array, vec: Vector3Like): Vector3Like {
@@ -199,7 +244,6 @@ export class Vector3Like {
     v.x -= scalar;
     v.y -= scalar;
     v.z -= scalar;
-
   }
 
   static SubtractScalarArray(v: Vec3Array, scalar: number): Vec3Array {
