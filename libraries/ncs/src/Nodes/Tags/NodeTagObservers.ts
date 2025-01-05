@@ -1,43 +1,37 @@
 import { Observable } from "@amodx/core/Observers";
 import { TagInstance } from "../../Tags/TagInstance";
-
+import { Nullable } from "@amodx/core/Types/UtilityTypes";
 export interface NodeTagObservers {}
 
 export class NodeTagObservers {
-  private _tagAdded?: Observable<TagInstance>;
-  private _tagRemoved?: Observable<TagInstance>;
-  private _tagsUpdated?: Observable<void>;
+  private _tagAdded: Nullable<Observable<TagInstance>> = null;
+  private _tagRemoved: Nullable<Observable<TagInstance>> = null;
+  private _tagsUpdated: Nullable<Observable<void>> = null;
 
-  get tagsAdded(): Observable<TagInstance> {
-    if (!this._tagAdded) {
-      this._tagAdded = new Observable();
-    }
+  get tagsAdded() {
+    if (!this._tagAdded) this._tagAdded = new Observable();
     return this._tagAdded;
   }
 
-  get tagsRemoved(): Observable<TagInstance> {
-    if (!this._tagRemoved) {
-      this._tagRemoved = new Observable();
-    }
+  get tagsRemoved() {
+    if (!this._tagRemoved) this._tagRemoved = new Observable();
     return this._tagRemoved;
   }
 
-  get tagsUpdated(): Observable<void> {
-    if (!this._tagsUpdated) {
-      this._tagsUpdated = new Observable();
-    }
+  get tagsUpdated() {
+    if (!this._tagsUpdated) this._tagsUpdated = new Observable();
     return this._tagsUpdated;
   }
 
-  isTagsAddedSet(): boolean {
-    return !!this._tagAdded;
+  get isTagsAddedSet() {
+    return this._tagAdded !== null;
   }
 
-  isTagsRemovedSet(): boolean {
-    return !!this._tagRemoved;
+  get isTagsRemovedSet() {
+    return this._tagRemoved !== null;
   }
 
-  isTagsUpdatedSet(): boolean {
-    return !!this._tagsUpdated;
+  get isTagsUpdatedSet() {
+    return this._tagsUpdated !== null;
   }
 }

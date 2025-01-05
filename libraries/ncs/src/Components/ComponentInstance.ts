@@ -8,12 +8,12 @@ import { ComponentObservers } from "./ComponentObservers";
 import { ComponentPipelines } from "./ComponentPipelines";
 import { TraintContainer } from "../Traits/TraitContainer";
 import { ComponentPrototype } from "./ComponentPrototype";
-
+import { Nullable } from "@amodx/core/Types/UtilityTypes";
 export class ComponentInstance<
   ComponentSchema extends object = {},
   Data extends object = {},
   Logic extends object = {},
-  Shared extends object = {}
+  Shared extends object = {},
 > implements GraphUpdtable
 {
   get type() {
@@ -29,37 +29,32 @@ export class ComponentInstance<
   logic: Logic;
   state: ComponentStateData;
 
-  private _traits?: TraintContainer;
+  private _traits: Nullable<TraintContainer> = null;
   get traits() {
-    if (!this._traits) {
-      this._traits = new TraintContainer(this);
-    }
+    if (!this._traits) this._traits = new TraintContainer(this);
     return this._traits;
   }
   get hasTraits() {
-    return Boolean(this._traits);
+    return this._traits !== null;
   }
 
-  private _observers?: ComponentObservers;
+  private _observers: Nullable<ComponentObservers> = null;
   get observers() {
-    if (!this._observers) {
-      this._observers = new ComponentObservers();
-    }
+    if (!this._observers) this._observers = new ComponentObservers();
     return this._observers;
   }
   get hasObservers() {
-    return Boolean(this._observers);
+    return this._observers !== null;
   }
 
-  private _pipelines?: ComponentPipelines<ComponentSchema>;
+  private _pipelines: Nullable<ComponentPipelines<ComponentSchema>> = null;
   get pipelines(): ComponentPipelines<ComponentSchema> {
-    if (!this._pipelines) {
+    if (!this._pipelines)
       this._pipelines = new ComponentPipelines<ComponentSchema>();
-    }
     return this._pipelines;
   }
   get hasPipelines() {
-    return Boolean(this._pipelines);
+    return this._pipelines !== null;
   }
   public node: NodeInstance;
 
@@ -105,10 +100,10 @@ export class ComponentInstance<
       GraphUpdate.removeItem(this.node.graph, this);
     }
     this.hasPipelines &&
-      this.pipelines.isDisposedSet() &&
+      this.pipelines.isDisposedSet &&
       this.pipelines.disposed.pipe(this);
     this.hasObservers &&
-      this.observers.isDisposedSet() &&
+      this.observers.isDisposedSet &&
       this.observers.disposed.notify();
     if (this.proto.data.dispose) this.proto.data.dispose(this);
 
@@ -118,9 +113,9 @@ export class ComponentInstance<
 
     this.proto.destory(this);
 
-    delete this._traits;
-    delete this._observers;
-    delete this._pipelines;
+    this._traits = null;
+    this._observers = null;
+    this._pipelines = null;
   }
 
   getDependencies() {
@@ -144,7 +139,7 @@ export class ComponentInstance<
     };
     return (
       (this.hasPipelines &&
-        this.pipelines.isCopySet() &&
+        this.pipelines.isCopySet &&
         this.pipelines.copy.pipe(data)) ||
       data
     );
@@ -162,7 +157,7 @@ export class ComponentInstance<
     };
     return (
       (this.hasPipelines &&
-        this.pipelines.isToJSONSet() &&
+        this.pipelines.isToJSONSet &&
         this.pipelines.toJSON.pipe(data)) ||
       data
     );

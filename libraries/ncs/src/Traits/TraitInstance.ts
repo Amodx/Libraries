@@ -12,7 +12,7 @@ export class TraitInstance<
   TraitSchema extends object = {},
   Data extends object = {},
   Logic extends object = {},
-  Shared extends object = {}
+  Shared extends object = {},
 > implements GraphUpdtable
 {
   get type() {
@@ -107,10 +107,10 @@ export class TraitInstance<
       GraphUpdate.removeItem(this.getNode().graph, this);
     }
     this.hasPipelines &&
-      this.pipelines.isDisposedSet() &&
+      this.pipelines.isDisposedSet &&
       this.pipelines.disposed.pipe(this);
     this.hasObservers &&
-      this.observers.isDisposedSet() &&
+      this.observers.isDisposedSet &&
       this.observers.disposed.notify();
     if (this.proto.data.dispose) this.proto.data.dispose(this);
 
@@ -137,11 +137,12 @@ export class TraitInstance<
       type: this.type,
       state: this.state,
       traits:
-        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) || undefined,
+        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) ||
+        undefined,
     };
     return (
       (this.hasPipelines &&
-        this.pipelines.isCopySet() &&
+        this.pipelines.isCopySet &&
         this.pipelines.copy.pipe(data)) ||
       data
     );
@@ -154,11 +155,12 @@ export class TraitInstance<
       type: this.type,
       state: this.state,
       traits:
-        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) || undefined,
+        (this.hasTraits && this.traits.traits.map((_) => _.toJSON())) ||
+        undefined,
     };
     return (
       (this.hasPipelines &&
-        this.pipelines.isCopySet() &&
+        this.pipelines.isCopySet &&
         this.pipelines.copy.pipe(data)) ||
       data
     );

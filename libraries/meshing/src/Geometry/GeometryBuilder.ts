@@ -2,7 +2,7 @@ import type { Vector3Like, Vec3Array } from "@amodx/math";
 
 import { GeometryNormals } from "./GeometryNormals.js";
 import { MesherDataTool } from "../Tools/MesherDataTools.js";
-import { Quad } from "../Classes/Quad";
+import { Quad } from "../Primitives/Quad";
 
 export class GeometryBuilder {
   static addTriangle(
@@ -11,14 +11,19 @@ export class GeometryBuilder {
     [[p1x, p1y, p1z], [p2x, p2y, p2z], [p3x, p3y, p3z]]: [
       Vec3Array,
       Vec3Array,
-      Vec3Array
+      Vec3Array,
     ]
   ) {
-    const { positions, normals, indices } = tool;
-    const baseIndex = tool.indicieIndex;
-    let posIndex = tool.positions.length;
-    let normIndex = tool.normals.length;
-    let indIndex = tool.indices.length;
+    if (!tool.mesh) return;
+    const mesh = tool.mesh;
+    const positions = mesh!.positions;
+    const normals = mesh!.normals;
+    const indices = mesh!.indices;
+
+    const baseIndex = mesh.indicieIndex;
+    let posIndex = positions.length;
+    let normIndex = normals.length;
+    let indIndex = indices.length;
 
     positions[posIndex++] = origin.x + p1x;
     positions[posIndex++] = origin.y + p1y;
@@ -46,18 +51,23 @@ export class GeometryBuilder {
     indices[indIndex++] = baseIndex + 1;
     indices[indIndex++] = baseIndex + 2;
 
-    tool.positions.length = posIndex;
-    tool.normals.length = normIndex;
-    tool.indices.length = indIndex;
-    tool.indicieIndex += 3;
+    positions.length = posIndex;
+    normals.length = normIndex;
+    indices.length = indIndex;
+    mesh.indicieIndex += 3;
   }
 
   static addQuad(tool: MesherDataTool, origin: Vector3Like, quad: Quad) {
-    const { positions, normals, indices } = tool;
-    const baseIndex = tool.indicieIndex;
-    let posIndex = tool.positions.length;
-    let normIndex = tool.normals.length;
-    let indIndex = tool.indices.length;
+    if (!tool.mesh) return;
+    const mesh = tool.mesh;
+    const positions = mesh!.positions;
+    const normals = mesh!.normals;
+    const indices = mesh!.indices;
+
+    const baseIndex = mesh.indicieIndex;
+    let posIndex = positions.length;
+    let normIndex = normals.length;
+    let indIndex = indices.length;
 
     const topRight = quad.positions.vertices[0];
     const topLeft = quad.positions.vertices[1];
@@ -66,11 +76,10 @@ export class GeometryBuilder {
 
     let normalMulti = 1;
 
-    const { orientation: orin, flip } = quad;
-
-    let orientation = orin;
+    let flip = quad.flip;
+    let orientation = quad.orientation;
     if (orientation) {
-      normalMulti = -1;
+      //  normalMulti = -1;
     }
 
     let sides = quad.doubleSided ? 2 : 1;
@@ -153,16 +162,14 @@ export class GeometryBuilder {
         normals[normIndex++] = bottomRight.y * normalMulti;
         normals[normIndex++] = bottomRight.z * normalMulti;
       }
-      tool.indicieIndex += 4;
+      mesh.indicieIndex += 4;
 
       orientation = orientation == 1 ? 0 : 1;
       normalMulti *= -1;
     }
 
-    tool.positions.length = posIndex;
-    tool.normals.length = normIndex;
-    tool.indices.length = indIndex;
+    positions.length = posIndex;
+    normals.length = normIndex;
+    indices.length = indIndex;
   }
-
-  
 }

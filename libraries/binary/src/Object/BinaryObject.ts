@@ -12,7 +12,7 @@ export class BinaryObject {
   }
 
   static bufferToObject<T>(
-    buffer: ArrayBuffer,
+    buffer: ArrayBufferLike,
     byteOffSet: number = 0,
     byteLength: number = 0
   ) {
@@ -32,7 +32,7 @@ export class BinaryObject {
   }
 
   static bufferToTypedNodes<T>(
-    buffer: ArrayBuffer,
+    buffer: ArrayBufferLike,
     byteOffSet: number = 0,
     byteLength: number = 0
   ): TypedNode<T> {

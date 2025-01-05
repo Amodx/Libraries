@@ -4,6 +4,10 @@ export class Flat2DIndex {
   private position: Vec2Array;
   private bounds: Vec2Array;
 
+  getBounds(): Vec2Array {
+    return this.bounds;
+  }
+
   constructor(
     private _getIndex: (position: Vec2Array, bounds: Vec2Array) => number,
     private _getXY: (
@@ -18,8 +22,7 @@ export class Flat2DIndex {
 
   static GetXYOrder(): Flat2DIndex {
     return new Flat2DIndex(
-      (position, bounds) =>
-        position[0] + position[1] * bounds[0],
+      (position, bounds) => position[0] + position[1] * bounds[0],
       (index, bounds, position) => {
         position[1] = Math.floor(index / bounds[0]);
         position[0] = Math.floor(index % bounds[0]);

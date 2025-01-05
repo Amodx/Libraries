@@ -9,6 +9,7 @@ import {
 import { PromiseTasks } from "../Tasks/PromiseTasks.js";
 import { InternalTasks } from "../Internal/InternalTasks.js";
 
+
 export class Thread {
   environment: "node" | "browser" = "browser";
   __ready = false;
@@ -98,16 +99,21 @@ export class Thread {
   private __throwError(message: string) {
     throw new Error(`[ThreadComm: ${this.name}] ${message}`);
   }
+  private _messageArray: any[] = [];
 
   sendMessage(message: string | number, data: any[] = [], transfers?: any[]) {
     if (!this.port) {
       return this.__throwError("Port is not set.");
     }
-    if (this.environment == "browser" && transfers) {
-      this.port.postMessage([message, ...data], transfers);
-      return;
+    this._messageArray.length = 0;
+    this._messageArray.push(message);
+    for (let i = 0; i < data.length; i++) {
+      this._messageArray.push(data[i]);
     }
-    this.port.postMessage([message, ...data]);
+    this.port.postMessage(
+      this._messageArray,
+      this.environment == "browser" && transfers ? transfers : undefined
+    );
   }
 
   listenForMessage(message: string | number, run: MessageFunction) {
@@ -129,6 +135,7 @@ export class Thread {
       [channel.port2]
     );
   }
+  private _runTaskArray: any[] = [];
 
   runTasks<T>(
     id: string | number,
@@ -142,9 +149,16 @@ export class Thread {
       mode = 2;
       tid = queueId;
     }
-    this.__sendInternalMessage(
-      ThreadsInternalMessages.runTasks,
-      [id, Threads.threadName, mode, tid, data],
+    this._runTaskArray[0] = ThreadsInternalMessages.runTasks;
+    this._runTaskArray[1] = id;
+    this._runTaskArray[2] = Threads.threadName;
+    this._runTaskArray[3] = mode;
+    this._runTaskArray[4] = tid;
+    this._runTaskArray[5] = data;
+
+    this.sendMessage(
+      ThreadsMessageHeaders.internal,
+      this._runTaskArray,
       transfers
     );
   }
@@ -163,7 +177,7 @@ export class Thread {
   }
 
   tasksExist(id: string, onDone: (exist: boolean) => void) {
-    const promiseId = `${this.name}-${id}-${Date.now()}`;
+    const promiseId = crypto.randomUUID();
 
     this.__sendInternalMessage(ThreadsInternalMessages.checkTasks, [
       id,
@@ -176,6 +190,8 @@ export class Thread {
     });
   }
 
+  private _runPromiseTaskArray: any[] = [];
+
   runPromiseTasks<T>(
     id: string | number,
     data: T,
@@ -183,10 +199,16 @@ export class Thread {
     onDone: (data: any) => void
   ) {
     const requestsID = crypto.randomUUID();
+    this._runPromiseTaskArray[0] = ThreadsInternalMessages.runTasks;
+    this._runPromiseTaskArray[1] = id;
+    this._runPromiseTaskArray[2] = Threads.threadName;
+    this._runPromiseTaskArray[3] = 1;
+    this._runPromiseTaskArray[4] = requestsID;
+    this._runPromiseTaskArray[5] = data;
     PromiseTasks.addPromiseTakss(id, requestsID, onDone);
-    this.__sendInternalMessage(
-      ThreadsInternalMessages.runTasks,
-      [id, Threads.threadName, 1, requestsID, data],
+    this.sendMessage(
+      ThreadsMessageHeaders.internal,
+      this._runPromiseTaskArray,
       transfers
     );
   }

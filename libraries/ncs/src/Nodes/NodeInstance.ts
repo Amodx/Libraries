@@ -7,7 +7,7 @@ import { NodePipelines } from "./NodePipelines";
 import { NodeContext } from "./Context/NodeContext";
 import { NodeComponents } from "./Components/NodeComponents";
 import { NodeTags } from "./Tags/NodeTags";
-
+import { Nullable } from "@amodx/core/Types/UtilityTypes";
 export interface NodeInstance {}
 
 export class NodeInstance {
@@ -18,71 +18,59 @@ export class NodeInstance {
   name: string;
   state: NodeStateData;
 
-  private _events?: NodeEvents;
+  private _events: Nullable<NodeEvents> = null;
 
   get events() {
-    if (!this._events) {
-      this._events = new NodeEvents(this);
-    }
+    if (!this._events) this._events = new NodeEvents(this);
     return this._events;
   }
   get hasEvents() {
-    return Boolean(this._context);
+    return this._events !== null;
   }
 
-  private _context?: NodeContext;
+  private _context: Nullable<NodeContext> = null;
   get context() {
-    if (!this._context) {
-      this._context = new NodeContext(this);
-    }
+    if (!this._context) this._context = new NodeContext(this);
     return this._context;
   }
   get hasContexts() {
-    return Boolean(this._context);
+    return this._context !== null;
   }
 
-  private _observers?: NodeObservers;
+  private _observers: Nullable<NodeObservers> = null;
   get observers() {
-    if (!this._observers) {
-      this._observers = new NodeObservers();
-    }
+    if (!this._observers) this._observers = new NodeObservers();
     return this._observers;
   }
   get hasObservers() {
-    return Boolean(this._observers);
+    return this._observers !== null;
   }
 
-  private _pipelines?: NodePipelines;
+  private _pipelines: Nullable<NodePipelines> = null;
   get pipelines(): NodePipelines {
-    if (!this._pipelines) {
-      this._pipelines = new NodePipelines();
-    }
+    if (!this._pipelines) this._pipelines = new NodePipelines();
     return this._pipelines;
   }
   get hasPipelines() {
-    return Boolean(this._pipelines);
+    return this._pipelines !== null;
   }
 
-  private _components?: NodeComponents;
+  private _components: Nullable<NodeComponents> = null;
   get components() {
-    if (!this._components) {
-      this._components = new NodeComponents(this);
-    }
+    if (!this._components) this._components = new NodeComponents(this);
     return this._components;
   }
   get hasComponents() {
-    return Boolean(this._components);
+    return this._components !== null;
   }
 
-  private _tags?: NodeTags;
+  private _tags: Nullable<NodeTags> = null;
   get tags() {
-    if (!this._tags) {
-      this._tags = new NodeTags(this);
-    }
+    if (!this._tags) this._tags = new NodeTags(this);
     return this._tags;
   }
   get hasTags() {
-    return Boolean(this._tags);
+    return this._tags !== null;
   }
 
   children: NodeInstance[] = [];
@@ -130,16 +118,16 @@ export class NodeInstance {
       child.dispose();
     }
     this.hasPipelines &&
-      this.pipelines.isDisposedSet() &&
+      this.pipelines.isDisposedSet &&
       this.pipelines.disposed.pipe(this);
     this.hasObservers &&
-      this.observers.isDisposedSet() &&
+      this.observers.isDisposedSet &&
       this.observers.disposed.notify();
-    delete this._observers;
-    delete this._pipelines;
-    delete this._events;
-    delete this._context;
-    delete this._tags;
+    this._observers = null;
+    this._pipelines = null;
+    this._events = null;
+    this._context = null;
+    this._tags = null;
   }
 
   addChildren(...nodes: NodeData[]) {
@@ -149,39 +137,53 @@ export class NodeInstance {
     }
   }
 
-  parentTo(node: NodeInstance) {
-    if (this.children.find((_) => NodeId.Compare(_.id, node.id))) return;
+  hasChild(node: NodeInstance) {
+    for (let i = 0; i < this.children.length; i++) {
+      if (NodeId.Compare(this.children[i].id, node.id)) return true;
+    }
+    return false;
+  }
+
+  parentTo(nodeToParentTo: NodeInstance) {
+    if (nodeToParentTo.hasChild(this)) return;
     this.parent?.removeChild(this.id);
-    node.addChild(this);
-    this.parent = node;
+    nodeToParentTo.addChild(this);
+    this.parent = nodeToParentTo;
     this.hasObservers &&
-      this.observers.isParentedSet() &&
-      node.observers.parented.notify();
+      this.observers.isParentedSet &&
+      nodeToParentTo.observers.parented.notify();
   }
 
   addChild(node: NodeInstance) {
-    if (this.children.find((_) => NodeId.Compare(_.id, node.id))) return;
+    if (this.hasChild(node)) return;
     node.parent = this;
     this.children.push(node);
     this.hasObservers &&
-      this.observers.isChildAddedSet() &&
+      this.observers.isChildAddedSet &&
       this.observers.childAdded.notify(node);
+    this.hasObservers &&
+      this.observers.isChildrenUpdatedSet &&
+      this.observers.childrenUpdated.notify();
     node.hasObservers &&
-      node.observers.isParentedSet() &&
+      node.observers.isParentedSet &&
       node.observers.parented.notify();
   }
 
   removeChild(id: NodeId) {
-    const index = this.children.findIndex((_) => _ && NodeId.Compare(id, _.id));
-    if (index !== -1) {
-      const child = this.children.splice(index, 1)![0];
-      this.hasObservers &&
-        this.observers.isChildRemovedSet() &&
-        this.observers.childRemoved.notify(child);
-      this.hasObservers &&
-        this.observers.isRemovedFromParentSet() &&
-        child.observers.removedFromParent.notify();
-      return child;
+    for (let i = 0; i < this.children.length; i++) {
+      if (NodeId.Compare(this.children[i].id, id)) {
+        const child = this.children.splice(i, 1)![0];
+        this.hasObservers &&
+          this.observers.isChildRemovedSet &&
+          this.observers.childRemoved.notify(child);
+        this.hasObservers &&
+          this.observers.isChildrenUpdatedSet &&
+          this.observers.childrenUpdated.notify();
+        this.hasObservers &&
+          this.observers.isRemovedFromParentSet &&
+          child.observers.removedFromParent.notify();
+        return child;
+      }
     }
     return null;
   }
@@ -192,7 +194,8 @@ export class NodeInstance {
       name: this.name,
       state: this.state,
       children: this.children.map((_) => _.copy()),
-      tags: (this.hasTags && this.tags.tags.map((_) => _.toJSON())) || undefined,
+      tags:
+        (this.hasTags && this.tags.tags.map((_) => _.toJSON())) || undefined,
       components:
         (this.hasComponents &&
           this.components.components.map((_) => _.copy())) ||
@@ -200,7 +203,7 @@ export class NodeInstance {
     };
     return (
       (this.hasPipelines &&
-        this.pipelines.isCopySet() &&
+        this.pipelines.isCopySet &&
         this.pipelines.copy.pipe(data)) ||
       data
     );
@@ -220,7 +223,7 @@ export class NodeInstance {
     };
     return (
       (this.hasPipelines &&
-        this.pipelines.isToJSONSet() &&
+        this.pipelines.isToJSONSet &&
         this.pipelines.toJSON.pipe(data)) ||
       data
     );

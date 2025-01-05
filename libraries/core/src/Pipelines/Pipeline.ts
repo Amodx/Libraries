@@ -31,8 +31,8 @@ export class Pipeline<T extends any = {}> {
   }
 
   pipe(data: T) {
-    for (const [key, pipe] of this.pipes) {
-      data = pipe(data);
+    for (const pipe of this.pipes) {
+      data = pipe[1](data);
     }
     return data;
   }
@@ -55,8 +55,8 @@ export class AsyncPipeline<T extends any = {}> {
   }
 
   async pipe(data: T) {
-    for (const [key, pipe] of this.pipes) {
-      data = await pipe(data);
+    for (const pipe of this.pipes) {
+      data = await pipe[1](data);
     }
     return data;
   }

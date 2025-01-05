@@ -9,13 +9,13 @@ export class ComponentPrototype<
   ComponentSchema extends object = {},
   Data extends Record<string, any> = {},
   Logic extends Record<string, any> = {},
-  Shared extends Record<string, any> = {}
+  Shared extends Record<string, any> = {},
 > {
   schemaController: Schema<ComponentSchema> | null;
   baseContextSchema: ComponentSchema;
-  pool = new ItemPool<
+  pool: ItemPool<
     ComponentInstance<ComponentSchema, Data, Logic, Shared>
-  >();
+  > | null = null;
   constructor(
     public data: ComponentRegisterData<ComponentSchema, Data, Logic, Shared>
   ) {
@@ -27,7 +27,9 @@ export class ComponentPrototype<
     this.baseContextSchema = (
       this.schemaController ? this.schemaController.createData() : {}
     ) as ComponentSchema;
-    this.pool.maxSize = data.pool?.maxSize || 100;
+    if (data.pool && data.pool?.maxSize > 1) {
+      this.pool = new ItemPool(data.pool.maxSize);
+    }
   }
 
   getSchema(
@@ -41,7 +43,7 @@ export class ComponentPrototype<
   private getPooled() {
     let comp: ComponentInstance<ComponentSchema, Data, Logic, Shared> | null =
       null;
-    if (this.data.pool?.maxSize) {
+    if (this.pool) {
       comp = this.pool.get();
     }
     return comp || new ComponentInstance();
@@ -49,7 +51,7 @@ export class ComponentPrototype<
   private return(
     component: ComponentInstance<ComponentSchema, Data, Logic, Shared>
   ) {
-    if (this.data.pool?.maxSize) {
+    if (this.pool) {
       return this.pool.addItem(component);
     }
     return null;

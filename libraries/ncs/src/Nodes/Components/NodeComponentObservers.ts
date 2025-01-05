@@ -1,43 +1,38 @@
 import { Observable } from "@amodx/core/Observers";
 import { ComponentInstance } from "../../Components/ComponentInstance";
-
+import { Nullable } from "@amodx/core/Types/UtilityTypes";
 export interface NodeComponentObservers {}
 
 export class NodeComponentObservers {
-  private _componentAdded?: Observable<ComponentInstance<any>>;
-  private _componentRemoved?: Observable<ComponentInstance<any>>;
-  private _componentsUpdated?: Observable<void>;
+  private _componentAdded: Nullable<Observable<ComponentInstance<any>>> = null;
+  private _componentRemoved: Nullable<Observable<ComponentInstance<any>>> =
+    null;
+  private _componentsUpdated: Nullable<Observable<void>> = null;
 
-  get componentAdded(): Observable<ComponentInstance<any>> {
-    if (!this._componentAdded) {
-      this._componentAdded = new Observable();
-    }
+  get componentAdded() {
+    if (!this._componentAdded) this._componentAdded = new Observable();
     return this._componentAdded;
   }
 
-  get componentRemoved(): Observable<ComponentInstance<any>> {
-    if (!this._componentRemoved) {
-      this._componentRemoved = new Observable();
-    }
+  get componentRemoved() {
+    if (!this._componentRemoved) this._componentRemoved = new Observable();
     return this._componentRemoved;
   }
 
-  get componentsUpdated(): Observable<void> {
-    if (!this._componentsUpdated) {
-      this._componentsUpdated = new Observable();
-    }
+  get componentsUpdated() {
+    if (!this._componentsUpdated) this._componentsUpdated = new Observable();
     return this._componentsUpdated;
   }
 
-  isComponentAddedSet(): boolean {
-    return !!this._componentAdded;
+  get isComponentAddedSet() {
+    return this._componentAdded !== null;
   }
 
-  isComponentRemovedSet(): boolean {
-    return !!this._componentRemoved;
+  get isComponentRemovedSet() {
+    return this._componentRemoved !== null;
   }
 
-  isComponentsUpdatedSet(): boolean {
-    return !!this._componentsUpdated;
+  get isComponentsUpdatedSet() {
+    return this._componentsUpdated !== null;
   }
 }

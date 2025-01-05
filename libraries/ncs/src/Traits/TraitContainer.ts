@@ -57,10 +57,10 @@ export class TraintContainer {
       newTrait.traits.addTraits(init,...trait.traits);
     }
     this.hasObservers &&
-      this.observers.isTraitAddedSet() &&
+      this.observers.isTraitAddedSet &&
       this.observers.traitAdded.notify(newTrait);
     this.hasObservers &&
-      this.observers.isTraitsUpdatedSet() &&
+      this.observers.isTraitsUpdatedSet &&
       this.observers.traitsUpdated.notify();
     return newTrait;
   }
@@ -79,11 +79,11 @@ export class TraintContainer {
         newTrait.traits.addTraits(init,...trait.traits);
       }
       this.hasObservers &&
-        this.observers.isTraitAddedSet() &&
+        this.observers.isTraitAddedSet &&
         this.observers.traitAdded.notify(newTrait);
     }
     this.hasObservers &&
-      this.observers.isTraitsUpdatedSet() &&
+      this.observers.isTraitsUpdatedSet &&
       this.observers.traitsUpdated.notify();
     return newTraits;
   }
@@ -92,10 +92,10 @@ export class TraintContainer {
     if (trait) {
       const child = this.traits.splice(index, 1)![0];
       this.hasObservers &&
-        this.observers.isTraitRemovedSet() &&
+        this.observers.isTraitRemovedSet &&
         this.observers.traitRemoved.notify(child);
       this.hasObservers &&
-        this.observers.isTraitsUpdatedSet() &&
+        this.observers.isTraitsUpdatedSet &&
         this.observers.traitsUpdated.notify();
       trait.dispose();
       return true;
@@ -120,11 +120,11 @@ export class TraintContainer {
     this.traits = this.traits.filter((_) => _.type != type);
     for (const comp of filtered) {
       this.hasObservers &&
-        this.observers.isTraitRemovedSet() &&
+        this.observers.isTraitRemovedSet &&
         this.observers.traitRemoved.notify(comp);
     }
     this.hasObservers &&
-      this.observers.isTraitsUpdatedSet() &&
+      this.observers.isTraitsUpdatedSet &&
       this.observers.traitsUpdated.notify();
     return filtered;
   }

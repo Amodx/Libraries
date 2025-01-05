@@ -5,6 +5,7 @@ import { NodeComponentObservers } from "./NodeComponentObservers";
 import { NCSRegister } from "../../Register/NCSRegister";
 import { ComponentInstanceMap } from "../../Components/ComponentInstanceMap";
 
+const filterUndefined = (_: any) => Boolean(_);
 export class NodeComponents {
   private _observers?: NodeComponentObservers;
   get observers() {
@@ -25,7 +26,10 @@ export class NodeComponents {
     }
   }
 
-  add(comp: ComponentData, init = false): ComponentInstance<any, any, any, any> {
+  add(
+    comp: ComponentData,
+    init = false
+  ): ComponentInstance<any, any, any, any> {
     const compType = NCSRegister.components.get(
       comp.type,
       comp.namespace || "main"
@@ -36,10 +40,10 @@ export class NodeComponents {
     map.addNode(this.node, newComponent);
 
     if (comp.traits?.length) {
-      newComponent.traits.addTraits(init,...comp.traits);
+      newComponent.traits.addTraits(init, ...comp.traits);
     }
     this.hasObservers &&
-      this.observers.isComponentAddedSet() &&
+      this.observers.isComponentAddedSet &&
       this.hasObservers &&
       this.observers.componentAdded.notify(newComponent);
     return newComponent;
@@ -51,7 +55,7 @@ export class NodeComponents {
     }
 
     this.hasObservers &&
-      this.observers.isComponentsUpdatedSet() &&
+      this.observers.isComponentsUpdatedSet &&
       this.observers.componentsUpdated.notify();
   }
 
@@ -60,45 +64,73 @@ export class NodeComponents {
     if (component) {
       const child = this.components.splice(index, 1)![0];
       this.hasObservers &&
-        this.observers.isComponentRemovedSet() &&
+        this.observers.isComponentRemovedSet &&
         this.observers.componentRemoved.notify(child);
       this.hasObservers &&
-        this.observers.isComponentsUpdatedSet() &&
+        this.observers.isComponentsUpdatedSet &&
         this.observers.componentsUpdated.notify();
       component.dispose();
       return true;
     }
     return false;
   }
+
   remove(type: string) {
-    return this.removeByIndex(this.components.findIndex((_) => _.type == type));
+    let removeIndex = -1;
+    for (let i = 0; i < this.components.length; i++) {
+      const comp = this.components[i];
+      if (comp.type == type) {
+        removeIndex = i;
+        break;
+      }
+    }
+    if (removeIndex == -1) return;
+    return this.removeByIndex(removeIndex);
   }
 
   get(type: string): ComponentInstance<any, any, any, any> | null {
-    return this.components.find((_) => _.type == type) || null;
+    for (let i = 0; i < this.components.length; i++) {
+      const comp = this.components[i];
+      if (comp.type == type) return comp;
+    }
+    return null;
   }
   getAll(type: string): ComponentInstance<any, any, any, any>[] {
-    return this.components.filter((_) => _.type == type);
+    const comps: ComponentInstance<any, any, any, any>[] = [];
+    for (let i = 0; i < this.components.length; i++) {
+      const comp = this.components[i];
+      if (comp.type == type) comps.push(comp);
+    }
+    return comps;
   }
   removeAll(type: string): ComponentInstance<any, any, any, any>[] {
-    const filtered = this.getAll(type);
-    this.components = this.components.filter((_) => _.type != type);
-    for (const comp of filtered) {
+    const removed: ComponentInstance<any, any, any, any>[] = [];
+    for (let i = 0; i < this.components.length; i++) {
+      const comp = this.components[i];
+      if (comp.type == type) {
+        removed.push(comp);
+        (this.components[i] as any) = undefined;
+        break;
+      }
+    }
+    this.components.filter(filterUndefined);
+    for (const comp of removed) {
       comp.dispose();
     }
-    for (const comp of filtered) {
+    for (const comp of removed) {
       this.hasObservers &&
-        this.observers.isComponentRemovedSet() &&
+        this.observers.isComponentRemovedSet &&
         this.observers.componentRemoved.notify(comp);
     }
     this.hasObservers &&
-      this.observers.isComponentsUpdatedSet() &&
+      this.observers.isComponentsUpdatedSet &&
       this.observers.componentsUpdated.notify();
-    return filtered;
+    return removed;
   }
 
   getChild(type: string): ComponentInstance<any, any, any, any> | null {
     for (const child of this.node.traverseChildren()) {
+      if (!child.components) continue;
       const found = child.components.get(type) as ComponentInstance;
       if (found) return found;
     }
@@ -107,6 +139,7 @@ export class NodeComponents {
 
   getParent(type: string): ComponentInstance<any, any, any, any> | null {
     for (const parent of this.node.traverseParents()) {
+      if (!parent.components) continue;
       const found = parent.components.get(type) as ComponentInstance;
       if (found) return found;
     }

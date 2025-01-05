@@ -15,6 +15,7 @@ import { Threads } from "../Threads.js";
 export class ThreadPool {
   private _totalThreads = 0;
   private _currentThread = 0;
+
   name = "";
   private __threads: Thread[] = [];
   private __data: ThreadPoolData = {
@@ -124,8 +125,8 @@ export class ThreadPool {
     transfers: any[] = [],
     queueId?: string
   ) {
-    for (const thread of this.__threads) {
-      thread.runTasks(id, data, transfers, queueId);
+    for (let i = 0; i < this.__threads.length; i++) {
+      this.__threads[i].runTasks(id, data, transfers, queueId);
     }
   }
 
@@ -241,8 +242,6 @@ export class ThreadPool {
     }
     return <QueueManager<T>>queue;
   }
-
-
 
   syncData<T>(dataType: string | number, data: T) {
     for (const thread of this.__threads) {

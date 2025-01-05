@@ -33,7 +33,7 @@ export class NodeTags {
     this.tags.push(newTag);
 
     this.hasObservers &&
-      this.observers.isTagsAddedSet() &&
+      this.observers.isTagsAddedSet &&
       this.hasObservers &&
       this.observers.tagsAdded.notify(newTag);
     return newTag;
@@ -44,7 +44,7 @@ export class NodeTags {
       this.add(tag);
     }
     this.hasObservers &&
-      this.observers.isTagsUpdatedSet() &&
+      this.observers.isTagsUpdatedSet &&
       this.observers.tagsUpdated.notify();
   }
 
@@ -54,10 +54,10 @@ export class NodeTags {
     if (tag) {
       const child = this.tags.splice(index, 1)![0];
       this.hasObservers &&
-        this.observers.isTagsRemovedSet() &&
+        this.observers.isTagsRemovedSet &&
         this.observers.tagsRemoved.notify(child);
       this.hasObservers &&
-        this.observers.isTagsUpdatedSet() &&
+        this.observers.isTagsUpdatedSet &&
         this.observers.tagsUpdated.notify();
       tag.dispose();
       return true;

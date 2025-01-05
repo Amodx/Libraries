@@ -129,7 +129,6 @@ export default function (controls: typeof Controls) {
   };
 
   const wheelListener = (event: WheelEvent) => {
-    console.log("WHEEL LISTENER");
     if (event.deltaY < 0) {
       if (controls._capturing && controls._capturingMode == "keyboard") {
         controls._capturedData = {

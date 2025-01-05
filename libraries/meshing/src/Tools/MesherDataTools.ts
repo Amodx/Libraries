@@ -1,48 +1,16 @@
-import {
-  BinaryNumberTypes,
-  TypedArrays,
-  TypedArrayClassMap,
-} from "@amodx/binary/";
-import {
-  MeshDefaultAttributes,
-  type MeshAttributes,
-} from "../MeshData.types.js";
-
-import { QuadScalarVertexData } from "../Classes/QuadVertexData.js";
+import { QuadScalarVertexData } from "../Primitives/QuadVertexData.js";
+import { Mesh } from "../Mesh/Mesh.js";
 
 export class MesherDataTool {
-  indicieIndex = 0;
+
   vars = new Map<string, number>();
   segments = new Map<string, number[]>();
   quadVertexData = new Map<string, QuadScalarVertexData>();
-  attributes = new Map<
-    string,
-    [
-      value: number[],
-      stride: number,
-      dataType: Exclude<
-        BinaryNumberTypes,
-        BinaryNumberTypes.BigInt | BinaryNumberTypes.BigUint
-      >
-    ]
-  >([
-    [MeshDefaultAttributes.Position, [[], 3, BinaryNumberTypes.Float32]],
-    [MeshDefaultAttributes.Normal, [[], 3, BinaryNumberTypes.Float32]],
-    [MeshDefaultAttributes.Indices, [[], 1, BinaryNumberTypes.Uint16]],
-  ]);
 
-  get positions() {
-    return this.attributes.get(MeshDefaultAttributes.Position)![0];
-  }
-  get normals() {
-    return this.attributes.get(MeshDefaultAttributes.Normal)![0];
-  }
-  get indices() {
-    return this.attributes.get(MeshDefaultAttributes.Indices)![0];
-  }
+  mesh: Mesh | null = null;
 
-  getAttribute(id: string) {
-    return this.attributes.get(id)![0];
+  startNewMesh(mesh?: Mesh) {
+    this.mesh = mesh ? mesh : new Mesh();
   }
 
   setVar(id: string, value: number) {
@@ -55,63 +23,16 @@ export class MesherDataTool {
     return this.vars.get(id);
   }
   resetAll() {
-    this.resetAttributes();
+    this.mesh?.clear();
+
     this.resetVars();
     return this;
   }
 
-  resetAttributes() {
-    for (const [key, v] of this.attributes) {
-      v[0].length = 0;
-    }
-    this.indicieIndex = 0;
-    return this;
-  }
   resetVars() {
     for (const key of this.vars.keys()) {
       this.vars.set(key, 0);
     }
     return this;
-  }
-
-  getMeshData() {
-    const arrays: any[] = [];
-    const strides: number[] = [];
-    const trasnfers: any[] = [];
-    for (let [key, [value, stride, type]] of this.attributes) {
-      if (key == MeshDefaultAttributes.Indices) {
-        if (value.length > 60_000) {
-          type = BinaryNumberTypes.Uint32;
-        }
-      }
-      //@ts-ignore
-      const newArray: Uint8Array = TypedArrayClassMap[type].from(value);
-      arrays.push(newArray);
-      strides.push(stride);
-      trasnfers.push(newArray.buffer);
-    }
-
-    return <[TypedArrays[], ArrayBuffer[], number[]]>[
-      arrays,
-      trasnfers,
-      strides,
-    ];
-  }
-
-  getAllAttributes(): [MeshAttributes, ArrayBuffer[]] {
-    const data: MeshAttributes = [];
-    const trasnfers: ArrayBuffer[] = [];
-    for (let [key, [value, stride, type]] of this.attributes) {
-      if (key == MeshDefaultAttributes.Indices) {
-        if (value.length > 60_000) {
-          type = BinaryNumberTypes.Uint32;
-        }
-      }
-      //@ts-ignore
-      const newArray: Uint8Array = TypedArrayClassMap[type].from(value);
-      trasnfers.push(newArray.buffer);
-      data.push([key, newArray, stride]);
-    }
-    return [data, trasnfers];
   }
 }

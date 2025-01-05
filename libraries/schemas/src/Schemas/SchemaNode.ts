@@ -17,7 +17,7 @@ export class TemplateNode {
 
 class SchemaNodeObservers<
   Value = any,
-  Input extends PropertyInputBase<any, any> = any
+  Input extends PropertyInputBase<any, any> = any,
 > {
   stateUpdated = new Observable<SchemaNode<Value, Input>>();
   updated = new Observable<SchemaNode<Value, Input>>();
@@ -27,25 +27,43 @@ class SchemaNodeObservers<
   evaluate = new Observable<void>();
   validate = new Observable<void>();
 }
-
+type UpdatedPipelineData<
+  Value = any,
+  Input extends PropertyInputBase<any, any> = any,
+> = {
+  newValue: any;
+  node: SchemaNode<Value, Input>;
+};
+type LoadInPipelineData<
+  Value = any,
+  Input extends PropertyInputBase<any, any> = any,
+> = {
+  value: any;
+  node: SchemaNode<Value, Input>;
+};
 class SchemaNodePipelines<
   Value = any,
-  Input extends PropertyInputBase<any, any> = any
+  Input extends PropertyInputBase<any, any> = any,
 > {
   onStore = new Pipeline<Property<Value, Input["data"]>>();
-  updated = new Pipeline<{ newValue: any; node: SchemaNode<Value, Input> }>();
-  
-  loadedIn = new Pipeline<{ value: any; node: SchemaNode<Value, Input> }>();
+  updated = new Pipeline<UpdatedPipelineData>();
+  loadedIn = new Pipeline<LoadInPipelineData>();
 }
 
 class SchemaNodeProxy<Value = any> {
-  constructor(public get: () => Value, public set: (value: Value) => Value) {}
+  constructor(
+    public get: () => Value,
+    public set: (value: Value) => Value
+  ) {}
 }
 
 export class SchemaNode<
   Value = any,
-  Input extends PropertyInputBase<any, any> = any
+  Input extends PropertyInputBase<any, any> = any,
 > {
+  private _updateData: UpdatedPipelineData<Value, Input>;
+  private _loadInData: LoadInPipelineData<Value, Input>;
+
   children: SchemaNode[] | null = null;
   conditions: PropertyConditionAction[] = [];
   input: Input | null;
@@ -59,9 +77,23 @@ export class SchemaNode<
     public property: Property<Value, Input["data"]>,
     public root: any
   ) {
+    this._updateData = {
+      node: this,
+      newValue: this.getValue(),
+    };
+    this._loadInData = {
+      node: this,
+      value: this.getValue(),
+    };
     if (property.input) {
-      const inputClass = PropertyInputRegister.getProperty(property.input.type);
-      this.input = new inputClass(property.input, this as any) as any;
+      const abstractInput = PropertyInputRegister.getProperty(
+        property.input.type
+      );
+      this.input = new PropertyInputBase(
+        abstractInput,
+        property.input,
+        this as any
+      ) as any;
     }
   }
 
@@ -101,9 +133,9 @@ export class SchemaNode<
         this.conditions.push(action);
       }
     }
-    if (property.input?.validator) {
+    if (property.input?.properties.validator) {
       const validator = ObjectPropertyValidatorRegister.getValidator(
-        property.input.validator
+        property.input.properties.validator
       );
 
       this.observers.updatedOrLoadedIn.subscribe(this, () => {
@@ -159,12 +191,8 @@ export class SchemaNode<
   }
 
   loadIn(value: any) {
-    this.setValue(
-      this.pipelines.loadedIn.pipe({
-        node: this,
-        value,
-      }).value
-    );
+    this._loadInData.value = value;
+    this.setValue(this.pipelines.loadedIn.pipe(this._loadInData).value);
     this.observers.loadedIn.notify(this);
     this.observers.updatedOrLoadedIn.notify(this);
   }
@@ -175,10 +203,10 @@ export class SchemaNode<
 
   update(newValue: any) {
     const oldValue = this.getValue();
-    const finalNewValue = this.pipelines.updated.pipe({
-      node: this,
-      newValue,
-    }).newValue;
+    this._updateData.newValue = newValue;
+    const finalNewValue = this.pipelines.updated.pipe(
+      this._updateData
+    ).newValue;
     this.setValue(finalNewValue);
     this.observers.set.notify(this);
 

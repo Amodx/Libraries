@@ -8,11 +8,11 @@ export class TraitPrototype<
   TraitSchema extends object = {},
   Data extends Record<string, any> = {},
   Logic extends Record<string, any> = {},
-  Shared extends Record<string, any> = {}
+  Shared extends Record<string, any> = {},
 > {
   schemaController: Schema<TraitSchema> | null;
   baseContextSchema: TraitSchema;
-  pool = new ItemPool<TraitInstance<TraitSchema, Data, Logic, Shared>>();
+  pool: ItemPool<TraitInstance<TraitSchema, Data, Logic, Shared>> | null = null;
   constructor(
     public data: TraitRegisterData<TraitSchema, Data, Logic, Shared>
   ) {
@@ -24,7 +24,9 @@ export class TraitPrototype<
     this.baseContextSchema = (
       this.schemaController ? this.schemaController.createData() : {}
     ) as TraitSchema;
-    this.pool.maxSize = data.pool?.maxSize || 100;
+    if (data.pool && data.pool.maxSize > 1) {
+      this.pool = new ItemPool(data.pool?.maxSize);
+    }
   }
 
   getSchema(
@@ -37,13 +39,13 @@ export class TraitPrototype<
 
   private getPooled() {
     let comp: TraitInstance<TraitSchema, Data, Logic, Shared> | null = null;
-    if (this.data.pool?.maxSize) {
+    if (this.pool) {
       comp = this.pool.get();
     }
     return comp || new TraitInstance();
   }
   private return(component: TraitInstance<TraitSchema, Data, Logic, Shared>) {
-    if (this.data.pool?.maxSize) {
+    if (this.pool) {
       return this.pool.addItem(component);
     }
     return null;

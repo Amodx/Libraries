@@ -3,7 +3,7 @@ const webpack = require("webpack");
 const HTMLWebpackPlugin = require("html-webpack-plugin");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 module.exports = {
-  entry: "./src/index.tsx",
+  entry: "./src/index.ts",
   mode: "development",
   output: {
     filename: "bundle.js",
@@ -77,20 +77,12 @@ module.exports = {
   devtool: "source-map",
   devServer: {
     historyApiFallback: true,
-    port: 9001,
-    https: true,
+    port: 9010,
+   // https: true,
     static: {
       directory: path.join(__dirname, "static"),
       publicPath: "/",
     },
-    /*     proxy: {
-      "/api": {
-        target: "http://localhost:3000",
-      },
-      "/files": {
-        target: "http://localhost:3000",
-      },
-    }, */
     liveReload: true,
     open: true,
     hot: true,

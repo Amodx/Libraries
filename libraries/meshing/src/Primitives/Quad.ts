@@ -56,7 +56,7 @@ export class Quad {
     return vertices;
   }
 
-  static GetQuadNormal(
+  static GetQuadNormalRightHanded(
     p1: Vec3Array,
     p2: Vec3Array,
     p3: Vec3Array,
@@ -84,10 +84,61 @@ export class Quad {
       (normalA[2] + normalB[2]) / 2,
     ]);
     const n4 = normalB;
+    const normals: any = [n1, n2, n3, n4];
 
-    return [n1, n2, n3, n4];
+    for (let i = 0; i < normals.length; i++) {
+      const n = normals[i];
+      for (let j = 0; j < 3; j++) {
+        if (Math.abs(n[j]) === 0) n[j] = 0;
+      }
+    }
+    return normals;
   }
+  static GetQuadNormalLeftHanded(
+    p1: Vec3Array,
+    p2: Vec3Array,
+    p3: Vec3Array,
+    p4: Vec3Array
+  ): [n1: Vec3Array, n2: Vec3Array, n3: Vec3Array, n4: Vec3Array] {
+    const vectorA1: Vec3Array = [p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]];
+    const vectorA2: Vec3Array = [p3[0] - p1[0], p3[1] - p1[1], p3[2] - p1[2]];
+    // Reverse the cross product direction for left-handed system
+    const normalA = Vector3Like.MultiplyScalarArray(
+      Vector3Like.NormalizeArray(Vector3Like.CrossArray(vectorA1, vectorA2)),
+      -1
+    );
 
+    const vectorB1: Vec3Array = [p3[0] - p1[0], p3[1] - p1[1], p3[2] - p1[2]];
+    const vectorB2: Vec3Array = [p4[0] - p1[0], p4[1] - p1[1], p4[2] - p1[2]];
+    // Reverse the cross product direction for left-handed system
+    const normalB = Vector3Like.MultiplyScalarArray(
+      Vector3Like.NormalizeArray(Vector3Like.CrossArray(vectorB1, vectorB2)),
+      -1
+    );
+
+    const n1 = Vector3Like.NormalizeArray([
+      (normalA[0] + normalB[0]) / 2,
+      (normalA[1] + normalB[1]) / 2,
+      (normalA[2] + normalB[2]) / 2,
+    ]);
+    const n2 = normalA;
+    const n3 = Vector3Like.NormalizeArray([
+      (normalA[0] + normalB[0]) / 2,
+      (normalA[1] + normalB[1]) / 2,
+      (normalA[2] + normalB[2]) / 2,
+    ]);
+    const n4 = normalB;
+
+    const normals: any = [n1, n2, n3, n4];
+
+    for (let i = 0; i < normals.length; i++) {
+      const n = normals[i];
+      for (let j = 0; j < 3; j++) {
+        if (Math.abs(n[j]) === 0) n[j] = 0;
+      }
+    }
+    return normals;
+  }
   static CalculateQuadPoints(
     start: Vec3Array,
     end: Vec3Array
@@ -194,7 +245,7 @@ export class Quad {
   uvs = new QuadVector2VertexData();
   flip = false;
   doubleSided = false;
-  orientation: 0 | 1 = 1;
+  orientation: 0 | 1 = 0;
 
   constructor(data: {
     positions?:
@@ -214,7 +265,7 @@ export class Quad {
     v1: Vec2Array,
     v2: Vec2Array,
     v3: Vec2Array,
-    v4: Vec2Array
+    v4: Vec2Array,
   ]) {
     this.uvs.set(
       Vector2Like.FromArray(v1),
@@ -266,7 +317,7 @@ export class Quad {
       );
     }
     if (positions.length == 4) {
-      const [n1, n2, n3, n4] = Quad.GetQuadNormal(...positions);
+      const [n1, n2, n3, n4] = Quad.GetQuadNormalLeftHanded(...positions);
       this.positions.set(
         Vector3Like.FromArray(positions[0]),
         Vector3Like.FromArray(positions[1]),

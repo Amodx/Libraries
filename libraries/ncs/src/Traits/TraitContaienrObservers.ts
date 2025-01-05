@@ -1,43 +1,37 @@
 import { Observable } from "@amodx/core/Observers";
 import { TraitInstance } from "Traits/TraitInstance";
-
+import { Nullable } from "@amodx/core/Types/UtilityTypes";
 export interface TraitContainerObservers {}
 
 export class TraitContainerObservers {
-  private _traitAdded?: Observable<TraitInstance>;
-  private _traitRemoved?: Observable<TraitInstance>;
-  private _traitsUpdated?: Observable<void>;
+  _traitAdded: Nullable<Observable<TraitInstance>> = null;
+  _traitRemoved: Nullable<Observable<TraitInstance>> = null;
+  _traitsUpdated: Nullable<Observable<void>> = null;
 
-  get traitAdded(): Observable<TraitInstance> {
-    if (!this._traitAdded) {
-      this._traitAdded = new Observable();
-    }
+  get traitAdded() {
+    if (!this._traitAdded) this._traitAdded = new Observable();
     return this._traitAdded;
   }
 
-  get traitRemoved(): Observable<TraitInstance> {
-    if (!this._traitRemoved) {
-      this._traitRemoved = new Observable();
-    }
+  get traitRemoved() {
+    if (!this._traitRemoved) this._traitRemoved = new Observable();
     return this._traitRemoved;
   }
 
-  get traitsUpdated(): Observable<void> {
-    if (!this._traitsUpdated) {
-      this._traitsUpdated = new Observable();
-    }
+  get traitsUpdated() {
+    if (!this._traitsUpdated) this._traitsUpdated = new Observable();
     return this._traitsUpdated;
   }
 
-  isTraitAddedSet(): boolean {
-    return !!this._traitAdded;
+  get isTraitAddedSet() {
+    return this._traitAdded !== null;
   }
 
-  isTraitRemovedSet(): boolean {
-    return !!this._traitRemoved;
+  get isTraitRemovedSet() {
+    return this._traitRemoved !== null;
   }
 
-  isTraitsUpdatedSet(): boolean {
-    return !!this._traitsUpdated;
+  get isTraitsUpdatedSet() {
+    return this._traitsUpdated !== null;
   }
 }

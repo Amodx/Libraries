@@ -1,44 +1,38 @@
 import { Pipeline } from "@amodx/core/Pipelines";
 import { TraitInstance } from "./TraitInstance";
 import { TraitData } from "./TraitData";
-
+import { Nullable } from "@amodx/core/Types/UtilityTypes";
 export interface TraitPipelines {}
 
 export class TraitPipelines<TraitSchema extends object = {}> {
-  private _disposed?: Pipeline<TraitInstance<TraitSchema>>;
-  private _toJSON?: Pipeline<TraitData<TraitSchema>>;
-  private _copy?: Pipeline<TraitData<TraitSchema>>;
+  private _disposed: Nullable<Pipeline<TraitInstance<TraitSchema>>> = null;
+  private _toJSON: Nullable<Pipeline<TraitData<TraitSchema>>> = null;
+  private _copy: Nullable<Pipeline<TraitData<TraitSchema>>> = null;
 
-  get disposed(): Pipeline<TraitInstance<TraitSchema>> {
-    if (!this._disposed) {
-      this._disposed = new Pipeline();
-    }
+  get disposed() {
+    if (!this._disposed) this._disposed = new Pipeline();
     return this._disposed;
   }
 
-  get toJSON(): Pipeline<TraitData<TraitSchema>> {
-    if (!this._toJSON) {
-      this._toJSON = new Pipeline();
-    }
+  get toJSON(){
+    if (!this._toJSON) this._toJSON = new Pipeline();
     return this._toJSON;
   }
 
-  get copy(): Pipeline<TraitData<TraitSchema>> {
-    if (!this._copy) {
-      this._copy = new Pipeline();
-    }
+  get copy() {
+    if (!this._copy) this._copy = new Pipeline();
     return this._copy;
   }
 
-  isDisposedSet(): boolean {
-    return !!this._disposed;
+  get isDisposedSet() {
+    return this._disposed !== null;
   }
 
-  isToJSONSet(): boolean {
-    return !!this._toJSON;
+  get isToJSONSet() {
+    return this._toJSON !== null;
   }
 
-  isCopySet(): boolean {
-    return !!this._copy;
+  get isCopySet() {
+    return this._copy !== null;
   }
 }

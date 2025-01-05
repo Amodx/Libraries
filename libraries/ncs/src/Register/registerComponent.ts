@@ -17,7 +17,7 @@ type RegisteredComponent<
   ComponentSchema extends object = {},
   Data extends object = {},
   Logic extends object = {},
-  Shared extends object = {}
+  Shared extends object = {},
 > = (ComponentRegisterData<ComponentSchema, Data, Logic, Shared> & {
   getNodes: (grpah: Graph) => Set<NodeInstance>;
   getComponents: (
@@ -32,12 +32,21 @@ type RegisteredComponent<
   get: (
     node: NodeInstance
   ) => ComponentInstance<ComponentSchema, Data, Logic, Shared> | null;
+  getRequired: (
+    node: NodeInstance
+  ) => ComponentInstance<ComponentSchema, Data, Logic, Shared>;
   getChild: (
     node: NodeInstance
   ) => ComponentInstance<ComponentSchema, Data, Logic, Shared> | null;
+  getRequiredChild: (
+    node: NodeInstance
+  ) => ComponentInstance<ComponentSchema, Data, Logic, Shared>;
   getParent: (
     node: NodeInstance
   ) => ComponentInstance<ComponentSchema, Data, Logic, Shared> | null;
+  getRequiredParent: (
+    node: NodeInstance
+  ) => ComponentInstance<ComponentSchema, Data, Logic, Shared>;
   getAll: (
     node: NodeInstance
   ) => ComponentInstance<ComponentSchema, Data, Logic, Shared>[] | null;
@@ -74,7 +83,7 @@ export const registerComponent = <
   ComponentSchema extends object = {},
   Data extends object = {},
   Logic extends object = {},
-  Shared extends object = {}
+  Shared extends object = {},
 >(
   data: ComponentRegisterData<ComponentSchema, Data, Logic, Shared>
 ): RegisteredComponent<ComponentSchema, Data, Logic, Shared> => {
@@ -101,6 +110,7 @@ export const registerComponent = <
       type: data.type,
       state: state || {},
       traits: traits || [],
+      namespace: data.namespace || "main",
       schema: {
         ...structuredClone(prototype.baseContextSchema),
         ...(schema || ({} as any)),
@@ -123,8 +133,8 @@ export const registerComponent = <
           schema
             ? schema
             : data.schema
-            ? structuredClone(prototype.baseContextSchema)
-            : ({} as any),
+              ? structuredClone(prototype.baseContextSchema)
+              : ({} as any),
           state,
           ...traits
         )
@@ -133,8 +143,32 @@ export const registerComponent = <
       return newComponent;
     },
     get: (node: NodeInstance) => node.components.get(data.type),
+    getRequired: (node: NodeInstance) => {
+      const found = node.components.get(data.type);
+      if (!found)
+        throw new Error(
+          `Could not find required component ${data.type} on node instance.`
+        );
+      return found;
+    },
     getChild: (node: NodeInstance) => node.components.getChild(data.type),
+    getRequiredChild: (node: NodeInstance) => {
+      const comp = node.components.getChild(data.type);
+      if (!comp)
+        throw new Error(
+          `Node does not have required child with component ${data.type}.`
+        );
+      return comp;
+    },
     getParent: (node: NodeInstance) => node.components.getParent(data.type),
+    getRequiredParent: (node: NodeInstance) => {
+      const comp = node.components.getParent(data.type);
+      if (!comp)
+        throw new Error(
+          `Node does not have required parent with component ${data.type}.`
+        );
+      return comp;
+    },
     getAll: (node: NodeInstance) => node.components.getAll(data.type),
     removeAll: (node: NodeInstance) => node.components.removeAll(data.type),
     remove: (node: NodeInstance) => node.components.remove(data.type),
@@ -164,8 +198,8 @@ export const registerComponent = <
             schema
               ? schema
               : data.schema
-              ? structuredClone(prototype.baseContextSchema)
-              : ({} as any),
+                ? structuredClone(prototype.baseContextSchema)
+                : ({} as any),
             state,
 
             ...traits

@@ -16,9 +16,8 @@ type RegisteredTrait<
   TraitSchema extends object = {},
   Data extends object = {},
   Logic extends object = {},
-  Shared extends object = {}
+  Shared extends object = {},
 > = (TraitRegisterData<TraitSchema, Data, Logic, Shared> & {
-  
   getNodes: (grpah: Graph) => Set<NodeInstance>;
   getTraits: (
     grpah: Graph
@@ -64,7 +63,7 @@ export function registerTrait<
   TraitSchema extends object = {},
   Data extends object = {},
   Logic extends object = {},
-  Shared extends object = {}
+  Shared extends object = {},
 >(
   data: TraitRegisterData<TraitSchema, Data, Logic, Shared>
 ): RegisteredTrait<TraitSchema, Data, Logic, Shared> {
@@ -103,11 +102,12 @@ export function registerTrait<
           schema
             ? schema
             : data.schema
-            ? structuredClone(prototype.baseContextSchema)
-            : ({} as any),
+              ? structuredClone(prototype.baseContextSchema)
+              : ({} as any),
           state,
           ...traits
-        )
+        ),
+        true
       );
     },
     get: (parent: ComponentInstance | TraitInstance) => {

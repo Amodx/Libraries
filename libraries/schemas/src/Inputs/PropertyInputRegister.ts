@@ -1,10 +1,10 @@
 import { ArrayMap } from "@amodx/core/DataStructures/ArrayMap";
-import { PropertyInputConstructor } from "./PropertyInput";
+import { AbstractPropertyInput } from "./PropertyInput";
 export class PropertyInputRegister {
-  static properties = new ArrayMap<string,PropertyInputConstructor>();
+  static properties = new ArrayMap<string, AbstractPropertyInput<any, any>>();
 
-  static regsiterProperty(...data: PropertyInputConstructor[]) {
-    this.properties.add(data.map((_) => [_.Meta.id, _]));
+  static regsiterProperty(data: AbstractPropertyInput) {
+    this.properties.set(data.id, data);
   }
 
   static getProperty(id: string) {

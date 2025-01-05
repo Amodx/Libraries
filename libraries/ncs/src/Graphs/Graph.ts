@@ -31,7 +31,7 @@ const create = (graph: Graph, data: NodeData, parent: NodeInstance) => {
     newNode.tags.addTags(...data.tags);
   }
   parent.hasObservers &&
-    parent.observers.isChildAddedSet() &&
+    parent.observers.isChildAddedSet &&
     parent.observers.childAdded.notify(newNode);
   graph.observers.nodeAdded.notify(newNode);
   graph.observers.nodesUpdated.notify();

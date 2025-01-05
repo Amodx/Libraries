@@ -330,7 +330,7 @@ export class BufferToObject {
   }
 
   static toObject<T>(
-    buffer: ArrayBuffer,
+    buffer: ArrayBufferLike,
     byteOffSet = 0,
     byteOffSetEnd = 0
   ): T {
@@ -356,7 +356,7 @@ export class BufferToObject {
     return <T>this._cobj;
   }
 
-  static toJSON<T>(buffer: ArrayBuffer, byteOffSet = 0, byteOffSetEnd = 0): T {
+  static toJSON<T>(buffer: ArrayBufferLike, byteOffSet = 0, byteOffSetEnd = 0): T {
     this._mode = "json";
     let legnth;
 
@@ -381,7 +381,7 @@ export class BufferToObject {
   }
 
   static toTypedNodes<T>(
-    buffer: ArrayBuffer,
+    buffer: ArrayBufferLike,
     byteOffSet = 0,
     byteOffSetEnd = 0
   ): T {
