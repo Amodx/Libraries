@@ -1,71 +1,68 @@
-import { NCS } from "../NCS";
 import { NCSRegister } from "./NCSRegister";
-import { ContextData, ContextRegisterData } from "../Contexts/ContextData";
-import { NodeInstance } from "../Nodes/NodeInstance";
-import { ContextInstance } from "../Contexts/ContextInstance";
-import { ObjectSchemaInstance } from "@amodx/schemas";
-import { ContextPrototype } from "../Contexts/ContextPrototype";
+import {
+  ContextRegisterData,
+  CreateContextData,
+} from "../Contexts/Context.types";
+import { NodeCursor } from "../Nodes/NodeCursor";
+import { ContextCursor } from "../Contexts/ContextCursor";
 
 type RegisteredContext<
   ContextSchema extends {} = {},
-  Data extends object = {}
+  Data extends object = {},
 > = (ContextRegisterData<ContextSchema, Data> & {
   set: (
-    parent: NodeInstance,
+    parent: NodeCursor,
     schema?: ContextSchema,
     data?: Data
-  ) => ContextInstance<ContextSchema, Data>;
-  get: (parent: NodeInstance) => ContextInstance<ContextSchema, Data> | null;
-  getRequired: (parent: NodeInstance) => ContextInstance<ContextSchema, Data>;
-  remove: (parent: NodeInstance) => ContextInstance<ContextSchema, Data> | null;
+  ) => ContextCursor<ContextSchema, Data>;
+  get: (parent: NodeCursor) => ContextCursor<ContextSchema, Data> | null;
+  getRequired: (parent: NodeCursor) => ContextCursor<ContextSchema, Data>;
+  remove: (parent: NodeCursor) => ContextCursor<ContextSchema, Data> | null;
 
-  prototype: ContextPrototype<ContextSchema, Data>;
-  default: ContextInstance<ContextSchema,Data>;
-  schemaController: ObjectSchemaInstance<ContextSchema>;
+  data: ContextRegisterData<ContextSchema, Data>;
+  default: ContextCursor<ContextSchema, Data>;
 }) &
-  (() => ContextData);
+  ((
+    schema?: ContextSchema,
+    schemaViewId?: string,
+    data?: Data
+  ) => CreateContextData);
 
 export function registerContext<
   ContextSchema extends {} = {},
-  Data extends object = {}
+  Data extends object = {},
 >(
   data: ContextRegisterData<ContextSchema, Data>
 ): RegisteredContext<ContextSchema, Data> {
-  const prototype = new ContextPrototype<ContextSchema, Data>(data);
-
-  NCSRegister.contexts.register(data.type, data.namespace || "main", prototype);
+  NCSRegister.contexts.register(data.type, data);
 
   const createContext = (
-    schema?: ContextSchema
-  ): ContextData<ContextSchema> => {
-    return NCS.Pipelines.OnContextDataCreate.pipe({
-      type: data.type,
-      schema: {
-        ...structuredClone(prototype.baseContextSchema),
-        ...(schema || ({} as any)),
-      },
-    }) as any;
+    schema?: ContextSchema,
+    schemaViewId?: string,
+    data?: any
+  ): CreateContextData<ContextSchema> => {
+    return [data.type, schema || ({} as any), schemaViewId || "default", data];
   };
 
   return Object.assign(createContext, data, {
-    prototype,
-    set: (parent: NodeInstance, schema?: ContextSchema, data?: Data) => {
+    data,
+    set: (parent: NodeCursor, schema?: ContextSchema, data?: Data) => {
       const newContext = parent.context.add(createContext(schema));
       if (data) {
-        newContext.data = data;
+        //  newContext.data = data;
       }
       return newContext;
     },
-    get: (parent: NodeInstance) => {
+    get: (parent: NodeCursor) => {
       return parent.context.get(data.type);
     },
-    getRequired: (parent: NodeInstance) => {
+    getRequired: (parent: NodeCursor) => {
       const found = parent.context.get(data.type);
       if (!found)
         throw new Error(`Could not find required context type: ${data.type}`);
       return found;
     },
-    remove: (parent: NodeInstance) => {
+    remove: (parent: NodeCursor) => {
       return parent.context.remove(data.type);
     },
   }) as any;

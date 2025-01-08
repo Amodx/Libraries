@@ -1,10 +1,10 @@
 export type ObservableFunction<T> = (data: T, observers: Observable<T>) => void;
 export type ObserverKeys = object | string | symbol | VoidFunction;
 
+const once = new Set<any>();
 export class Observable<T = void> {
   observersMap = new Map<ObserverKeys, ObservableFunction<T>>();
   observers: ObservableFunction<T>[] = [];
-  onceObservers: ObservableFunction<T>[] = [];
 
   constructor() {}
   /**
@@ -46,15 +46,17 @@ export class Observable<T = void> {
    * Subsrcibe to the observer once.
    */
   subscribeOnce(func: ObservableFunction<T>) {
-    this.onceObservers.push(func);
+    this.observers.push(func);
+    once.add(func);
   }
   /**
    * Unsubscribe a function that was added to the observer with the function *subscribeOnce*.
    */
   unsubscribeOnce(func: ObservableFunction<T>) {
-    for (let i = 0; i < this.onceObservers.length; i++) {
-      if (this.onceObservers[i] == func) {
-        this.onceObservers.splice(i, 1);
+    for (let i = 0; i < this.observers.length; i++) {
+      if (this.observers[i] == func) {
+        this.observers.splice(i, 1);
+        once.delete(func);
         return true;
       }
     }
@@ -65,16 +67,12 @@ export class Observable<T = void> {
    * Run each callback function.
    */
   notify(data: T) {
-    for (let i = 0; i < this.observers.length; i++) {
+    for (let i = this.observers.length; i > 0; i--) {
       this.observers[i](data, this);
-      if (this._broken) {
-        this._broken = false;
-        return;
+      if (once.has(this)) {
+        this.observers.splice(i, 1);
+        once.delete(this);
       }
-    }
-    while (this.onceObservers.length) {
-      const observer = this.onceObservers.shift()!;
-      observer(data, this);
       if (this._broken) {
         this._broken = false;
         return;
@@ -86,20 +84,16 @@ export class Observable<T = void> {
    * Run each callback function and awaits it.
    */
   async notifyAsync(data: T) {
-    for (let i = 0; i < this.observers.length; i++) {
-      if (this._broken) {
-        this._broken = false;
-        return;
-      }
+    for (let i = this.observers.length; i > 0; i--) {
       await this.observers[i](data, this);
-    }
-    while (this.onceObservers.length) {
+      if (once.has(this)) {
+        this.observers.splice(i, 1);
+        once.delete(this);
+      }
       if (this._broken) {
         this._broken = false;
         return;
       }
-      const observer = this.onceObservers.shift()!;
-      await observer(data, this);
     }
   }
 
@@ -107,8 +101,7 @@ export class Observable<T = void> {
    * Removes all observers.
    */
   clear() {
-    this.onceObservers = [];
-    this.observers = [];
+    this.observers.length = 0;
     this.observersMap.clear();
   }
 

@@ -1,4 +1,4 @@
-import { TagRegisterData } from "./TagData";
+import { TagRegisterData } from "./Tag.types";
 
 export class Tag {
   get id() {

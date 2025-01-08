@@ -1,6 +1,6 @@
 import { SystemInstance } from "./SystemInstance";
 import { Graph } from "../Graphs/Graph";
-import { SystemRegisterData } from "./SystemData";
+import { SystemRegisterData } from "./System.types";
 
 export class SystemPrototype {
   systems = new Map<Graph, SystemInstance>();

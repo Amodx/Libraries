@@ -1,15 +1,20 @@
-import { ComponentInstanceMap } from "../Components/ComponentInstanceMap";
 import { Graph } from "../Graphs/Graph";
-import { QueryData } from "./QueryData";
-import { NodeInstance } from "../Nodes/NodeInstance";
-import { TagInstanceMap } from "../Tags/TagInstanceMap";
+import { QueryData } from "./Query.types";
+import { NodeCursor } from "../Nodes/NodeCursor";
 import { NCSRegister } from "../Register/NCSRegister";
+import { ObservableFunction } from "../Util/Observable";
 
 export class QueryInstance {
-  nodes = new Set<NodeInstance>();
-  constructor(public graph: Graph, public data: QueryData) {}
+  nodes: number[] = [];
 
-  evulate(node: NodeInstance): boolean {
+  private _updateFunction: ObservableFunction<number>;
+  private nodeCursor = new NodeCursor();
+  constructor(
+    public graph: Graph,
+    public data: QueryData
+  ) {}
+
+  evulate(node: NodeCursor): boolean {
     if (this.data.inclueComponents) {
       for (const comp of this.data.inclueComponents) {
         if (!(node.hasComponents && node.components.get(comp.type))) {
@@ -43,35 +48,36 @@ export class QueryInstance {
   }
 
   init() {
-    const onupdate = (node: NodeInstance) => {
+    this._updateFunction = (nodeIndex: number) => {
+      const node = this.nodeCursor.setNode(nodeIndex);
       if (!this.evulate(node)) {
-        this.nodes.delete(node);
+        for (let i = 0; i < this.nodes.length; i++) {
+          if (this.nodes[i] == node.index) {
+            this.nodes.splice(i, 1);
+          }
+        }
         return;
       }
-      this.nodes.add(node);
+      this.nodes.push(node.index);
     };
 
     if (this.data.inclueComponents) {
       for (const comp of this.data.inclueComponents) {
-        const map = ComponentInstanceMap.getMap(comp.type).getMap(this.graph);
-
-        map.observers.nodeAdded.subscribe(this, onupdate);
-        map.observers.nodeRemoved.subscribe(this, onupdate);
+        const map = this.graph.components.get(comp.type)!;
+        map.observers.nodeAdded.subscribe(this._updateFunction);
+        map.observers.nodeRemoved.subscribe(this._updateFunction);
       }
     }
     if (this.data.includeTags) {
       for (const tagId of this.data.includeTags) {
-        const tagPrototype = NCSRegister.tags.get(
-          tagId.id,
-          tagId.namespace || "main"
-        )!;
-        const tagMap = TagInstanceMap.getMap(tagId.id).getMap(this.graph);
-        tagMap.observers.nodeAdded.subscribe(this, onupdate);
-        tagMap.observers.nodeRemoved.subscribe(this, onupdate);
-        for (const child of tagPrototype.tag.traverseChildren()) {
-          const chidMap = TagInstanceMap.getMap(child.id).getMap(this.graph);
-          chidMap.observers.nodeAdded.subscribe(this, onupdate);
-          chidMap.observers.nodeRemoved.subscribe(this, onupdate);
+        const tag = NCSRegister.tags.get(tagId.id)!;
+        const tagMap = this.graph.tags.get(tagId.id)!;
+        tagMap.observers.nodeAdded.subscribe(this._updateFunction);
+        tagMap.observers.nodeRemoved.subscribe(this._updateFunction);
+        for (const child of tag.traverseChildren()) {
+          const chidMap = this.graph.tags.get(child.id)!;
+          chidMap.observers.nodeAdded.subscribe(this._updateFunction);
+          chidMap.observers.nodeRemoved.subscribe(this._updateFunction);
         }
       }
     }
@@ -80,24 +86,21 @@ export class QueryInstance {
   dispose() {
     if (this.data.inclueComponents) {
       for (const comp of this.data.inclueComponents) {
-        const map = ComponentInstanceMap.getMap(comp.type).getMap(this.graph);
-        map.observers.nodeAdded.unsubscribe(this);
-        map.observers.nodeRemoved.unsubscribe(this);
+        const map = this.graph.components.get(comp.type)!;
+        map.observers.nodeAdded.unsubscribe(this._updateFunction);
+        map.observers.nodeRemoved.unsubscribe(this._updateFunction);
       }
     }
     if (this.data.includeTags) {
       for (const tagId of this.data.includeTags) {
-        const tagPrototype = NCSRegister.tags.get(
-          tagId.id,
-          tagId.namespace || "main"
-        )!;
-        const tagMap = TagInstanceMap.getMap(tagId.id).getMap(this.graph);
-        tagMap.observers.nodeAdded.unsubscribe(this);
-        tagMap.observers.nodeRemoved.unsubscribe(this);
-        for (const child of tagPrototype.tag.traverseChildren()) {
-          const chidMap = TagInstanceMap.getMap(child.id).getMap(this.graph);
-          chidMap.observers.nodeAdded.unsubscribe(this);
-          chidMap.observers.nodeRemoved.unsubscribe(this);
+        const tag = NCSRegister.tags.get(tagId.id)!;
+        const tagMap = this.graph.tags.get(tagId.id)!;
+        tagMap.observers.nodeAdded.unsubscribe(this._updateFunction);
+        tagMap.observers.nodeRemoved.unsubscribe(this._updateFunction);
+        for (const child of tag.traverseChildren()) {
+          const chidMap = this.graph.tags.get(child.id)!;
+          chidMap.observers.nodeAdded.unsubscribe(this._updateFunction);
+          chidMap.observers.nodeRemoved.unsubscribe(this._updateFunction);
         }
       }
     }

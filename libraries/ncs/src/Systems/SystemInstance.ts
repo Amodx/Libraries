@@ -1,9 +1,9 @@
-import { GraphUpdate, GraphUpdtable } from "../Graphs/GraphUpdate";
+
 import { Graph } from "../Graphs/Graph";
-import { SystemRegisterData } from "./SystemData";
+import { SystemRegisterData } from "./System.types";
 import { QueryInstance } from "../Queries/QueryInstance";
 
-export class SystemInstance implements GraphUpdtable {
+export class SystemInstance  {
   queries: QueryInstance[] = [];
   constructor(public graph: Graph, public proto: SystemRegisterData) {
     for (const query of proto.queries) {
@@ -16,9 +16,9 @@ export class SystemInstance implements GraphUpdtable {
   }
 
   init() {
-    GraphUpdate.addITem(this.graph, this);
+
   }
   dispose() {
-    GraphUpdate.removeItem(this.graph, this);
+
   }
 }

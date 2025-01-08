@@ -1,47 +1,29 @@
+const buffer = new ArrayBuffer(16);
+const randomArray = new Uint8Array(buffer);
+const view = new DataView(buffer);
+
 export class NodeId {
-  get high() {
-    return this._idArray[0];
+
+  static Create(): bigint {
+    crypto.getRandomValues(randomArray);
+    const high = BigInt(view.getUint32(0)) << 96n;
+    const midHigh = BigInt(view.getUint32(4)) << 64n;
+    const midLow = BigInt(view.getUint32(8)) << 32n;
+    const low = BigInt(view.getUint32(12));
+    const bigIntId = high | midHigh | midLow | low;
+    return bigIntId;
   }
 
-  get low() {
-    return this._idArray[1];
+  static CreateString(): string {
+    return this.ToHexString(this.Create());
   }
 
-  private _idString = "";
-  get idString() {
-    if (!this._idString) this._idString = NodeId.ToHexString(this);
-    return this._idString;
+  static FromString(id: string): bigint {
+    const bigIntId = BigInt("0x" + id);
+    return bigIntId;
   }
 
-  private constructor(private _idArray: BigUint64Array) {}
-
-  static Compare(id: NodeId, id2: NodeId) {
-    return id.low == id2.low && id.high == id2.high;
-  }
-
-  static Create(id?: string): NodeId {
-    if (id) {
-      return NodeId.FromString(id);
-    } else {
-      const buffer = new ArrayBuffer(16);
-      const randomArray = new Uint8Array(buffer);
-      crypto.getRandomValues(randomArray);
-
-      const idArray = new BigUint64Array(buffer);
-
-      return new NodeId(idArray);
-    }
-  }
-
-  static FromString(id: string): NodeId {
-    const high = BigInt("0x" + id.slice(0, 16));
-    const low = BigInt("0x" + id.slice(16, 32));
-    return new NodeId(new BigUint64Array([high, low]));
-  }
-  static ToHexString(id: NodeId): string {
-    return (
-      id.high.toString(16).padStart(16, "0") +
-      id.low.toString(16).padStart(16, "0")
-    );
+  static ToHexString(id: BigInt): string {
+    return id.toString(16).padStart(32, "0");
   }
 }

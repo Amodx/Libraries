@@ -1,113 +1,117 @@
-import { NodeData } from "../Nodes/NodeData";
-import { NodeInstance } from "../Nodes/NodeInstance";
+import { CreateNodeData } from "../Nodes/Node.types";
 import { NodeId } from "../Nodes/NodeId";
-import { GraphEvents } from "./GraphEvents";
-import { Node } from "../NCS";
-import { GraphUpdate } from "./GraphUpdate";
-import { GraphObservers } from "./GraphObservers";
+import { ComponentCursor } from "../Components/ComponentCursor";
+import { NodeArray } from "../Nodes/NodeArray";
+import { ComponentArray } from "../Components/ComponentArray";
+import { NodeCursor } from "../Nodes/NodeCursor";
+import { ContextArray } from "../Contexts/ContextArray";
+import { TagArray } from "../Tags/TagArray";
 
-export interface GraphDependencies {
-  [key: string]: any;
-}
-export interface Graph {}
+const parentCursor = new NodeCursor();
+const nodeCursor = new NodeCursor();
+const componentCursor = new ComponentCursor();
 
-const create = (graph: Graph, data: NodeData, parent: NodeInstance) => {
-  const newNode = new NodeInstance(parent, data, graph);
+function createNode(graph: Graph, data: CreateNodeData, parent: number) {
+  const newNode = graph.nodes.addNode(
+    data[0],
+    parent,
+    data[1],
+    data[2],
+    null,
+    null,
+    null,
+    null
+  );
+  nodeCursor.graph = graph;
 
-  newNode.parent = parent;
-  parent.children.push(newNode);
+  nodeCursor.setNode(newNode);
+  // graph._nodeMap.set(newNode.id, newNode);
 
-  let high = graph._nodeMap.get(newNode.id.low);
-  if (!high) {
-    high = new Map<BigInt, NodeInstance>();
-    graph._nodeMap.set(newNode.id.low, high);
+  if (data[3]?.length) {
+    for (let i = 0; i < data[3].length; i++) {
+      nodeCursor.components.add(data[3][i]);
+    }
   }
-  high.set(newNode.id.high, newNode);
-
-  if (data.components?.length) {
-    newNode.components.addComponents(...data.components);
-  }
-  if (data.tags?.length) {
-    newNode.tags.addTags(...data.tags);
-  }
-  parent.hasObservers &&
-    parent.observers.isChildAddedSet &&
-    parent.observers.childAdded.notify(newNode);
-  graph.observers.nodeAdded.notify(newNode);
-  graph.observers.nodesUpdated.notify();
-
-  if (data.children?.length) {
-    for (const child of data.children) {
-      create(graph, child, newNode);
+  if (data[4]?.length) {
+    for (let i = 0; i < data[4].length; i++) {
+      nodeCursor.tags.add(data[4][i]);
     }
   }
 
-  return newNode;
-};
+  const parentData = graph.nodes._children[parent];
+  if (typeof parentData === "undefined") {
+    parentCursor.setNode(parent);
+    parentCursor.addChild(nodeCursor);
+  }
+
+  if (data[5]?.length) {
+    for (let i = 0; i < data[5].length; i++) {
+      createNode(graph, data[5][i], newNode);
+    }
+  }
+  nodeCursor.setNode(newNode);
+  return nodeCursor;
+}
 
 export class Graph {
-  _nodeMap = new Map<BigInt, Map<BigInt, NodeInstance>>();
-  events = new GraphEvents();
-  observers = new GraphObservers();
-  root = new NodeInstance(null as any, Node({ name: "__root__" }), this);
+  nodes = new NodeArray();
+  components = new Map<string, ComponentArray>();
+  contexts = new ContextArray();
+  tags = new Map<string, TagArray>();
+  _updatingComponents: ComponentArray[] = [];
 
-  constructor(public dependencies: GraphDependencies) {}
+  root = new NodeCursor();
 
-  getNode(id: NodeId | string) {
-    if (typeof id == "string") id = NodeId.Create(id);
-
-    const high = this._nodeMap.get(id.low);
-    if (!high) throw new Error(`Node with id ${id.idString} does not exist`);
-    const node = high.get(id.high);
-    if (!node) throw new Error(`Node with id ${id.idString} does not exist`);
-    return node;
+  constructor() {}
+  getNode(index: number, cursor = new NodeCursor()) {
+    const nodeIndex = this.nodes._parents[index];
+    if (typeof nodeIndex === "undefined")
+      throw new Error(`Node with index ${index} does not exist`);
+    cursor.setNode(nodeIndex);
+    return cursor;
   }
 
-  loadInRoot(data: NodeData) {
-    if (this.root) this.root.dispose();
-    const root = new NodeInstance({} as any, data, this);
-    root.addChildren(...data.children);
-    this.root = root;
+  getNodeFromId(id: bigint | string, cursor = new NodeCursor()) {
+    if (typeof id == "string") id = NodeId.FromString(id);
+    const nodeIndex = this.nodes._idMap.get(id);
+    if (typeof nodeIndex === "undefined")
+      throw new Error(`Node with id ${id} does not exist`);
+    cursor.setNode(nodeIndex);
+    return cursor;
   }
 
-  addNode(data: NodeData, parent: NodeInstance = this.root) {
-    const newNode = create(this, data, parent);
+
+  addNode(data: CreateNodeData, parent: number) {
+    const newNode = createNode(this, data, parent);
     if (newNode.hasComponents) {
-      for (const comp of newNode.components.components) {
-        comp.init();
+      const components = newNode.components.components;
+      for (let i = 0; i < components.length; i++) {
+        componentCursor.setInstance(newNode, components[i], components[i + 1]);
+        componentCursor.init();
       }
     }
     for (const child of newNode.traverseChildren()) {
       if (child.hasComponents) {
-        for (const comp of child.components.components) {
-          comp.init();
+        const components = child.components.components;
+        for (let i = 0; i < components.length; i++) {
+          componentCursor.setInstance(child, components[i], components[i + 1]);
+          componentCursor.init();
         }
       }
     }
     return newNode;
   }
 
-  removeNode(id: NodeId) {
-    const low = this._nodeMap.get(id.low);
-    if (!low) return;
-
-    const node = low.get(id.high);
-
+  removeNode(index: number) {
+    const node = this.nodes.removeNode(index);
     if (!node) return;
-    if (!node.isDisposed()) node.dispose();
-    this._nodeMap.delete(id.low);
-    low.delete(id.high);
-    this.observers.nodeRemoved.notify(node);
-    this.observers.nodesUpdated.notify();
+    nodeCursor.setNode(index);
+    if (!nodeCursor.isDisposed()) nodeCursor.dispose();
+
   }
 
   update() {
-    const updating = GraphUpdate.getItems(this);
-    if (updating) {
-      for (const item of updating) {
-        item.update();
-      }
-    }
+   
   }
 
   toJSON() {

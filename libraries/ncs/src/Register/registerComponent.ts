@@ -1,17 +1,16 @@
 import {
-  ComponentData,
+  SerializedComponentData,
   ComponentRegisterData,
   ComponentStateData,
-} from "../Components/ComponentData";
-import { ComponentInstance } from "../Components/ComponentInstance";
-import { ComponentInstanceMap } from "../Components/ComponentInstanceMap";
+  CreateComponentData,
+} from "../Components/Component.types";
 import { Graph } from "../Graphs/Graph";
-import { NCS } from "../NCS";
-import { NodeInstance } from "../Nodes/NodeInstance";
-import { TraitData } from "../Traits/TraitData";
-import { NodeData } from "../Nodes/NodeData";
+
+import { SerializedNodeData } from "../Nodes/Node.types";
 import { NCSRegister } from "./NCSRegister";
-import { ComponentPrototype } from "../Components/ComponentPrototype";
+import { ComponentCursor } from "../Components/ComponentCursor";
+import { SchemaCursor } from "../Schema/Schema.types";
+import { NodeCursor } from "../Nodes/NodeCursor";
 
 type RegisteredComponent<
   ComponentSchema extends object = {},
@@ -19,65 +18,69 @@ type RegisteredComponent<
   Logic extends object = {},
   Shared extends object = {},
 > = (ComponentRegisterData<ComponentSchema, Data, Logic, Shared> & {
-  getNodes: (grpah: Graph) => Set<NodeInstance>;
-  getComponents: (
-    grpah: Graph
-  ) => Set<ComponentInstance<ComponentSchema, Data, Logic, Shared>>;
+  getNodes: (grpah: Graph) => any;
+  getComponents: (grpah: Graph) => Set<any>;
   set: (
-    node: NodeInstance,
+    node: NodeCursor,
     componentSchema?: Partial<ComponentSchema>,
-    traits?: TraitData[],
+    schemaCursor?: SchemaCursor<ComponentSchema>,
     state?: ComponentStateData
-  ) => ComponentInstance<ComponentSchema, Data, Logic, Shared>;
+  ) => ComponentCursor<ComponentSchema, Data, Logic, Shared>;
   get: (
-    node: NodeInstance
-  ) => ComponentInstance<ComponentSchema, Data, Logic, Shared> | null;
+    node: NodeCursor
+  ) => ComponentCursor<ComponentSchema, Data, Logic, Shared> | null;
   getRequired: (
-    node: NodeInstance
-  ) => ComponentInstance<ComponentSchema, Data, Logic, Shared>;
+    node: NodeCursor
+  ) => ComponentCursor<ComponentSchema, Data, Logic, Shared>;
   getChild: (
-    node: NodeInstance
-  ) => ComponentInstance<ComponentSchema, Data, Logic, Shared> | null;
+    node: NodeCursor
+  ) => ComponentCursor<ComponentSchema, Data, Logic, Shared> | null;
   getRequiredChild: (
-    node: NodeInstance
-  ) => ComponentInstance<ComponentSchema, Data, Logic, Shared>;
+    node: NodeCursor
+  ) => ComponentCursor<ComponentSchema, Data, Logic, Shared>;
   getParent: (
-    node: NodeInstance
-  ) => ComponentInstance<ComponentSchema, Data, Logic, Shared> | null;
+    node: NodeCursor
+  ) => ComponentCursor<ComponentSchema, Data, Logic, Shared> | null;
   getRequiredParent: (
-    node: NodeInstance
-  ) => ComponentInstance<ComponentSchema, Data, Logic, Shared>;
+    node: NodeCursor
+  ) => ComponentCursor<ComponentSchema, Data, Logic, Shared>;
   getAll: (
-    node: NodeInstance
-  ) => ComponentInstance<ComponentSchema, Data, Logic, Shared>[] | null;
+    node: NodeCursor
+  ) => ComponentCursor<ComponentSchema, Data, Logic, Shared>[] | null;
   remove: (
-    node: NodeInstance
-  ) => ComponentInstance<ComponentSchema, Data, Logic, Shared> | null;
+    node: NodeCursor
+  ) => ComponentCursor<ComponentSchema, Data, Logic, Shared> | null;
   removeAll: (
-    node: NodeInstance
-  ) => ComponentInstance<ComponentSchema, Data, Logic, Shared>[] | null;
+    node: NodeCursor
+  ) => ComponentCursor<ComponentSchema, Data, Logic, Shared>[] | null;
 
   nodeData: {
-    get: (node: NodeData) => ComponentData<ComponentSchema> | null;
+    get: (
+      node: SerializedNodeData
+    ) => SerializedComponentData<ComponentSchema> | null;
     set: (
-      node: NodeData,
+      node: SerializedNodeData,
       componentSchema?: Partial<ComponentSchema>,
-      traits?: TraitData[],
       state?: ComponentStateData
     ) => void;
-    getAll: (node: NodeData) => ComponentData<ComponentSchema>[] | null;
-    remove: (node: NodeData) => ComponentData<ComponentSchema> | null;
-    removeAll: (node: NodeData) => ComponentData<ComponentSchema>[] | null;
+    getAll: (
+      node: SerializedNodeData
+    ) => SerializedComponentData<ComponentSchema>[] | null;
+    remove: (
+      node: SerializedNodeData
+    ) => SerializedComponentData<ComponentSchema> | null;
+    removeAll: (
+      node: SerializedNodeData
+    ) => SerializedComponentData<ComponentSchema>[] | null;
   };
 
-  prototype: ComponentPrototype<ComponentSchema, Data, Logic, Shared>;
-  default: ComponentInstance<ComponentSchema, Data, Logic, Shared>;
+  data: ComponentRegisterData<ComponentSchema, Data, Logic, Shared>;
+  default: ComponentCursor<ComponentSchema, Data, Logic, Shared>;
 }) &
   ((
     schema?: Partial<ComponentSchema> | null | undefined,
-    state?: Partial<ComponentStateData> | null | undefined,
-    ...traits: TraitData[]
-  ) => ComponentData<ComponentSchema>);
+    state?: Partial<ComponentStateData> | null | undefined
+  ) => SerializedComponentData<ComponentSchema>);
 
 export const registerComponent = <
   ComponentSchema extends object = {},
@@ -87,63 +90,32 @@ export const registerComponent = <
 >(
   data: ComponentRegisterData<ComponentSchema, Data, Logic, Shared>
 ): RegisteredComponent<ComponentSchema, Data, Logic, Shared> => {
-  const prototype = new ComponentPrototype<
-    ComponentSchema,
-    Data,
-    Logic,
-    Shared
-  >(data);
-  NCSRegister.components.register(
-    data.type,
-    data.namespace || "main",
-    prototype
-  );
-
-  const componentMap = ComponentInstanceMap.registerComponent(data.type);
+  const typeId = NCSRegister.components.register(data.type, data);
 
   const createComponent = (
     schema?: Partial<ComponentSchema> | null | undefined,
-    state?: Partial<ComponentStateData> | null | undefined,
-    ...traits: TraitData[]
-  ): ComponentData<ComponentSchema> => {
-    return NCS.Pipelines.OnComponentDataCreate.pipe({
-      type: data.type,
-      state: state || {},
-      traits: traits || [],
-      namespace: data.namespace || "main",
-      schema: {
-        ...structuredClone(prototype.baseContextSchema),
-        ...(schema || ({} as any)),
-      },
-    });
+    state?: Partial<ComponentStateData> | null | undefined
+  ): CreateComponentData<ComponentSchema> => {
+    return [data.type, state || {}, schema || null, null];
   };
 
   return Object.assign(createComponent, data, {
-    prototype,
-    getNodes: (graph: Graph) => componentMap.getNodes(graph),
-    getComponents: (graph: Graph) => componentMap.getItems(graph),
+    data,
+    getNodes: (graph: Graph) => [],
+    getComponents: (graph: Graph) => [],
     set: (
-      node: NodeInstance,
+      node: NodeCursor,
       schema?: Partial<ComponentSchema> | null,
-      state?: ComponentStateData | null,
-      ...traits: TraitData[]
+      state?: ComponentStateData | null
     ) => {
-      const newComponent = node.components.add(
-        createComponent(
-          schema
-            ? schema
-            : data.schema
-              ? structuredClone(prototype.baseContextSchema)
-              : ({} as any),
-          state,
-          ...traits
-        )
-      );
-      newComponent.init();
-      return newComponent;
+      const cursor = new ComponentCursor();
+      const newComponent = node.components.add(createComponent(schema, state));
+      cursor.setInstance(node, typeId, newComponent.index);
+      cursor.init();
+      return cursor;
     },
-    get: (node: NodeInstance) => node.components.get(data.type),
-    getRequired: (node: NodeInstance) => {
+    get: (node: NodeCursor) => node.components.get(data.type),
+    getRequired: (node: NodeCursor) => {
       const found = node.components.get(data.type);
       if (!found)
         throw new Error(
@@ -151,8 +123,8 @@ export const registerComponent = <
         );
       return found;
     },
-    getChild: (node: NodeInstance) => node.components.getChild(data.type),
-    getRequiredChild: (node: NodeInstance) => {
+    getChild: (node: NodeCursor) => node.components.getChild(data.type),
+    getRequiredChild: (node: NodeCursor) => {
       const comp = node.components.getChild(data.type);
       if (!comp)
         throw new Error(
@@ -160,8 +132,8 @@ export const registerComponent = <
         );
       return comp;
     },
-    getParent: (node: NodeInstance) => node.components.getParent(data.type),
-    getRequiredParent: (node: NodeInstance) => {
+    getParent: (node: NodeCursor) => node.components.getParent(data.type),
+    getRequiredParent: (node: NodeCursor) => {
       const comp = node.components.getParent(data.type);
       if (!comp)
         throw new Error(
@@ -169,42 +141,34 @@ export const registerComponent = <
         );
       return comp;
     },
-    getAll: (node: NodeInstance) => node.components.getAll(data.type),
-    removeAll: (node: NodeInstance) => node.components.removeAll(data.type),
-    remove: (node: NodeInstance) => node.components.remove(data.type),
+    getAll: (node: NodeCursor) => node.components.getAll(data.type),
+    removeAll: (node: NodeCursor) => node.components.removeAll(data.type),
+    remove: (node: NodeCursor) => node.components.remove(data.type),
     nodeData: {
-      get: (node: NodeData) =>
+      get: (node: SerializedNodeData) =>
         node.components?.find((_) => _.type == data.type) || null,
-      getAll: (node: NodeData) =>
+      getAll: (node: SerializedNodeData) =>
         node.components?.filter((_) => _.type == data.type),
-      remove: (node: NodeData) =>
+      remove: (node: SerializedNodeData) =>
         node.components?.splice(
           node.components?.findIndex((_) => _.type == data.type)
         )[0] || null,
-      removeAll(node: NodeData) {
+      removeAll(node: SerializedNodeData) {
         const all = this.getAll(node);
         node.components = node.components?.filter((_) => _.type != data.type);
         return all?.length ? all : null;
       },
       set: (
-        node: NodeData,
+        node: SerializedNodeData,
         schema?: Partial<ComponentSchema> | null,
-        state?: ComponentStateData | null,
-        ...traits: TraitData[]
+        state?: ComponentStateData | null
       ) => {
         node.components ??= [];
-        node.components.push(
-          createComponent(
-            schema
-              ? schema
-              : data.schema
-                ? structuredClone(prototype.baseContextSchema)
-                : ({} as any),
-            state,
-
-            ...traits
-          )
-        );
+        node.components.push({
+          type: data.type,
+          schema: {},
+          state: state || {},
+        });
       },
     },
   }) as any;

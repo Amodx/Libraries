@@ -1,62 +1,50 @@
-type SyncPipelineFunction<T> = (data: T) => T;
-type AsyncPipelineFunction<T> = (data: T) => Promise<T> | T;
+type PipelineFunction<T> = (data: T) => T | Promise<T>;
 export type PipelineKeys = Object | string | Symbol | Function;
 
 export class Pipeline<T extends any = {}> {
-  private pipes = new Map<PipelineKeys, SyncPipelineFunction<T>>();
-
+  private pipeMap = new Map<PipelineKeys, PipelineFunction<T>>();
+  private pipes: PipelineFunction<T>[] = [];
   constructor() {}
 
   isRegistered(key: PipelineKeys) {
-    return this.pipes.has(key);
+    return this.pipeMap.has(key);
   }
 
-  regiser(func: SyncPipelineFunction<T>): void;
-  regiser(key: PipelineKeys, func: SyncPipelineFunction<T>): void;
-  regiser(
-    key: PipelineKeys | SyncPipelineFunction<T>,
-    func?: SyncPipelineFunction<T>
-  ) {
+  regiser(func: PipelineFunction<T>): void;
+  regiser(key: PipelineKeys, func: PipelineFunction<T>): void;
+  regiser(key: PipelineKeys | PipelineFunction<T>, func?: PipelineFunction<T>) {
     if (typeof key === "function" && func === undefined) {
-      this.pipes.set(key, key as SyncPipelineFunction<T>);
+      this.pipeMap.set(key, key as PipelineFunction<T>);
+      this.pipes.push(key as PipelineFunction<T>);
     } else if (func !== undefined) {
-      this.pipes.set(key, func);
+      this.pipeMap.set(key, func);
+      this.pipes.push(func);
     } else {
       throw new Error("Invalid arguments for regiser method");
     }
   }
 
   unRegister(key: PipelineKeys) {
-    this.pipes.delete(key);
+    const func = this.pipeMap.get(key);
+    if (!func) return false;
+    this.pipeMap.delete(key);
+    for (let i = 0; i < this.pipes.length; i++) {
+      if (this.pipes[i] == func) {
+        this.pipes.splice(i,1);
+      }
+    }
   }
 
   pipe(data: T) {
-    for (const pipe of this.pipes) {
-      data = pipe[1](data);
+    for (let i = 0; i < this.pipes.length; i++) {
+      data = this.pipes[i](data) as T;
     }
     return data;
   }
-}
-export class AsyncPipeline<T extends any = {}> {
-  private pipes = new Map<PipelineKeys, AsyncPipelineFunction<T>>();
 
-  constructor() {}
-
-  isRegistered(key: PipelineKeys) {
-    return this.pipes.has(key);
-  }
-
-  regiser(key: PipelineKeys, func: AsyncPipelineFunction<T>) {
-    this.pipes.set(key, func);
-  }
-
-  unRegister(key: PipelineKeys) {
-    this.pipes.delete(key);
-  }
-
-  async pipe(data: T) {
-    for (const pipe of this.pipes) {
-      data = await pipe[1](data);
+  async pipeAsync(data: T) {
+    for (let i = 0; i < this.pipes.length; i++) {
+      data = (await this.pipes[i](data)) as T;
     }
     return data;
   }

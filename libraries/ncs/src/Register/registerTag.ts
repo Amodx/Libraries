@@ -1,64 +1,57 @@
-import { NCS } from "../NCS";
-
 import { NCSRegister } from "./NCSRegister";
-import { TagData, TagRegisterData } from "../Tags/TagData";
-import { NodeInstance } from "../Nodes/NodeInstance";
-import { TagInstance } from "../Tags/TagInstance";
+import {  TagRegisterData } from "../Tags/Tag.types";
+import { NodeCursor } from "../Nodes/NodeCursor";
+import { TagCursor } from "../Tags/TagCursor";
 import { Tag } from "../Tags/Tag";
-import { TagPrototype } from "../Tags/TagPrototype";
 import { Graph } from "../Graphs/Graph";
-import { TagInstanceMap } from "../Tags/TagInstanceMap";
-
 export type RegisteredTag = (TagRegisterData & {
   tag: Tag;
-  prototype: TagPrototype;
-  set: (parent: NodeInstance) => TagInstance;
-  get: (parent: NodeInstance) => TagInstance | null;
-  getChild: (parent: NodeInstance) => TagInstance | null;
-  getAllChildlren: (parent: NodeInstance) => TagInstance[] | null;
-  getParent: (parent: NodeInstance) => TagInstance | null;
-  getAllParents: (parent: NodeInstance) => TagInstance[] | null;
-  remove: (parent: NodeInstance) => TagInstance | null;
-  getNodes: (grpah: Graph) => Set<NodeInstance>;
-  getTags: (grpah: Graph) => Set<TagInstance>;
+  data: TagRegisterData;
+  set: (parent: NodeCursor) => TagCursor;
+  get: (parent: NodeCursor) => TagCursor | null;
+  getChild: (parent: NodeCursor) => TagCursor | null;
+  getAllChildlren: (parent: NodeCursor) => TagCursor[] | null;
+  getParent: (parent: NodeCursor) => TagCursor | null;
+  getAllParents: (parent: NodeCursor) => TagCursor[] | null;
+  remove: (parent: NodeCursor) => TagCursor | null;
+  getNodes: (grpah: Graph) => Set<NodeCursor>;
+  getTags: (grpah: Graph) => Set<TagCursor>;
 }) &
-  (() => TagData);
+  (() => string);
 
 export function registerTag(data: TagRegisterData): RegisteredTag {
   const tag = new Tag(null, data);
-  const prototype = new TagPrototype(data, tag);
-  NCSRegister.tags.register(data.id, data.namespace || "main", prototype);
-  const map = TagInstanceMap.registerTag(tag.id);
-  const createTag = (): TagData => {
-    return NCS.Pipelines.OnTagDataCreate.pipe({
-      id: data.id,
-    });
+
+  NCSRegister.tags.register(data.id, tag);
+ // const map = TagInstanceMap.registerTag(tag.id);
+  const createTag = (): string => {
+    return data.id
   };
 
   return Object.assign(createTag, data, {
     tag,
-    prototype,
-    getNodes: (graph: Graph) => map.getNodes(graph),
-    getTags: (graph: Graph) => map.getItems(graph),
-    getChild: (parent: NodeInstance) => {
+    data,
+   // getNodes: (graph: Graph) => map.getNodes(graph),
+   // getTags: (graph: Graph) => map.getItems(graph),
+    getChild: (parent: NodeCursor) => {
       return parent.tags.getChild(data.id);
     },
-    getAllChildlren: (parent: NodeInstance) => {
+    getAllChildlren: (parent: NodeCursor) => {
       return parent.tags.getAllChildlren(data.id);
     },
-    getParent: (parent: NodeInstance) => {
+    getParent: (parent: NodeCursor) => {
       return parent.tags.getParent(data.id);
     },
-    getAllParents: (parent: NodeInstance) => {
+    getAllParents: (parent: NodeCursor) => {
       return parent.tags.getAllParents(data.id);
     },
-    set: (parent: NodeInstance) => {
+    set: (parent: NodeCursor) => {
       return parent.tags.add(createTag());
     },
-    get: (parent: NodeInstance) => {
+    get: (parent: NodeCursor) => {
       return parent.tags.get(data.id);
     },
-    remove: (parent: NodeInstance) => {
+    remove: (parent: NodeCursor) => {
       return parent.tags.remove(data.id);
     },
   }) as any;

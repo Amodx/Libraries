@@ -1,6 +1,6 @@
 import { NCSRegister } from "./NCSRegister";
 import { SystemPrototype } from "../Systems/SystemPrototype";
-import { SystemRegisterData } from "../Systems/SystemData";
+import { SystemRegisterData } from "../Systems/System.types";
 import { Graph } from "../Graphs/Graph";
 import { SystemInstance } from "../Systems/SystemInstance";
 
@@ -15,7 +15,7 @@ type RegisteredSystem = SystemRegisterData & {
 export function registerSystem(data: SystemRegisterData): RegisteredSystem {
   const prototype = new SystemPrototype(data);
 
-  NCSRegister.systems.register(data.type, data.namespace || "main", prototype);
+  NCSRegister.systems.register(data.type,  prototype);
 
   return Object.assign(data, {
     prototype,

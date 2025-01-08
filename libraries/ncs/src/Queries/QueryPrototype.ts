@@ -1,5 +1,5 @@
 import { Graph } from "../Graphs/Graph";
-import { QueryData } from "./QueryData";
+import { QueryData } from "./Query.types";
 import { QueryInstance } from "./QueryInstance";
 
 export class QueryPrototype {
