@@ -3,12 +3,7 @@ import {
   CreateComponentData,
 } from "../Components/Component.types";
 
-/**
- * Interface representing the state data of a node.
- */
-export interface NodeStateData {
-  [key: string]: any;
-}
+
 
 export type CreateNodeData = [
   /**
@@ -21,17 +16,13 @@ export type CreateNodeData = [
    */
   name: string,
   /**
-   * The state data of the node.
-   */
-  state: NodeStateData,
-  /**
    * The components of the node.
    */
   components: CreateComponentData[] | null,
   /**
    * The tags of the node.
    */
-  tags: string[] | null,
+  tags: number[] | null,
   /**
    * The children nodes of the node.
    */
@@ -53,10 +44,6 @@ export type SerializedNodeData = {
    */
   name: string;
   /**
-   * The state data of the node.
-   */
-  state: NodeStateData;
-  /**
    * The components of the node.
    */
   components?: SerializedComponentData[];
@@ -71,6 +58,7 @@ export type SerializedNodeData = {
 };
 export enum NodeObserverIds {
   Disposed,
+  Enabled,
   Parented,
   RemovedFromParent,
   ChildAdded,

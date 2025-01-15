@@ -1,3 +1,4 @@
+import { ItemPool } from "../Util/ItemPool";
 import { RecursivePartial } from "../Util/Util.types";
 import { setBinaryObjectData } from "./Functions/createSchemaBinaryObjectCursorClass";
 import { Property } from "./Property/Property";
@@ -7,7 +8,6 @@ import {
   BinaryObjectSchemaView,
   SchemaCreateData,
   SchemaCursor,
-  
 } from "./Schema.types";
 function traverseCreateJSON(property: Property, target: any, source: any) {
   for (const child of property.children!) {
@@ -24,6 +24,8 @@ function traverseCreateJSON(property: Property, target: any, source: any) {
 const tempData: any[] = [];
 
 export class SchemaView<Shape extends {} = any> {
+  _dataPool = new ItemPool();
+
   constructor(
     public schema: Schema<Shape>,
     public id: string,
@@ -33,12 +35,41 @@ export class SchemaView<Shape extends {} = any> {
     private _cursorClass: any
   ) {}
 
+  returnData(returnData: any) {
+    this._dataPool.addItem(returnData);
+  }
+
   createData(overrides?: RecursivePartial<Shape> | null): any {
     const data = this._createData;
 
     let baseData = !overrides
       ? this.schema._data
       : this.schema.createData(tempData, overrides);
+    if (this._dataPool.items.length) {
+      const newData = this._dataPool.get()! as any;
+      if (data.type == "object") {
+        for (let i = 0; i < baseData.length; i++) {
+          newData[i] =
+            typeof baseData[i] == "object"
+              ? structuredClone(baseData[i])
+              : baseData[i];
+        }
+        return newData;
+      }
+      if (data.type == "typed-array") {
+        (newData as Uint32Array).set(baseData);
+        return newData;
+      }
+      if (data.type == "binary-object") {
+        for (let i = 0; i < baseData.length; i++) {
+          const meta = this.meta[i];
+          if (!meta.binary) continue;
+          setBinaryObjectData(newData, meta, this.byteOffset![i], baseData[i]);
+        }
+        return newData;
+      }
+    }
+
     if (data.type == "object") {
       const newData: any[] = new Array(baseData.length);
       for (let i = 0; i < baseData.length; i++) {
@@ -47,7 +78,7 @@ export class SchemaView<Shape extends {} = any> {
             ? structuredClone(baseData[i])
             : baseData[i];
       }
-      return newData
+      return newData;
     }
     if (data.type == "typed-array") {
       const size = baseData.length;
@@ -59,7 +90,7 @@ export class SchemaView<Shape extends {} = any> {
           : new ArrayBuffer(byteSize)
       );
       typedArray.set(baseData);
-      return typedArray
+      return typedArray;
     }
     if (data.type == "binary-object") {
       let byteSize = data.byteSize;

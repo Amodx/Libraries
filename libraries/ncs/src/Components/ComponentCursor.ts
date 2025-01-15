@@ -1,18 +1,26 @@
 import {
   SerializedComponentData,
-  ComponentStateData,
   ComponentRegisterData,
 } from "./Component.types";
 import { SchemaCursor } from "../Schema/Schema.types";
 import { NCSRegister } from "../Register/NCSRegister";
 import { NodeCursor } from "../Nodes/NodeCursor";
 import { ComponentArray } from "./ComponentArray";
+import { NCSPools } from "../Pools/NCSPools";
 export class ComponentCursor<
   ComponentSchema extends object = {},
   Data extends object = {},
   Logic extends object = {},
   Shared extends object = {},
 > {
+  static Get() {
+    const cursor = NCSPools.componentCursor.get();
+    if (!cursor) return new ComponentCursor();
+    return cursor;
+  }
+  static Retrun(cursor: ComponentCursor) {
+    return NCSPools.componentCursor.addItem(cursor);
+  }
   get index() {
     return this._index;
   }
@@ -20,9 +28,9 @@ export class ComponentCursor<
     return NCSRegister.components.idPalette.getStringId(this._type);
   }
   get shared() {
-    return this.proto.shared;
+    return this.__proto.shared;
   }
-  schema: SchemaCursor<ComponentSchema> | null;
+  schema: SchemaCursor<ComponentSchema>;
   get data(): Data | null {
     return this.arrays._data[this._index];
   }
@@ -35,48 +43,52 @@ export class ComponentCursor<
   set logic(logic: Logic | null) {
     this.arrays._logic[this._index] = logic;
   }
-  get state(): ComponentStateData {
-    return this.arrays._state[this._index];
-  }
 
   public node: NodeCursor;
   public arrays: ComponentArray;
-  public proto: ComponentRegisterData<ComponentSchema, Data, Logic, Shared>;
+  public __proto: ComponentRegisterData<ComponentSchema, Data, Logic, Shared>;
 
+  get typeId() {
+    return this._type;
+  }
   private _index = 0;
   private _type = 0;
+
+  private constructor() {}
   setInstance(node: NodeCursor, type: number, index: number) {
     this._index = index;
     this._type = type;
     this.node = node;
-    this.proto = NCSRegister.components.items[this._type];
+    this.__proto = NCSRegister.components.items[this._type];
+
+    this.arrays = node.graph._components[type];
+
     if (this.arrays.schemaArray._data[index] !== undefined) {
       this.schema = this.arrays.schemaArray.createViewCursor(index);
     }
     return this;
   }
 
-  init() {
-    this.proto.init && this.proto.init(this);
-  }
-
   isDisposed() {
     return this.arrays._disposed[this._index];
   }
   dispose() {
-    if (this.proto.dispose) this.proto.dispose(this);
-    this.arrays._disposed[this._index] = true;
+    if (this.__proto.dispose) this.__proto.dispose(this);
+    this.arrays.removeComponent(this._index);
+  }
+
+  returnCursor() {
+    return ComponentCursor.Retrun(this);
   }
 
   update() {
-    this.proto.update && this.proto.update(this);
+    this.__proto.update && this.__proto.update(this);
   }
 
   toJSON(): SerializedComponentData {
     return {
       schema: this.schema && this.schema.toJSON(),
       type: this.type,
-      state: this.state,
     };
   }
 }

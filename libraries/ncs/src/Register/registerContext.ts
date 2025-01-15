@@ -5,6 +5,7 @@ import {
 } from "../Contexts/Context.types";
 import { NodeCursor } from "../Nodes/NodeCursor";
 import { ContextCursor } from "../Contexts/ContextCursor";
+import { NCSPools } from "../Pools/NCSPools";
 
 type RegisteredContext<
   ContextSchema extends {} = {},
@@ -41,7 +42,13 @@ export function registerContext<
     schemaViewId?: string,
     data?: any
   ): CreateContextData<ContextSchema> => {
-    return [data.type, schema || ({} as any), schemaViewId || "default", data];
+    const createData: CreateContextData<ContextSchema, Data> =
+      NCSPools.createContextData.get() || ([] as any);
+    createData[0] = data.type;
+    createData[1] = schema || {};
+    createData[2] = schemaViewId || "default";
+    createData[3] = data || null;
+    return createData;
   };
 
   return Object.assign(createContext, data, {

@@ -1,10 +1,11 @@
 import { Observable } from "../Util/Observable";
 import { BinaryObjectSchemaView } from "./Schema.types";
 import { Schema } from "./Schema";
+import { NCSPools } from "../Pools/NCSPools";
 
 export class SchemaArray {
   _data: (any[] | BinaryObjectSchemaView)[] = [];
-  _dataViews: string[] = [];
+  _dataViews: number[] = [];
   _observers: Observable[][] = [];
   _proxyObjects: any[][] = [];
   _proxyKeys: any[][] = [];
@@ -16,27 +17,48 @@ export class SchemaArray {
       this._proxyKeys[i] = [];
     }
   }
+
   createViewCursor(index: number) {
     const data = this._data[index];
     if (data === undefined) return null;
     const viewId = this._dataViews[index];
-    const view = this.schema.views.get(viewId);
+    const view = this.schema.views[viewId];
     if (!view) return null;
     return view.createCursor();
   }
 
   setData(index: number, data: any, view?: string | null) {
     this._data[index] = data;
-    this._dataViews[index] = view || "default";
+    this._dataViews[index] = this.schema.viewIdPalettew.getNumberId(
+      view || "default"
+    );
   }
+
+  getViewAt(index: number) {
+    if (this._data[index] === undefined) return null;
+    return this.schema.getView(
+      this.schema.viewIdPalettew.getStringId(this._dataViews[index])
+    );
+  }
+
   removeData(index: number) {
+    if (this._data[index] === undefined) return false;
+    const view = this.getViewAt(index)!;
+    view.returnData(this._data[index]);
     (this._data as any)[index] = undefined;
-    (this._dataViews as any)[index] = undefined;
+    (this._dataViews as any)[index] = -1;
     for (let i = 0; i < this.schema._data.length; i++) {
-      (this._observers as any)[i][index] = undefined;
+      if (this._observers[i][index]) {
+        this._observers[i][index].clear();
+        NCSPools.observers.addItem(this._observers[i][index]);
+        (this._observers as any)[i][index] = undefined;
+      }
+
       (this._proxyObjects as any)[i][index] = undefined;
       (this._proxyKeys as any)[i][index] = undefined;
     }
+
+    return true;
   }
 
   getObserver(propertyIndex: number, arrayIndex: number): Observable | null {
@@ -58,6 +80,7 @@ export class SchemaArray {
     }
     this._observers[propertyIndex][arrayIndex] = value;
   }
+
   hasProxy(propertyIndex: number, arrayIndex: number) {
     return this._proxyObjects[propertyIndex][arrayIndex] !== undefined;
   }

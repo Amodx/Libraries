@@ -1,10 +1,6 @@
 
 <h1 align="center">Amodx Libraries</h1>
 
-### What is Amodx?
-
-Amodx is a collection of free, open-source, and highly useful abstract APIs and tools. This mono repo houses the core libraries essential for various Amodx projects, designed to provide robust and efficient solutions for diverse development needs.
-
 ### Packages
 
 - **@amodx/math**
@@ -29,7 +25,5 @@ Amodx is a collection of free, open-source, and highly useful abstract APIs and 
   - A library designed for multithreaded communication and thread pool management, enhancing the performance and efficiency of your applications.
 - **@amodx/ncs**
   - The NCS library is used to build flexible and scalable Node Component Systems (NCS). 
-- **@amodx/uri**
-  - The Universal Renderer Interface (URI), which abstracts away different rendering libraries to provide a unified rendering approach.
 - **@amodx/core**
   - A collection of utility classes and functions that serve as the foundation for most other Amodx libraries, ensuring consistency and reducing redundancy.

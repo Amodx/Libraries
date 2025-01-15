@@ -1,117 +1,124 @@
 import { CreateNodeData } from "../Nodes/Node.types";
 import { NodeId } from "../Nodes/NodeId";
-import { ComponentCursor } from "../Components/ComponentCursor";
 import { NodeArray } from "../Nodes/NodeArray";
 import { ComponentArray } from "../Components/ComponentArray";
 import { NodeCursor } from "../Nodes/NodeCursor";
 import { ContextArray } from "../Contexts/ContextArray";
 import { TagArray } from "../Tags/TagArray";
+import { NCSPools } from "../Pools/NCSPools";
+import { SystemInstance } from "../Systems/SystemInstance";
 
-const parentCursor = new NodeCursor();
-const nodeCursor = new NodeCursor();
-const componentCursor = new ComponentCursor();
+const parentCursor = NodeCursor.Get();
+const nodeCursor = NodeCursor.Get();
 
 function createNode(graph: Graph, data: CreateNodeData, parent: number) {
-  const newNode = graph.nodes.addNode(
-    data[0],
-    parent,
-    data[1],
-    data[2],
-    null,
-    null,
-    null,
-    null
-  );
+  const newNode = graph._nodes.addNode(data[0], parent, data[1]);
   nodeCursor.graph = graph;
 
-  nodeCursor.setNode(newNode);
-  // graph._nodeMap.set(newNode.id, newNode);
+  nodeCursor.setNode(graph, newNode);
 
+  if (data[2]?.length) {
+    for (let i = 0; i < data[2].length; i++) {
+      nodeCursor.components.add(data[2][i]);
+    }
+  }
   if (data[3]?.length) {
     for (let i = 0; i < data[3].length; i++) {
-      nodeCursor.components.add(data[3][i]);
-    }
-  }
-  if (data[4]?.length) {
-    for (let i = 0; i < data[4].length; i++) {
-      nodeCursor.tags.add(data[4][i]);
+      nodeCursor.tags.add(data[3][i]);
     }
   }
 
-  const parentData = graph.nodes._children[parent];
+  const parentData = graph._nodes._children[parent];
   if (typeof parentData === "undefined") {
-    parentCursor.setNode(parent);
+    parentCursor.setNode(graph, parent);
     parentCursor.addChild(nodeCursor);
   }
 
-  if (data[5]?.length) {
-    for (let i = 0; i < data[5].length; i++) {
-      createNode(graph, data[5][i], newNode);
+  if (data[4]?.length) {
+    for (let i = 0; i < data[4].length; i++) {
+      createNode(graph, data[4][i], newNode);
     }
   }
-  nodeCursor.setNode(newNode);
+  nodeCursor.setNode(graph, newNode);
+
+  data[0] = null;
+  data[1] = "";
+  data[2] = null;
+  data[3] = null;
+  data[4] = null;
+  NCSPools.createNodeData.addItem(data);
+
   return nodeCursor;
 }
 
 export class Graph {
-  nodes = new NodeArray();
-  components = new Map<string, ComponentArray>();
-  contexts = new ContextArray();
-  tags = new Map<string, TagArray>();
+  _systems: SystemInstance[] = [];
+  _nodes = new NodeArray();
+  _components: ComponentArray[] = [];
+  _contexts = new ContextArray();
+  _tags: TagArray[] = [];
   _updatingComponents: ComponentArray[] = [];
 
-  root = new NodeCursor();
+  root = NodeCursor.Get();
 
-  constructor() {}
-  getNode(index: number, cursor = new NodeCursor()) {
-    const nodeIndex = this.nodes._parents[index];
+  constructor() {
+    const rootIndex = this._nodes.addNode(null, -1, "root");
+    this.root.setNode(this, rootIndex);
+  }
+  getNode(index: number, cursor = NodeCursor.Get()) {
+    const nodeIndex = this._nodes._parents[index];
     if (typeof nodeIndex === "undefined")
       throw new Error(`Node with index ${index} does not exist`);
-    cursor.setNode(nodeIndex);
+    cursor.setNode(this, nodeIndex);
     return cursor;
   }
 
-  getNodeFromId(id: bigint | string, cursor = new NodeCursor()) {
+  getNodeFromId(id: bigint | string, cursor = NodeCursor.Get()) {
     if (typeof id == "string") id = NodeId.FromString(id);
-    const nodeIndex = this.nodes._idMap.get(id);
+    const nodeIndex = this._nodes._idMap.get(id);
     if (typeof nodeIndex === "undefined")
       throw new Error(`Node with id ${id} does not exist`);
-    cursor.setNode(nodeIndex);
+    cursor.setNode(this, nodeIndex);
     return cursor;
   }
 
-
-  addNode(data: CreateNodeData, parent: number) {
+  addNode(
+    data: CreateNodeData,
+    parent: number = this.root.index,
+    cursor = NodeCursor.Get()
+  ) {
     const newNode = createNode(this, data, parent);
     if (newNode.hasComponents) {
       const components = newNode.components.components;
-      for (let i = 0; i < components.length; i++) {
-        componentCursor.setInstance(newNode, components[i], components[i + 1]);
-        componentCursor.init();
+      for (let i = 0; i < components.length; i += 2) {
+        this._components[components[i]].init(components[i + 1]);
       }
     }
     for (const child of newNode.traverseChildren()) {
       if (child.hasComponents) {
         const components = child.components.components;
-        for (let i = 0; i < components.length; i++) {
-          componentCursor.setInstance(child, components[i], components[i + 1]);
-          componentCursor.init();
+        for (let i = 0; i < components.length; i += 2) {
+          this._components[components[i]].init(components[i + 1]);
         }
       }
     }
-    return newNode;
+    newNode.toRef(cursor);
+    return cursor;
   }
 
   removeNode(index: number) {
-    const node = this.nodes.removeNode(index);
-    if (!node) return;
-    nodeCursor.setNode(index);
-    if (!nodeCursor.isDisposed()) nodeCursor.dispose();
-
+    const node = this._nodes.removeNode(index);
+    if (!node) return false;
+    return true;
   }
 
   update() {
-   
+    for (let i = 0; i < this._updatingComponents.length; i++) {
+      this._updatingComponents[i].update();
+    }
+    for (let i = 0; i < this._systems.length; i++) {
+      this._systems[i].update();
+    }
   }
 
   toJSON() {

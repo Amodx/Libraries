@@ -2,10 +2,19 @@ import { ContextRegisterData } from "./Context.types";
 import { ContextArray } from "./ContextArray";
 import { NCSRegister } from "../Register/NCSRegister";
 import { NodeCursor } from "../Nodes/NodeCursor";
+import { NCSPools } from "../Pools/NCSPools";
 export class ContextCursor<
   ContextSchema extends {} = {},
   Data extends {} = {},
 > {
+  static Get() {
+    const cursor = NCSPools.contextCursor.get();
+    if (!cursor) return new ContextCursor();
+    return cursor;
+  }
+  static Retrun(cursor: ContextCursor) {
+    return NCSPools.contextCursor.addItem(cursor);
+  }
   proto: ContextRegisterData<ContextSchema, Data>;
   _index = 0;
   _type = 0;
@@ -28,10 +37,15 @@ export class ContextCursor<
   }
 
   arrays: ContextArray;
+  private constructor() {}
 
   setContext(node: NodeCursor, index: number) {
     this._index = index;
-    this.arrays = node.graph.contexts;
+    this.arrays = node.graph._contexts;
     this._type = this.arrays._type[index];
+  }
+
+  dispose() {
+    this.arrays.removeContext(this._index);
   }
 }

@@ -1,7 +1,8 @@
 export type ObservableFunction<T> = (data: T, observers: Observable<T>) => void;
-const once = new Set<any>();
+
 export class Observable<T = void> {
   observers: ObservableFunction<T>[] = [];
+  once: Set<any> | null = null;
 
   constructor() {}
   /**
@@ -18,6 +19,7 @@ export class Observable<T = void> {
     for (let i = 0; i < this.observers.length; i++) {
       if (this.observers[i] == func) {
         this.observers.splice(i, 1);
+        if (this.once && this.once.has(func)) this.once.delete(func);
         return true;
       }
     }
@@ -28,20 +30,8 @@ export class Observable<T = void> {
    */
   subscribeOnce(func: ObservableFunction<T>) {
     this.observers.push(func);
-    once.add(func);
-  }
-  /**
-   * Unsubscribe a function that was added to the observer with the function *subscribeOnce*.
-   */
-  unsubscribeOnce(func: ObservableFunction<T>) {
-    for (let i = 0; i < this.observers.length; i++) {
-      if (this.observers[i] == func) {
-        this.observers.splice(i, 1);
-        once.delete(func);
-        return true;
-      }
-    }
-    return false;
+    if (!this.once) this.once = new Set();
+    this.once.add(func);
   }
 
   /**
@@ -49,10 +39,11 @@ export class Observable<T = void> {
    */
   notify(data: T) {
     for (let i = this.observers.length; i > 0; i--) {
-      this.observers[i](data, this);
-      if (once.has(this)) {
+      const func = this.observers[i];
+      func(data, this);
+      if (this.once && this.once.has(func)) {
         this.observers.splice(i, 1);
-        once.delete(this);
+        this.once.delete(func);
       }
     }
   }
@@ -61,8 +52,7 @@ export class Observable<T = void> {
    * Removes all observers.
    */
   clear() {
+    this.once && this.once.clear();
     this.observers.length = 0;
   }
-
-
 }

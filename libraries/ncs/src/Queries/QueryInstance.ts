@@ -8,7 +8,7 @@ export class QueryInstance {
   nodes: number[] = [];
 
   private _updateFunction: ObservableFunction<number>;
-  private nodeCursor = new NodeCursor();
+  private nodeCursor = NodeCursor.Get();
   constructor(
     public graph: Graph,
     public data: QueryData
@@ -49,7 +49,7 @@ export class QueryInstance {
 
   init() {
     this._updateFunction = (nodeIndex: number) => {
-      const node = this.nodeCursor.setNode(nodeIndex);
+      const node = this.nodeCursor.setNode(this.graph, nodeIndex);
       if (!this.evulate(node)) {
         for (let i = 0; i < this.nodes.length; i++) {
           if (this.nodes[i] == node.index) {
@@ -63,19 +63,26 @@ export class QueryInstance {
 
     if (this.data.inclueComponents) {
       for (const comp of this.data.inclueComponents) {
-        const map = this.graph.components.get(comp.type)!;
+        const map =
+          this.graph._components[
+            NCSRegister.components.idPalette.getNumberId(comp.type)
+          ];
         map.observers.nodeAdded.subscribe(this._updateFunction);
         map.observers.nodeRemoved.subscribe(this._updateFunction);
       }
     }
     if (this.data.includeTags) {
-      for (const tagId of this.data.includeTags) {
-        const tag = NCSRegister.tags.get(tagId.id)!;
-        const tagMap = this.graph.tags.get(tagId.id)!;
+      for (const includeTag of this.data.includeTags) {
+        const tag = NCSRegister.tags.get(includeTag.id)!;
+        const tagMap =
+          this.graph._tags[
+            NCSRegister.tags.idPalette.getNumberId(includeTag.id)
+          ];
         tagMap.observers.nodeAdded.subscribe(this._updateFunction);
         tagMap.observers.nodeRemoved.subscribe(this._updateFunction);
         for (const child of tag.traverseChildren()) {
-          const chidMap = this.graph.tags.get(child.id)!;
+          const chidMap =
+            this.graph._tags[NCSRegister.tags.idPalette.getNumberId(child.id)];
           chidMap.observers.nodeAdded.subscribe(this._updateFunction);
           chidMap.observers.nodeRemoved.subscribe(this._updateFunction);
         }
@@ -86,19 +93,26 @@ export class QueryInstance {
   dispose() {
     if (this.data.inclueComponents) {
       for (const comp of this.data.inclueComponents) {
-        const map = this.graph.components.get(comp.type)!;
+        const map =
+          this.graph._components[
+            NCSRegister.components.idPalette.getNumberId(comp.type)
+          ];
         map.observers.nodeAdded.unsubscribe(this._updateFunction);
         map.observers.nodeRemoved.unsubscribe(this._updateFunction);
       }
     }
     if (this.data.includeTags) {
-      for (const tagId of this.data.includeTags) {
-        const tag = NCSRegister.tags.get(tagId.id)!;
-        const tagMap = this.graph.tags.get(tagId.id)!;
+      for (const includeTag of this.data.includeTags) {
+        const tag = NCSRegister.tags.get(includeTag.id)!;
+        const tagMap =
+          this.graph._tags[
+            NCSRegister.tags.idPalette.getNumberId(includeTag.id)
+          ];
         tagMap.observers.nodeAdded.unsubscribe(this._updateFunction);
         tagMap.observers.nodeRemoved.unsubscribe(this._updateFunction);
         for (const child of tag.traverseChildren()) {
-          const chidMap = this.graph.tags.get(child.id)!;
+          const chidMap =
+            this.graph._tags[NCSRegister.tags.idPalette.getNumberId(child.id)];
           chidMap.observers.nodeAdded.unsubscribe(this._updateFunction);
           chidMap.observers.nodeRemoved.unsubscribe(this._updateFunction);
         }

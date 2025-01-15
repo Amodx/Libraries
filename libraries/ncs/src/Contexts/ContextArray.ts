@@ -51,6 +51,7 @@ export class ContextArray {
       schemaArray.removeData(index);
     }
     (this._data as any)[index] = undefined;
+
     return data;
   }
 }

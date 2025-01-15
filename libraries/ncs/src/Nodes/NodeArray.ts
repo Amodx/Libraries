@@ -1,9 +1,20 @@
+import { IdPalette } from "../Util/IdPalette";
+import { NCSPools } from "../Pools/NCSPools";
 import { Observable } from "../Util/Observable";
-import { NodeObserverIds, NodeStateData } from "./Node.types";
+import { NodeObserverIds } from "./Node.types";
 
-const observerValues = Object.values(NodeObserverIds).map((_) => Number(_));
+const observerValues = Object.values(NodeObserverIds)
+  .map((_) => Number(_))
+  .filter((v) => !Number.isNaN(v));
+const observersArrays: Observable<any>[][] = [];
+
+for (let i = 0; i < observerValues.length; i++) {
+  observersArrays[observerValues[i]] = [];
+}
+
 export class NodeArray {
   _freeSlots: number[] = [];
+  _eventPalette = new IdPalette();
 
   /**A map of node ids to their index in the run time array */
   _idMap = new Map<bigint, number>();
@@ -11,27 +22,16 @@ export class NodeArray {
   _indexMap: bigint[] = [];
 
   _names: string[] = [];
-  _state: NodeStateData[] = [];
-  _events = new Map<string, (Observable<any>)[]>();
-  _observers = new Map<NodeObserverIds, (Observable<any>)[]>(
-    observerValues.map((_) => [_, []])
-  );
+  _events: Observable<any>[][] = [];
+  _observers: Observable<any>[][] = structuredClone(observersArrays);
   _parents: number[] = [];
   _children: number[][] = [];
   _components: number[][] = [];
   _tags: number[][] = [];
   _context: number[][] = [];
-
-  addNode(
-    id: bigint | null,
-    parent: number,
-    name: string,
-    state: NodeStateData,
-    children: number[] | null = null,
-    components: number[] | null = null,
-    tags: number[] | null = null,
-    context: number[] | null = null
-  ): number {
+  _disposed: boolean[] = [];
+  _enabled: boolean[] = [];
+  addNode(id: bigint | null, parent: number, name: string): number {
     let slot = this._freeSlots.length
       ? this._freeSlots.shift()!
       : this._parents.length;
@@ -39,34 +39,58 @@ export class NodeArray {
     id && this.addNodeId(slot, id);
     this._parents[slot] = parent;
     this._names[slot] = name;
-    this._state[slot] = state;
-
-    children && (this._children[slot] = children);
-    components && (this._components[slot] = components);
-    tags && (this._tags[slot] = tags);
-    context && (this._context[slot] = context);
+    this._disposed[slot] = false;
+    this._enabled[slot] = true;
     return slot;
   }
-  removeNode(index: number) {
-    if (this._parents[index] === undefined) return null;
-    this._freeSlots.push(index);
-    this._indexMap[index] && this.removeNodeId(this._indexMap[index]);
-    this._parents[index] = -1;
-    this._names[index] = "";
+  removeNode(slot: number) {
+    if (this._parents[slot] === undefined) return false;
+    this._freeSlots.push(slot);
+    this._indexMap[slot] && this.removeNodeId(this._indexMap[slot]);
+    this._parents[slot] = -1;
+    this._names[slot] = "";
+    this._disposed[slot] = true;
+    this._enabled[slot] = false;
 
     for (let i = 0; i < observerValues.length; i++) {
-      const array = this._observers.get(observerValues[i])![index] as any;
-      array[index] = undefined;
+      const observer = this._observers[i]![slot];
+      if (observer !== undefined) {
+        NCSPools.observers.addItem(observer);
+        (this._events[i] as any)![slot] = undefined;
+      }
     }
-    for (const [key] of this._events) {
-      const array = this._events.get(key)![index] as any;
-      array[index] = undefined;
+    for (let i = 0; i < this._eventPalette.size; i++) {
+      const observer = this._events[i]![slot];
+      if (observer !== undefined) {
+        NCSPools.observers.addItem(observer);
+        (this._events[i] as any)![slot] = undefined;
+      }
     }
-    (this._state as any)[index] = undefined;
-    (this._children as any)[index] = undefined;
-    (this._components as any)[index] = undefined;
-    (this._tags as any)[index] = undefined;
-    (this._context as any)[index] = undefined;
+
+    if (this._children[slot] !== undefined) {
+      this._children[slot].length = 0;
+      NCSPools.numberArray.addItem(this._children[slot]);
+      (this._children as any)[slot] = undefined;
+    }
+
+    if (this._components[slot] !== undefined) {
+      this._components[slot].length = 0;
+      NCSPools.numberArray.addItem(this._components[slot]);
+      (this._components as any)[slot] = undefined;
+    }
+
+    if (this._tags[slot] !== undefined) {
+      this._tags[slot].length = 0;
+      NCSPools.numberArray.addItem(this._tags[slot]);
+      (this._tags as any)[slot] = undefined;
+    }
+
+    if (this._context[slot] !== undefined) {
+      this._context[slot].length = 0;
+      NCSPools.numberArray.addItem(this._context[slot]);
+      (this._context as any)[slot] = undefined;
+    }
+    return true;
   }
   addNodeId(index: number, id: bigint) {
     this._idMap.set(id, index);

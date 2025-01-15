@@ -12,13 +12,13 @@ import {
   SchemaCursorIndex,
   SchemaCreateData,
   SchemaCursor,
-  
 } from "./Schema.types";
 import { createSchemaTypedArrayCursorClass } from "./Functions/createSchemaTypedArrayCursorClass";
 import { createSchemaBinaryObjectCursorClass } from "./Functions/createSchemaBinaryObjectCursorClass";
 import { SchemaView } from "./SchemaView";
 import { RecursivePartial } from "../Util/Util.types";
 import { SchemaArray } from "./SchemaArray";
+import { IdPalette } from "../Util/IdPalette";
 
 const traverseCreate = (
   parent: Property,
@@ -174,11 +174,12 @@ export class Schema<Shape extends Record<string, any> = {}> {
   public readonly _data: any[] = [];
   public readonly _meta: PropertyMetaData[] = [];
 
-  views = new Map<string, SchemaView>();
+  viewIdPalettew = new IdPalette();
+  views: SchemaView[] = [];
   private defaultCursor: SchemaCursor<Shape>;
   private defaultInstance: any;
 
-  array: SchemaArray
+  array: SchemaArray;
 
   constructor(data: SchemaData) {
     traverseCreate(this.root, data, -1);
@@ -189,6 +190,24 @@ export class Schema<Shape extends Record<string, any> = {}> {
     this.defaultInstance = view.createData();
     this.defaultInstance[0] = this._data;
     this.array = new SchemaArray(this);
+  }
+
+  createData(newData: any[] = [], overrides: RecursivePartial<Shape>) {
+    for (let i = 0; i < this._data.length; i++) {
+      newData[i] =
+        typeof this._data[i] == "object"
+          ? structuredClone(this._data[i])
+          : this._data[i];
+    }
+    this.defaultInstance[0] = newData;
+    this.defaultCursor.setInstance(this.defaultInstance);
+    traverseCreateData(this.root, this.defaultCursor, overrides);
+    return newData;
+  }
+
+  getView(id: string) {
+    if (!this.viewIdPalettew.isRegistered(id)) return null;
+    return this.views[this.viewIdPalettew.getNumberId(id)];
   }
 
   createObjectView(
@@ -210,22 +229,10 @@ export class Schema<Shape extends Record<string, any> = {}> {
       createData,
       this._objectCursorClass
     );
+    const viewIndex = this.viewIdPalettew.register(id);
+    this.views[viewIndex] = view;
 
-    this.views.set(id, view);
     return view;
-  }
-
-  createData(newData: any[] = [],overrides: RecursivePartial<Shape>,) {
-    for (let i = 0; i < this._data.length; i++) {
-      newData[i] =
-        typeof this._data[i] == "object"
-          ? structuredClone(this._data[i])
-          : this._data[i];
-    }
-    this.defaultInstance[0] = newData;
-    this.defaultCursor.setInstance(this.defaultInstance);
-    traverseCreateData(this.root,this.defaultCursor,overrides);
-    return newData;
   }
 
   createBinaryObjectView(
@@ -252,7 +259,8 @@ export class Schema<Shape extends Record<string, any> = {}> {
       this._binaryObjectCursorClass
     );
 
-    this.views.set(id, view);
+    const viewIndex = this.viewIdPalettew.register(id);
+    this.views[viewIndex] = view;
 
     return view;
   }
@@ -280,6 +288,8 @@ export class Schema<Shape extends Record<string, any> = {}> {
       createData,
       this._typedArrayCursorClass
     );
+    const viewIndex = this.viewIdPalettew.register(id);
+    this.views[viewIndex] = view;
     return view;
   }
 }

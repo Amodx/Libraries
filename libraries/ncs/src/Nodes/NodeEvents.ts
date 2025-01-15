@@ -1,3 +1,4 @@
+import { NCSPools } from "../Pools/NCSPools";
 import { Observable, ObservableFunction } from "../Util/Observable";
 import { NodeCursor } from "./NodeCursor";
 
@@ -8,6 +9,15 @@ export class NodeEventCursor {
 }
 
 export class NodeEvents {
+  static Get() {
+    const cursor = NCSPools.nodeEvents.get();
+    if (!cursor) return new NodeEvents();
+    return cursor;
+  }
+
+  static Retrun(cursor: NodeEvents) {
+    return NCSPools.nodeEvents.addItem(cursor);
+  }
   get events() {
     return this.node.arrays._events;
   }
@@ -16,39 +26,56 @@ export class NodeEvents {
   }
   node: NodeCursor;
   private cursor = new NodeEventCursor();
+  private constructor() {}
 
   hasListener(id: string) {
-    return this.node.arrays._events.has(id);
+    const numberId = this.node.arrays._eventPalette.getNumberId(id);
+    if (numberId === undefined) return false;
+    return this.node.arrays._events[numberId][this.index] !== undefined;
   }
 
   clearListeners(id: string) {
-    let observer = this.events.get(id)?.[this.index];
+    const numberId = this.node.arrays._eventPalette.getNumberId(id);
+    if (numberId === undefined) return false;
+    let observer = this.node.arrays._events[numberId]?.[this.index];
     if (!observer) return false;
     observer.clear();
+    NCSPools.observers.addItem(observer);
+    (this.node.arrays._events[numberId][this.index] as any) = undefined;
   }
 
   addListener<Data>(id: string, run: (data: Data) => void) {
-    let observer = this.events.get(id)?.[this.index];
+    const numberId = this.node.arrays._eventPalette.isRegistered(id)
+      ? this.node.arrays._eventPalette.getNumberId(id)
+      : this.node.arrays._eventPalette.register(id);
+    let observers = this.node.arrays._events[numberId];
+    if (!observers) {
+      observers = [];
+      this.node.arrays._events[numberId] = observers;
+    }
+    let observer = observers[this.index];
     if (!observer) {
-      observer = new Observable();
-      const observers: Observable[] = [];
+      observer = NCSPools.observers.get() || new Observable();
       observers[this.index] = observer;
-      this.events.set(id, observers);
     }
     observer.subscribe(run as any);
   }
 
   removeListener(id: string, run: ObservableFunction<any>) {
-    let observer = this.events.get(id)?.[this.index];
-    if (!observer) return false;
-    observer.unsubscribe(run);
+    const numberId = this.node.arrays._eventPalette.getNumberId(id);
+    if (numberId === undefined) return false;
+    let observers = this.node.arrays._events[numberId];
+    if (!observers || !observers[this.index]) return false;
+    observers[this.index].unsubscribe(run);
     return true;
   }
 
   dispatch<Data>(id: string, data: Data) {
-    let observer = this.events.get(id)?.[this.index];
-    if (!observer) return false;
-    (observer as any).notify(data);
+    const numberId = this.node.arrays._eventPalette.getNumberId(id);
+    if (numberId === undefined) return false;
+    let observers = this.node.arrays._events[numberId];
+    if (!observers || !observers[this.index]) return false;
+    observers[this.index].notify(data);
     this.cursor.id = id;
     this.cursor.data = data;
     return true;

@@ -11,7 +11,6 @@ export class SystemPrototype {
     if (this.systems.has(graph)) return this.systems.get(graph)!;
     const newSystem = new SystemInstance(graph, this.data);
     this.systems.set(graph, newSystem)!;
-    newSystem.init();
     return newSystem;
   }
   remove(graph: Graph) {

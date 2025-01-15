@@ -1,14 +1,25 @@
+import { NCSPools } from "../Pools/NCSPools";
 import { NCSRegister } from "../Register/NCSRegister";
 import { TagCursor } from "../Tags/TagCursor";
 import { NodeCursor } from "./NodeCursor";
 
-const tagCursor = new TagCursor();
+const tagCursor = TagCursor.Get();
 export class NodeTags {
   node: NodeCursor;
+  static Get() {
+    const cursor = NCSPools.nodeTags.get();
+    if (!cursor) return new NodeTags();
+    return cursor;
+  }
 
+  static Retrun(cursor: NodeTags) {
+    return NCSPools.nodeTags.addItem(cursor);
+  }
   get tags() {
     return this.node.arrays._tags[this.node.index];
   }
+
+  private constructor() {}
 
   dispose() {
     for (let i = 0; i < this.tags.length; i += 2) {
@@ -17,11 +28,10 @@ export class NodeTags {
     }
   }
 
-  add(id: string, cursor = tagCursor): any {
-    const tagId = NCSRegister.tags.idPalette.getNumberId(id);
-    const newTag = this.node.graph.tags.get(id)!.addTag(this.node.index);
-    this.tags.push(tagId, newTag);
-    cursor.setTag(this.node, tagId, newTag);
+  add(id: number, cursor = tagCursor): any {
+    const newTag = this.node.graph._tags[id]!.addTag(this.node.index);
+    this.tags.push(id, newTag);
+    cursor.setTag(this.node, id, newTag);
     if (this.node.hasObservers) {
       this.node.observers.isTagsAddedSet &&
         this.node.observers.tagsAdded.notify(cursor);
@@ -74,7 +84,7 @@ export class NodeTags {
     for (const child of this.node.traverseChildren()) {
       const found = child.tags.get(type);
       if (found) {
-        tags.push(new TagCursor().setTag(this.node, found.type, found.index));
+        tags.push(TagCursor.Get().setTag(this.node, found.typeId, found.index));
       }
     }
     return tags;
@@ -91,7 +101,7 @@ export class NodeTags {
     for (const child of this.node.traverseParents()) {
       const found = child.tags.get(type, tagCursor);
       if (found) {
-        tags.push(new TagCursor().setTag(this.node, found.type, found.index));
+        tags.push(TagCursor.Get().setTag(this.node, found.typeId, found.index));
       }
     }
     return tags;

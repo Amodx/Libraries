@@ -16,12 +16,7 @@ export interface ComponentPoolData {
   [key: string]: any;
 }
 
-/**
- * Interface representing the state data of a component.
- */
-export interface ComponentStateData {
-  [key: string]: any;
-}
+
 
 /**
  * Type representing the data of a component.
@@ -34,10 +29,6 @@ export type SerializedComponentData<ComponentSchema extends object = any> = {
    */
   type: string;
   /**
-   * The state data of the component.
-   */
-  state: ComponentStateData;
-  /**
    * The ComponentSchema of the component.
    */
   schema?: ComponentSchema;
@@ -48,11 +39,7 @@ export type CreateComponentData<ComponentSchema extends object = any> = [
   /**
    * The type of the component.
    */
-  type: string,
-  /**
-   * The state data of the component.
-   */
-  state: ComponentStateData,
+  type: number,
   /**
    * The ComponentSchema of the component.
    */

@@ -1,8 +1,8 @@
 import "./core.css";
-
+import { NCS, Node } from "@amodx/ncs";
 import App from "App";
 import { Vector3Like } from "@amodx/math/";
-import { Schema } from "@amodx/ncs/Schema/Schema";
+
 import { NodeId } from "@amodx/ncs/Nodes/NodeId";
 import { PropertyMetaData } from "@amodx/ncs/Schema/Property/Property.types";
 document.body.append(App());
@@ -11,6 +11,7 @@ type TrasnformData = {
   rotation: { x: number; y: number; z: number };
   scale: { x: number; y: number; z: number };
 };
+import { Schema } from "@amodx/ncs/Schema/Schema";
 class Trasnform {
   position = Vector3Like.Create();
   rotation = Vector3Like.Create();
@@ -56,8 +57,8 @@ const idSchema = new Schema<{
   console.log(cursor.position, cursor.rotation, cursor.scale);
   console.log(cursor.scale.x, cursor.scale.y, cursor.scale.z);
 }
-/* {
-  const view = transformSchema.createTypedArrayView("typed-view","f32");
+{
+  const view = transformSchema.createTypedArrayView("typed-view", "f32");
   console.log("created type array view");
   console.log(view);
   const cursor = view.createCursor();
@@ -66,7 +67,8 @@ const idSchema = new Schema<{
   const data = view.createData();
   console.log("created  type array data");
   console.log(data);
-  cursor.setInstance(data);
+  transformSchema.array.setData(1, data, "typed-view");
+  cursor.setInstance(1);
   console.log(cursor.position, cursor.rotation, cursor.scale);
   console.log(cursor.scale.x, cursor.scale.y, cursor.scale.z);
 }
@@ -82,7 +84,7 @@ const idSchema = new Schema<{
       [object["z"]]: { binary: { type: "f32" } },
     };
   }
-  const view = transformSchema.createBinaryObjectView("binary-object",false, {
+  const view = transformSchema.createBinaryObjectView("binary-object", false, {
     ...addVector3(i.position),
     ...addVector3(i.rotation),
     ...addVector3(i.scale),
@@ -96,13 +98,15 @@ const idSchema = new Schema<{
   console.log("created binary object data");
   console.log(data);
   cursor.setInstance(data);
+  transformSchema.array.setData(2, data, "binary-object");
+  cursor.setInstance(2);
   console.log(cursor.position, cursor.rotation, cursor.scale);
   console.log(cursor.scale.x, cursor.scale.y, cursor.scale.z);
 }
 
 {
   const i = idSchema.index;
-  const view = idSchema.createBinaryObjectView("binary-object",false, {
+  const view = idSchema.createBinaryObjectView("binary-object", false, {
     [i.nodeid]: {
       binary: {
         type: "buffer",
@@ -130,8 +134,22 @@ const idSchema = new Schema<{
   const data = view.createData();
   console.log("created id binary object data");
   console.log(data);
-  cursor.setInstance(data);
+  idSchema.array.setData(2, data, "binary-object");
+  cursor.setInstance(2);
   cursor.nodeid = NodeId.Create();
   console.log(cursor.nodeid);
 }
- */
+
+const TranformComponent = NCS.registerComponent<Trasnform>({
+  type: "transform",
+  schema: transformSchema,
+});
+
+const graph = NCS.createGraph();
+const newNode = graph
+  .addNode(Node([TranformComponent(null, "typed-view")],null,Node()))
+  .toRef();
+console.log(newNode);
+const tranformComp = TranformComponent.get(newNode);
+console.log(tranformComp);
+console.log(tranformComp!.schema.position.x, tranformComp?.schema.__view.id);

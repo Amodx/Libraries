@@ -1,11 +1,11 @@
 export class ItemPool<Item> {
   items: Item[] = [];
-
-  constructor(public maxSize: number = 100) {}
+  maxSize: number = Infinity;
 
   addItem(item: Item) {
     if (this.items.length > this.maxSize) return false;
     this.items.push(item);
+    return true;
   }
 
   get() {
