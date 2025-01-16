@@ -11,6 +11,7 @@ import { registerComponent } from "./Register/registerComponent";
 import { RegisteredTag, registerTag } from "./Register/registerTag";
 import { registerSystem } from "./Register/registerSystem";
 import { NCSPools } from "./Pools/NCSPools";
+import { Schema } from "Schema/Schema";
 
 export class NCS {
   static createGraph() {
@@ -33,6 +34,9 @@ export class NCS {
     return data;
   }
 
+  static schemaFromObject<T extends Record<string, any>>(data: T) {
+    return Schema.FromObject<T>(data);
+  }
   static createQuery(data: QueryData) {
     return new QueryPrototype(data);
   }

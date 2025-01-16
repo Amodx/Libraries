@@ -124,7 +124,7 @@ function traverse(parent: any, properties: Property[]) {
                   this.__view.byteOffset![index]
                 );
             if (oldVale != value) {
-              obs.notify();
+              obs.notify(value);
             }
           }
           setBinaryObjectData(

@@ -3,6 +3,7 @@ import { ContextArray } from "./ContextArray";
 import { NCSRegister } from "../Register/NCSRegister";
 import { NodeCursor } from "../Nodes/NodeCursor";
 import { NCSPools } from "../Pools/NCSPools";
+import { SchemaCursor } from "../Schema/Schema.types";
 export class ContextCursor<
   ContextSchema extends {} = {},
   Data extends {} = {},
@@ -21,12 +22,10 @@ export class ContextCursor<
   get index() {
     return this._index;
   }
-  get data() {
+  get data(): Data {
     return this.arrays._data[this._index];
   }
-  get schema() {
-    return null;
-  }
+  schema: SchemaCursor<ContextSchema>;
   get nodes() {
     return this.arrays._node[this._index];
   }

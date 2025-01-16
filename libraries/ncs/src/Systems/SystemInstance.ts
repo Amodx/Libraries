@@ -1,9 +1,11 @@
 import { Graph } from "../Graphs/Graph";
 import { SystemRegisterData } from "./System.types";
 import { QueryInstance } from "../Queries/QueryInstance";
+import { NodeCursor } from "../Nodes/NodeCursor";
 
 export class SystemInstance {
   queries: QueryInstance[] = [];
+  node = NodeCursor.Get()
   constructor(
     public graph: Graph,
     public proto: SystemRegisterData

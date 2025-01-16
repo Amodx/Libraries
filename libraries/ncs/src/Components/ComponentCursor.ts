@@ -27,20 +27,20 @@ export class ComponentCursor<
   get type() {
     return NCSRegister.components.idPalette.getStringId(this._type);
   }
-  get shared() {
-    return this.__proto.shared;
+  get shared(): Shared {
+    return this.__proto.shared!;
   }
   schema: SchemaCursor<ComponentSchema>;
-  get data(): Data | null {
+  get data(): Data {
     return this.arrays._data[this._index];
   }
-  set data(data: Data | null) {
+  set data(data: Data) {
     this.arrays._data[this._index] = data;
   }
-  get logic(): Logic | null {
+  get logic(): Logic {
     return this.arrays._logic[this._index];
   }
-  set logic(logic: Logic | null) {
+  set logic(logic: Logic) {
     this.arrays._logic[this._index] = logic;
   }
 
@@ -79,6 +79,15 @@ export class ComponentCursor<
 
   returnCursor() {
     return ComponentCursor.Retrun(this);
+  }
+  cloneCursor(
+    cursor?: ComponentCursor,
+    nodeCursor?: NodeCursor
+  ): ComponentCursor<ComponentSchema, Data, Logic, Shared> {
+    const newCursor = cursor || ComponentCursor.Get();
+    const newNodeCursor = nodeCursor || NodeCursor.Get();
+    newCursor.setInstance(newNodeCursor, this.typeId, this._index);
+    return newCursor as any;
   }
 
   update() {

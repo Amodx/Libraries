@@ -93,6 +93,7 @@ export const registerComponent = <
 ): RegisteredComponent<ComponentSchema, Data, Logic, Shared> => {
   const typeId = NCSRegister.components.register(data.type, data);
 
+  data.shared = data.shared || ({} as Shared);
   const createComponent = (
     schema?: Partial<ComponentSchema> | null | undefined,
     schemaView?: string | null

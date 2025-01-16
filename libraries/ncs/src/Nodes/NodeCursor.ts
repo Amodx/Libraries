@@ -330,6 +330,12 @@ export class NodeCursor {
     return NodeCursor.Retrun(this);
   }
 
+  cloneCursor(cursor?: NodeCursor) {
+    const newCursor = cursor || NodeCursor.Get();
+    newCursor.setNode(this.graph, this._index);
+    return newCursor;
+  }
+
   toJSON(): SerializedNodeData {
     let components: SerializedComponentData[] | undefined;
     if (this.hasComponents) {

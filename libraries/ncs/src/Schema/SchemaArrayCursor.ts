@@ -17,13 +17,13 @@ export class SchemaArrayCursor {
   setIndex(index: number) {
     this._index = index;
   }
-  getObserver(propertyIndex: number): Observable | null {
+  getObserver(propertyIndex: number): Observable<any> | null {
     return this.schemaArray.getObserver(propertyIndex, this._index);
   }
-  getOrCreateObserver(propertyIndex: number): Observable {
+  getOrCreateObserver(propertyIndex: number): Observable<any> {
     let observer = this.schemaArray.getObserver(propertyIndex, this._index);
     if (!observer) {
-      observer = NCSPools.observers.get() || new Observable();
+      observer = NCSPools.observers.get() || new Observable<any>();
       this.schemaArray.setObserver(propertyIndex, this._index, observer);
     }
     return observer;

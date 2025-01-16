@@ -25,7 +25,7 @@ function traverse(parent: any, properties: Property[]) {
               ? this.__cursor.fetchProxyData(index)
               : this.__cursor.data[index];
             if (oldVale != value) {
-              obs.notify();
+              obs.notify(value);
             }
           }
           this.__cursor.data[index] = value;

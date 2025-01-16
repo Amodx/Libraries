@@ -1,7 +1,4 @@
-import {
-  BinaryPropertyTypes,
-  PropertyData,
-} from "./Property/Property.types";
+import { BinaryPropertyTypes, PropertyData } from "./Property/Property.types";
 import { Schema } from "./Schema";
 import { SchemaView } from "./SchemaView";
 import { SchemaArrayCursor } from "./SchemaArrayCursor";
@@ -17,15 +14,15 @@ export type BinaryObjectSchemaView = {
   buffer: Uint8Array;
 };
 
-export type SchemaCursor<Shape extends {} = any> = SchemaCursorBase & Shape;
+export type SchemaCursor<Shape extends {} = any> = SchemaCursorBase<Shape> & Shape;
 
 export interface SchemaCursorBase<Shape extends {} = any> {
   __view: SchemaView<Shape>;
   __cursor: SchemaArrayCursor;
-  getSchemaIndex(): Schema<Shape>["index"];
+  getSchemaIndex(): SchemaCursorIndex<Shape>;
   getInstance(): number;
   setInstance(index: number): void;
-  getCursor() :SchemaArrayCursor ;
+  getCursor(): SchemaArrayCursor;
   clone(): SchemaCursorBase<Shape>;
   toJSON(): Shape;
 }

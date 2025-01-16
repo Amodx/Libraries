@@ -6,7 +6,7 @@ import { NCSPools } from "../Pools/NCSPools";
 export class SchemaArray {
   _data: (any[] | BinaryObjectSchemaView)[] = [];
   _dataViews: number[] = [];
-  _observers: Observable[][] = [];
+  _observers: Observable<any>[][] = [];
   _proxyObjects: any[][] = [];
   _proxyKeys: any[][] = [];
 
@@ -61,7 +61,7 @@ export class SchemaArray {
     return true;
   }
 
-  getObserver(propertyIndex: number, arrayIndex: number): Observable | null {
+  getObserver(propertyIndex: number, arrayIndex: number): Observable<any> | null {
     if (!this._observers[propertyIndex][arrayIndex]) return null;
     let observer = !this._observers[propertyIndex][arrayIndex];
     if (!observer) return null;
@@ -71,7 +71,7 @@ export class SchemaArray {
   setObserver(
     propertyIndex: number,
     arrayIndex: number,
-    value: Observable | null
+    value: Observable<any> | null
   ) {
     if (!value) {
       //@ts-ignore

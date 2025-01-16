@@ -1,6 +1,22 @@
 export * from "./NCS";
 export * from "./Graphs/Graph";
+//schema 
+export * from "./Schema/Schema"
+//nodes
+export * from "./Nodes/NodeCursor";
+export * from "./Nodes/Node.types";
+//components
 export * from "./Components/Component.types";
 export * from "./Components/ComponentCursor";
-export * from "./Nodes/Node.types";
-export * from "./Nodes/NodeCursor";
+//tags
+export * from "./Tags/Tag.types";
+export * from "./Tags/TagCursor";
+//context
+export * from "./Contexts/Context.types";
+export * from "./Contexts/ContextCursor";
+//queries
+export * from "./Queries/Query.types";
+export * from "./Queries/QueryInstance";
+//systems
+export * from "./Systems/System.types";
+export * from "./Systems/SystemInstance";
