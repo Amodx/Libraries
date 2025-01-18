@@ -36,6 +36,7 @@ export class ContextArray {
     this._state[slot] = state;
     this._disposed[slot] = false;
     data && (this._data[slot] = data);
+    console.warn("CREATED CONTEXT", data, this._data[slot]);
     return slot;
   }
   removeContext(index: number) {

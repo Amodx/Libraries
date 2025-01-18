@@ -81,7 +81,7 @@ const traverseArray = (
   for (let i = 0; i < parent.children!.length; i++) {
     const property = parent.children![i];
     if (!property.children) {
-      data[property.index] = structuredClone(property.value);
+      data[Number(property.index)] = structuredClone(property.value);
       property.meta && (meta[property.index] = structuredClone(property.meta));
     } else {
       traverseArray(property, data, meta);
@@ -123,18 +123,16 @@ function traverseCreateFromObject(object: any, property: PropertyData) {
   }
   return property;
 }
-function traverseCreateData(property: Property, target: any, source: any) {
-  for (const child of property.children!) {
-    if (child.children) {
-      if (!source[property.id]) continue;
-      target[property.id] ??= {};
-      traverseCreateData(child, target[property.id], source[property.id]);
+function traverseCreateData(parent: Property, target: any[], source: any) {
+  for (const property of parent.children!) {
+    if (typeof source[property.id] === "undefined") continue;
+    if (property.children) {
+      traverseCreateData(property, target, source[property.id]);
     } else {
-      if (typeof source[property.id] == "undefined") continue;
-      target[property.id] = source[property.id];
+      target[property.index] = source[property.id];
     }
   }
-  return property;
+  return target;
 }
 
 export class Schema<Shape extends Record<string, any> = {}> {
@@ -176,19 +174,15 @@ export class Schema<Shape extends Record<string, any> = {}> {
 
   viewIdPalettew = new IdPalette();
   views: SchemaView[] = [];
-  private defaultCursor: SchemaCursor<Shape>;
-  private defaultInstance: any;
 
   array: SchemaArray;
 
   constructor(data: SchemaData) {
+
     traverseCreate(this.root, data, -1);
     this.index = createSchemaIndex(this);
     traverseArray(this.root, this._data, this._meta);
-    const view = this.createObjectView("default");
-    this.defaultCursor = view.createCursor();
-    this.defaultInstance = view.createData();
-    this.defaultInstance[0] = this._data;
+    this.createObjectView("default");
     this.array = new SchemaArray(this);
   }
 
@@ -199,9 +193,7 @@ export class Schema<Shape extends Record<string, any> = {}> {
           ? structuredClone(this._data[i])
           : this._data[i];
     }
-    this.defaultInstance[0] = newData;
-    this.defaultCursor.setInstance(this.defaultInstance);
-    traverseCreateData(this.root, this.defaultCursor, overrides);
+    traverseCreateData(this.root, newData, overrides);
     return newData;
   }
 

@@ -30,6 +30,7 @@ export class NodeObservers {
       observer = NCSPools.observers.get() || new Observable();
       this.observers[NodeObserverIds.Disposed]![this.node.index] = observer;
     }
+    this.node.arrays._hasObservers[this.node.index] = true;
     return observer;
   }
 
@@ -39,6 +40,7 @@ export class NodeObservers {
       observer = NCSPools.observers.get() || new Observable();
       this.observers[NodeObserverIds.Enabled]![this.node.index] = observer;
     }
+    this.node.arrays._hasObservers[this.node.index] = true;
     return observer;
   }
 
@@ -49,6 +51,7 @@ export class NodeObservers {
       observer = NCSPools.observers.get() || new Observable();
       this.observers[NodeObserverIds.Parented]![this.node.index] = observer;
     }
+    this.node.arrays._hasObservers[this.node.index] = true;
     return observer;
   }
 
@@ -60,6 +63,7 @@ export class NodeObservers {
       this.observers[NodeObserverIds.RemovedFromParent]![this.node.index] =
         observer;
     }
+    this.node.arrays._hasObservers[this.node.index] = true;
     return observer;
   }
 
@@ -69,6 +73,7 @@ export class NodeObservers {
       observer = NCSPools.observers.get() || new Observable();
       this.observers[NodeObserverIds.ChildAdded]![this.node.index] = observer;
     }
+    this.node.arrays._hasObservers[this.node.index] = true;
     return observer;
   }
 
@@ -79,6 +84,7 @@ export class NodeObservers {
       observer = NCSPools.observers.get() || new Observable();
       this.observers[NodeObserverIds.ChildRemoved]![this.node.index] = observer;
     }
+    this.node.arrays._hasObservers[this.node.index] = true;
     return observer;
   }
 
@@ -90,6 +96,7 @@ export class NodeObservers {
       this.observers[NodeObserverIds.ChildrenUpdated]![this.node.index] =
         observer;
     }
+    this.node.arrays._hasObservers[this.node.index] = true;
     return observer;
   }
 
@@ -144,6 +151,7 @@ export class NodeObservers {
       this.observers[NodeObserverIds.ComponentAdded]![this.node.index] =
         observer;
     }
+    this.node.arrays._hasObservers[this.node.index] = true;
     return observer;
   }
 
@@ -156,6 +164,7 @@ export class NodeObservers {
       this.observers[NodeObserverIds.ComponentRemoved]![this.node.index] =
         observer;
     }
+    this.node.arrays._hasObservers[this.node.index] = true;
     return observer;
   }
 
@@ -167,6 +176,7 @@ export class NodeObservers {
       this.observers[NodeObserverIds.ComponentsUpdated]![this.node.index] =
         observer;
     }
+    this.node.arrays._hasObservers[this.node.index] = true;
     return observer;
   }
 
@@ -197,6 +207,7 @@ export class NodeObservers {
       observer = NCSPools.observers.get() || new Observable();
       this.observers[NodeObserverIds.TagAdded]![this.node.index] = observer;
     }
+    this.node.arrays._hasObservers[this.node.index] = true;
     return observer;
   }
 
@@ -206,6 +217,7 @@ export class NodeObservers {
       observer = NCSPools.observers.get() || new Observable();
       this.observers[NodeObserverIds.TagRemoved]![this.node.index] = observer;
     }
+    this.node.arrays._hasObservers[this.node.index] = true;
     return observer;
   }
 
@@ -216,6 +228,7 @@ export class NodeObservers {
       observer = NCSPools.observers.get() || new Observable();
       this.observers[NodeObserverIds.TagsUpdated]![this.node.index] = observer;
     }
+    this.node.arrays._hasObservers[this.node.index] = true;
     return observer;
   }
 

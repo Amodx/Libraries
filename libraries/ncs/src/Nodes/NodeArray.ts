@@ -31,6 +31,7 @@ export class NodeArray {
   _context: number[][] = [];
   _disposed: boolean[] = [];
   _enabled: boolean[] = [];
+  _hasObservers: boolean[] = [];
   addNode(id: bigint | null, parent: number, name: string): number {
     let slot = this._freeSlots.length
       ? this._freeSlots.shift()!
@@ -41,6 +42,7 @@ export class NodeArray {
     this._names[slot] = name;
     this._disposed[slot] = false;
     this._enabled[slot] = true;
+    this._hasObservers[slot] = false;
     return slot;
   }
   removeNode(slot: number) {
@@ -51,7 +53,7 @@ export class NodeArray {
     this._names[slot] = "";
     this._disposed[slot] = true;
     this._enabled[slot] = false;
-
+    this._hasObservers[slot] = false;
     for (let i = 0; i < observerValues.length; i++) {
       const observer = this._observers[i]![slot];
       if (observer !== undefined) {

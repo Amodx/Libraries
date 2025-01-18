@@ -1,11 +1,13 @@
 import {
-  SerializedComponentData,
   ComponentRegisterData,
   CreateComponentData,
 } from "../Components/Component.types";
 import { Graph } from "../Graphs/Graph";
 
-import { SerializedNodeData } from "../Nodes/Node.types";
+import {
+  SerializedNodeData,
+  SerializedComponentData,
+} from "../Data/SerializedData.types";
 import { NCSRegister } from "./NCSRegister";
 import { ComponentCursor } from "../Components/ComponentCursor";
 import { SchemaCursor } from "../Schema/Schema.types";
@@ -19,8 +21,10 @@ type RegisteredComponent<
   Logic extends object = {},
   Shared extends object = {},
 > = (ComponentRegisterData<ComponentSchema, Data, Logic, Shared> & {
-  getNodes(grpah: Graph): any;
-  getComponents(grpah: Graph): Generator<ComponentCursor>;
+  getNodes(grpah: Graph): Generator<NodeCursor>;
+  getComponents(
+    grpah: Graph
+  ): Generator<ComponentCursor<ComponentSchema, Data, Logic, Shared>>;
   set(
     node: NodeCursor,
     componentSchema?: Nullable<Partial<ComponentSchema>>,
@@ -28,11 +32,11 @@ type RegisteredComponent<
     cursor?: ComponentCursor<ComponentCursor, Data, Logic, Shared>
   ): ComponentCursor<ComponentSchema, Data, Logic, Shared>;
   get(
-    node: NodeCursor,
+    node: NodeCursor | number,
     cursor?: ComponentCursor<ComponentCursor, Data, Logic, Shared>
   ): ComponentCursor<ComponentSchema, Data, Logic, Shared> | null;
   getRequired(
-    node: NodeCursor,
+    node: NodeCursor | number,
     cursor?: ComponentCursor<ComponentCursor, Data, Logic, Shared>
   ): ComponentCursor<ComponentSchema, Data, Logic, Shared>;
   getChild(
@@ -75,6 +79,8 @@ type RegisteredComponent<
     ): SerializedComponentData<ComponentSchema>[] | null;
   };
 
+  type: string;
+  typeId: number;
   data: ComponentRegisterData<ComponentSchema, Data, Logic, Shared>;
   default: ComponentCursor<ComponentSchema, Data, Logic, Shared>;
 }) &
@@ -109,6 +115,8 @@ export const registerComponent = <
 
   return Object.assign(createComponent, data, {
     data,
+    type: data.type,
+    typeId,
     *getNodes(
       graph: Graph,
       nodeCursor = NodeCursor.Get()
@@ -160,7 +168,7 @@ export const registerComponent = <
       const found = node.components.get(data.type, cursor);
       if (!found)
         throw new Error(
-          `Could not find required component ${data.type} on node instance.`
+          `Node [${node.name}] does not have required component [${data.type}].`
         );
       return found;
     },
@@ -171,7 +179,7 @@ export const registerComponent = <
       const comp = node.components.getChild(data.type, cursor);
       if (!comp)
         throw new Error(
-          `Node does not have required child with component ${data.type}.`
+          `Node [${node.name}] does not have a child with required component [${data.type}].`
         );
       return comp;
     },
@@ -182,7 +190,7 @@ export const registerComponent = <
       const comp = node.components.getParent(data.type, cursor);
       if (!comp)
         throw new Error(
-          `Node does not have required parent with component ${data.type}.`
+          `Node [${node.name}] does not have a parent with required component [${data.type}].`
         );
       return comp;
     },

@@ -50,7 +50,7 @@ export class ComponentArray {
       : this._node.length;
     this._node[slot] = node;
     this._disposed[slot] = false;
-    this.schemaArray.setData(slot, schema, schemaView);
+    if (this.schemaArray) this.schemaArray.setData(slot, schema, schemaView);
     componentObserverData[0] = this.numberTypeId;
     componentObserverData[1] = slot;
     this.observers.componentAdded.notify(componentObserverData);
@@ -70,7 +70,7 @@ export class ComponentArray {
     (this._data as any)[index] = undefined;
     (this._logic as any)[index] = undefined;
     this._node[index] = -1;
-    this.schemaArray.removeData(index);
+    if (this.schemaArray) this.schemaArray.removeData(index);
     return data;
   }
 

@@ -124,7 +124,17 @@ function traverse(parent: any, properties: Property[]) {
                   this.__view.byteOffset![index]
                 );
             if (oldVale != value) {
+              setBinaryObjectData(
+                this.__cursor.data[0] as any,
+                this.__view.meta[index],
+                this.__view.byteOffset![index],
+                value
+              );
+              if (proxy) {
+                this.__cursor.setProxyData(index, value);
+              }
               obs.notify(value);
+              return;
             }
           }
           setBinaryObjectData(

@@ -8,32 +8,6 @@ export interface ComponentMetaData {
   name: string;
   [key: string]: any;
 }
-/**
- * Interface representing the pool data of a component.
- */
-export interface ComponentPoolData {
-  maxSize: number;
-  [key: string]: any;
-}
-
-
-
-/**
- * Type representing the data of a component.
- *
- * @template ComponentSchema - The ComponentSchema of the component.
- */
-export type SerializedComponentData<ComponentSchema extends object = any> = {
-  /**
-   * The type of the component.
-   */
-  type: string;
-  /**
-   * The ComponentSchema of the component.
-   */
-  schema?: ComponentSchema;
-  schemaViewId?: string;
-};
 
 export type CreateComponentData<ComponentSchema extends object = any> = [
   /**
@@ -70,7 +44,7 @@ export type ComponentRegisterData<
    * The type of the component.
    */
   type: string;
-  pool?: ComponentPoolData;
+
 
   /**
    * The schema used to create an editable version of the component.

@@ -9,16 +9,16 @@ import {
   SchemaCreateData,
   SchemaCursor,
 } from "./Schema.types";
-function traverseCreateJSON(property: Property, target: any, source: any) {
-  for (const child of property.children!) {
+function traverseCreateJSON(parent: Property, target: any, source: any) {
+  for (const child of parent.children!) {
     if (child.children) {
-      target[property.id] ??= {};
-      traverseCreateJSON(child, target[property.id], source[property.id]);
+      target[child.id] ??= {};
+      traverseCreateJSON(child, target[child.id], source[child.id]);
     } else {
-      target[property.id] = source[property.id];
+      target[child.id] = source[child.id];
     }
   }
-  return property;
+  return target;
 }
 
 const tempData: any[] = [];
@@ -41,10 +41,11 @@ export class SchemaView<Shape extends {} = any> {
 
   createData(overrides?: RecursivePartial<Shape> | null): any {
     const data = this._createData;
-
+    overrides && (tempData.length = 0);
     let baseData = !overrides
       ? this.schema._data
       : this.schema.createData(tempData, overrides);
+
     if (this._dataPool.items.length) {
       const newData = this._dataPool.get()! as any;
       if (data.type == "object") {

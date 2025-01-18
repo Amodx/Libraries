@@ -58,7 +58,7 @@ export class NodeEvents {
       observer = NCSPools.observers.get() || new Observable();
       observers[this.index] = observer;
     }
-    observer.subscribe(run as any);
+    observer.subscribe(run );
   }
 
   removeListener(id: string, run: ObservableFunction<any>) {

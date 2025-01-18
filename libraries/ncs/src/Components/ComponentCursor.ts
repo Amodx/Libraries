@@ -1,7 +1,4 @@
-import {
-  SerializedComponentData,
-  ComponentRegisterData,
-} from "./Component.types";
+import { ComponentRegisterData } from "./Component.types";
 import { SchemaCursor } from "../Schema/Schema.types";
 import { NCSRegister } from "../Register/NCSRegister";
 import { NodeCursor } from "../Nodes/NodeCursor";
@@ -63,13 +60,14 @@ export class ComponentCursor<
 
     this.arrays = node.graph._components[type];
 
-    if (this.arrays.schemaArray._data[index] !== undefined) {
+    if (this.arrays?.schemaArray?._data[index] !== undefined) {
       this.schema = this.arrays.schemaArray.createViewCursor(index);
+      this.schema.setInstance(index);
     }
     return this;
   }
 
-  isDisposed() {
+  get isDisposed() {
     return this.arrays._disposed[this._index];
   }
   dispose() {
@@ -86,18 +84,13 @@ export class ComponentCursor<
   ): ComponentCursor<ComponentSchema, Data, Logic, Shared> {
     const newCursor = cursor || ComponentCursor.Get();
     const newNodeCursor = nodeCursor || NodeCursor.Get();
+    newNodeCursor.setNode(this.node.graph, this.node.index);
+
     newCursor.setInstance(newNodeCursor, this.typeId, this._index);
     return newCursor as any;
   }
 
   update() {
     this.__proto.update && this.__proto.update(this);
-  }
-
-  toJSON(): SerializedComponentData {
-    return {
-      schema: this.schema && this.schema.toJSON(),
-      type: this.type,
-    };
   }
 }

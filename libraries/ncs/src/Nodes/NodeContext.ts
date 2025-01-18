@@ -4,7 +4,6 @@ import { NCSRegister } from "../Register/NCSRegister";
 import { NodeCursor } from "./NodeCursor";
 import { NCSPools } from "../Pools/NCSPools";
 
-
 export class NodeContext {
   node: NodeCursor;
   static Get() {
@@ -31,11 +30,12 @@ export class NodeContext {
       defaultCursor.setContext(this.node, context[i]);
       defaultCursor.dispose();
     }
-    ContextCursor.Retrun(defaultCursor)
+    ContextCursor.Retrun(defaultCursor);
   }
 
   add(contextData: CreateContextData) {
     const cursor = ContextCursor.Get();
+
     if (!this.context) {
       this.node.arrays._context[this.node.index] =
         NCSPools.numberArray.get() || [];
@@ -43,7 +43,7 @@ export class NodeContext {
     const context = this.context;
     for (let i = 0; i < context.length; i++) {
       cursor.setContext(this.node, context[i]);
-      if (cursor.type == contextData[0]) return contextData;
+      if (cursor.type == contextData[0]) return cursor.index;
     }
     const contextType = NCSRegister.contexts.get(contextData[0]);
     const typeId = NCSRegister.contexts.idPalette.getNumberId(contextData[0]);
@@ -56,7 +56,8 @@ export class NodeContext {
         ? contextType.schema
             .getView(contextData[2] || "default")!
             .createData(contextData[1])
-        : null
+        : null,
+      contextData[3]
     );
     context.push(newContext);
     cursor.setContext(this.node, newContext);
@@ -65,7 +66,8 @@ export class NodeContext {
     contextData[2] = null;
     contextData[3] = null;
     NCSPools.createContextData.addItem(contextData);
-    ContextCursor.Retrun(cursor)
+    ContextCursor.Retrun(cursor);
+
     return newContext;
   }
 
@@ -82,31 +84,42 @@ export class NodeContext {
             break;
           }
         }
-        ContextCursor.Retrun(cursor)
+        ContextCursor.Retrun(cursor);
         return true;
       }
     }
-    ContextCursor.Retrun(cursor)
+    ContextCursor.Retrun(cursor);
     return false;
   }
 
   get(type: string): ContextCursor | null {
-    const cursor = ContextCursor.Get();
     const context = this.context;
-    for (let i = 0; i < context.length; i++) {
-      cursor.setContext(this.node, context[i]);
-      if (cursor.type == type) return cursor;
+    const cursor = ContextCursor.Get();
+
+    if (context) {
+      for (let i = 0; i < context.length; i++) {
+        cursor.setContext(this.node, context[i]);
+        if (cursor.type == type) return cursor;
+      }
     }
-    for (const parent of this.node.traverseParents()) {
-      if (parent.hasContexts) {
-        const found = parent.context.get(type);
-        if (found) {
-          found.nodes.push(this.node.index);
-          this.context.push(found.index);
-          return found;
+
+    const parentCursor = NodeCursor.Get();
+
+    for (const parent of this.node.traverseParents(parentCursor)) {
+      if (this.node.arrays._context[parent.index]) {
+        const context = this.node.arrays._context[parent.index];
+        for (let i = 0; i < context.length; i++) {
+          cursor.setContext(parent, context[i]);
+          if (cursor.type == type) {
+            //@todo add anchor
+            cursor.setContext(parent, context[i]);
+
+            return cursor;
+          }
         }
       }
     }
+    NodeCursor.Retrun(parentCursor);
     return null;
   }
 }

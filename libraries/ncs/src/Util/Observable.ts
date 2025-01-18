@@ -1,12 +1,12 @@
-export type ObservableFunction<T> = (data: T, observers: Observable<T>) => void;
+export type ObservableFunction<T> = (data: T) => void;
 
 export class Observable<T = void> {
-  observers: ObservableFunction<T>[] = [];
-  once: Set<any> | null = null;
+  private observers: ObservableFunction<T>[] = [];
+  private once: Set<any> | null = null;
 
   constructor() {}
   /**
-   * Subsrcibe to the observer. If only the first param is set must be the observer function itself which will be used as they key.
+   * Subscribe to the observer. If only the first param is set must be the observer function itself which will be used as they key.
    * Otherwise the first param is the key to subsrcibe to the observer with.
    */
   subscribe(func: ObservableFunction<T>) {
@@ -26,7 +26,7 @@ export class Observable<T = void> {
     return false;
   }
   /**
-   * Subsrcibe to the observer once.
+   * Subscribe to the observer once.
    */
   subscribeOnce(func: ObservableFunction<T>) {
     this.observers.push(func);
@@ -38,9 +38,9 @@ export class Observable<T = void> {
    * Run each callback function.
    */
   notify(data: T) {
-    for (let i = this.observers.length; i > 0; i--) {
+    for (let i = this.observers.length - 1; i >= 0; i--) {
       const func = this.observers[i];
-      func(data, this);
+      func(data);
       if (this.once && this.once.has(func)) {
         this.observers.splice(i, 1);
         this.once.delete(func);

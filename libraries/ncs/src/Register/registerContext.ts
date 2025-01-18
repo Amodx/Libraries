@@ -13,8 +13,9 @@ type RegisteredContext<
 > = (ContextRegisterData<ContextSchema, Data> & {
   set: (
     parent: NodeCursor,
-    schema?: ContextSchema,
-    data?: Data
+    schema?: ContextSchema | null,
+    schemaView?: string | null,
+    data?: Data | null
   ) => ContextCursor<ContextSchema, Data>;
   get: (parent: NodeCursor) => ContextCursor<ContextSchema, Data> | null;
   getRequired: (parent: NodeCursor) => ContextCursor<ContextSchema, Data>;
@@ -24,6 +25,7 @@ type RegisteredContext<
   default: ContextCursor<ContextSchema, Data>;
 }) &
   ((
+    
     schema?: ContextSchema,
     schemaViewId?: string,
     data?: Data
@@ -40,24 +42,28 @@ export function registerContext<
   const createContext = (
     schema?: ContextSchema,
     schemaViewId?: string,
-    data?: any
+    contextData?: any
   ): CreateContextData<ContextSchema> => {
     const createData: CreateContextData<ContextSchema, Data> =
       NCSPools.createContextData.get() || ([] as any);
     createData[0] = data.type;
     createData[1] = schema || {};
     createData[2] = schemaViewId || "default";
-    createData[3] = data || null;
+    createData[3] = contextData || null;
     return createData;
   };
 
   return Object.assign(createContext, data, {
     data,
-    set: (parent: NodeCursor, schema?: ContextSchema, data?: Data) => {
-      const newContext = parent.context.add(createContext(schema));
-      if (data) {
-        //  newContext.data = data;
-      }
+    set: (
+      parent: NodeCursor,
+      schema?: ContextSchema,
+      schemaViewId?: string,
+      data?: Data
+    ) => {
+      const newContext = parent.context.add(
+        createContext(schema, schemaViewId, data)
+      );
       return newContext;
     },
     get: (parent: NodeCursor) => {

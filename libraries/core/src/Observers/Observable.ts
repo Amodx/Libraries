@@ -1,5 +1,5 @@
 export type ObservableFunction<T> = (data: T, observers: Observable<T>) => void;
-export type ObserverKeys = object | string | symbol | VoidFunction;
+export type ObserverKeys = object | number | string | symbol | VoidFunction;
 
 const once = new Set<any>();
 export class Observable<T = void> {
@@ -67,7 +67,7 @@ export class Observable<T = void> {
    * Run each callback function.
    */
   notify(data: T) {
-    for (let i = this.observers.length; i > 0; i--) {
+    for (let i = this.observers.length - 1; i >= 0; i--) {
       this.observers[i](data, this);
       if (once.has(this)) {
         this.observers.splice(i, 1);
@@ -84,7 +84,7 @@ export class Observable<T = void> {
    * Run each callback function and awaits it.
    */
   async notifyAsync(data: T) {
-    for (let i = this.observers.length; i > 0; i--) {
+    for (let i = this.observers.length - 1; i >= 0; i--) {
       await this.observers[i](data, this);
       if (once.has(this)) {
         this.observers.splice(i, 1);

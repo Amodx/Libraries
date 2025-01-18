@@ -1,7 +1,10 @@
 export * from "./NCS";
+export * from "./Functional";
 export * from "./Graphs/Graph";
-//schema 
-export * from "./Schema/Schema"
+//data
+export * from "./Data/SerializedData.types"
+//schema
+export * from "./Schema/Schema";
 //nodes
 export * from "./Nodes/NodeCursor";
 export * from "./Nodes/Node.types";

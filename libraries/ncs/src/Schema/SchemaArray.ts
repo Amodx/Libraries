@@ -63,7 +63,7 @@ export class SchemaArray {
 
   getObserver(propertyIndex: number, arrayIndex: number): Observable<any> | null {
     if (!this._observers[propertyIndex][arrayIndex]) return null;
-    let observer = !this._observers[propertyIndex][arrayIndex];
+    let observer = this._observers[propertyIndex][arrayIndex];
     if (!observer) return null;
     return observer;
   }

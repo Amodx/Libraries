@@ -109,7 +109,7 @@ export class NodeComponents {
 
   get(
     type: string,
-    cursor = defaultCursor
+    cursor = ComponentCursor.Get()
   ): ComponentCursor<any, any, any, any> | null {
     const components = this.components;
     if (!components) return null;
@@ -157,7 +157,7 @@ export class NodeComponents {
 
   getChild(
     type: string,
-    cursor = defaultCursor
+    cursor = ComponentCursor.Get()
   ): ComponentCursor<any, any, any, any> | null {
     for (const child of this.node.traverseChildren()) {
       if (!child.components) continue;
@@ -169,7 +169,7 @@ export class NodeComponents {
 
   getParent(
     type: string,
-    cursor = defaultCursor
+    cursor = ComponentCursor.Get()
   ): ComponentCursor<any, any, any, any> | null {
     for (const parent of this.node.traverseParents()) {
       if (!parent.components) continue;

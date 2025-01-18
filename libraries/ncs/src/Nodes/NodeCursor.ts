@@ -1,6 +1,5 @@
 import { Graph } from "../Graphs/Graph";
 import { NodeId } from "./NodeId";
-import { SerializedNodeData } from "./Node.types";
 import { NodeEvents } from "./NodeEvents";
 import { NodeObservers } from "./NodeObservers";
 import { NodeContext } from "./NodeContext";
@@ -8,7 +7,6 @@ import { NodeComponents } from "./NodeComponents";
 import { NodeTags } from "./NodeTags";
 import { Nullable } from "../Util/Util.types";
 import { ComponentCursor } from "../Components/ComponentCursor";
-import { SerializedComponentData } from "../Components/Component.types";
 import { TagCursor } from "../Tags/TagCursor";
 import { NCSPools } from "../Pools/NCSPools";
 
@@ -94,8 +92,8 @@ export class NodeCursor {
   get context() {
     if (!this._context) {
       this._context = NodeContext.Get();
-      this._context.node = this;
     }
+    this._context.node = this;
     return this._context;
   }
 
@@ -105,20 +103,23 @@ export class NodeCursor {
 
   private _observers: Nullable<NodeObservers> = null;
   get observers() {
-    if (!this._observers) this._observers = NodeObservers.Get();
+    if (!this._observers) {
+      this._observers = NodeObservers.Get();
+    }
+    this._observers.node = this;
     return this._observers;
   }
 
   get hasObservers() {
-    return this._observers !== null;
+    return this.arrays._hasObservers[this._index];
   }
 
   private _components: Nullable<NodeComponents> = null;
   get components() {
     if (!this._components) {
       this._components = NodeComponents.Get();
-      this._components.node = this;
     }
+    this._components.node = this;
     return this._components;
   }
 
@@ -130,8 +131,8 @@ export class NodeCursor {
   get tags() {
     if (!this._tags) {
       this._tags = NodeTags.Get();
-      this._tags.node = this;
     }
+    this._tags.node = this;
     return this._tags;
   }
 
@@ -139,7 +140,7 @@ export class NodeCursor {
     return this._tags !== null;
   }
 
-  get children() {
+  get childrenArray() {
     return this.arrays._children[this._index] || null;
   }
   get parent() {
@@ -175,14 +176,23 @@ export class NodeCursor {
     if (this.arrays._components[index] !== undefined) {
       this._components = NodeComponents.Get();
       this._components.node = this;
+    } else {
+      if (this._components) NodeComponents.Retrun(this._components);
+      this._components = null;
     }
     if (this.arrays._tags[index] !== undefined) {
       this._tags = NodeTags.Get();
       this._tags.node = this;
+    } else {
+      if (this._tags) NodeTags.Retrun(this._tags);
+      this._tags = null;
     }
     if (this.arrays._context[index] !== undefined) {
       this._context = NodeContext.Get();
       this._context.node = this;
+    } else {
+      if (this._context) NodeContext.Retrun(this._context);
+      this._context = null;
     }
     return this;
   }
@@ -191,37 +201,65 @@ export class NodeCursor {
     return cursor.setNode(this.graph, this.index);
   }
 
+  /** Traverse the node's direct children */
+  *children(cursor = nodeCursor): Generator<NodeCursor> {
+    const array = this.childrenArray;
+    if (!array) return false;
+    for (let i = 0; i < array.length; i++) {
+      cursor.setNode(this.graph, array[i]);
+      yield cursor;
+    }
+    return true;
+  }
+
+  /** Traverse all the node's descendants */
   *traverseChildren(cursor = nodeCursor): Generator<NodeCursor> {
-    const children: number[][] = [this.children];
+    if (!this.childrenArray) return false;
+    const children: number[][] = [this.childrenArray];
     while (children.length) {
       const childrenArray = children.shift()!;
       if (!childrenArray) continue;
       for (let i = 0; i < childrenArray.length; i++) {
         cursor.setNode(this.graph, childrenArray[i]);
         yield cursor;
-        if (cursor.children?.length) children.push(cursor.children);
+        if (this.arrays._children[childrenArray[i]] !== undefined) {
+          children.push(this.arrays._children[childrenArray[i]]);
+        }
       }
     }
+    return true;
   }
+
+  /** Traverse all the node's parents */
   *traverseParents(cursor = nodeCursor): Generator<NodeCursor> {
     let parent = this.parent;
-    while (parent) {
+    if (parent === undefined || parent < 0) return false;
+    while (true) {
       cursor.setNode(this.graph, parent);
       yield cursor;
-      parent = cursor.parent;
+      parent = this.arrays._parents[cursor._index];
+      if (parent === undefined || parent < 0) return true;
     }
   }
+
+  /** Traverse all the node's components */
   *traverseComponents(cursor = componentCursor): Generator<ComponentCursor> {
     const components = this.components!.components;
+    if (!components) return false;
     for (let i = 0; i < components.length; i += 2) {
       yield cursor.setInstance(this, components[i], components[i + 1]);
     }
+    return true;
   }
+
+  /** Traverse all the node's tags */
   *traverseTags(cursor = tagCursor): Generator<TagCursor> {
     const tags = this.tags!.tags;
+    if (!this.tags) return false;
     for (let i = 0; i < tags.length; i += 2) {
       yield cursor.setTag(this, tags[i], tags[i + 1]);
     }
+    return true;
   }
 
   dispose() {
@@ -235,9 +273,9 @@ export class NodeCursor {
     this.hasComponents && this.components!.dispose();
     this.hasTags && this.tags!.dispose();
 
-    if (this.children) {
-      for (let i = 0; i < this.children.length; i++) {
-        nodeCursor.setNode(this.graph, this.children[i]);
+    if (this.childrenArray) {
+      for (let i = 0; i < this.childrenArray.length; i++) {
+        nodeCursor.setNode(this.graph, this.childrenArray[i]);
         nodeCursor.dispose();
       }
     }
@@ -256,9 +294,9 @@ export class NodeCursor {
   }
 
   hasChild(node: NodeCursor) {
-    if (!this.children) return false;
-    for (let i = 0; i < this.children.length; i++) {
-      if (this.children[i] == node.index) return true;
+    if (!this.childrenArray) return false;
+    for (let i = 0; i < this.childrenArray.length; i++) {
+      if (this.childrenArray[i] == node.index) return true;
     }
     return false;
   }
@@ -276,12 +314,20 @@ export class NodeCursor {
       nodeToParentTo.observers!.parented.notify(nodeCursor);
   }
 
+  getChild(index: number, cursor = NodeCursor.Get()) {
+    const childrenArray = this.childrenArray;
+    if (!childrenArray || childrenArray[index] === undefined) return null;
+    return cursor.setNode(this.graph, childrenArray[index]);
+  }
+
   addChild(node: NodeCursor) {
     if (this.hasChild(node)) return;
-    if (!this.children)
+    if (!this.childrenArray) {
       this.arrays._children[this._index] = NCSPools.numberArray.get() || [];
+    }
     node.parent = this.index;
-    this.children.push(node.index);
+
+    this.childrenArray.push(node.index);
     if (this.hasObservers) {
       this.observers!.isChildAddedSet &&
         this.observers!.childAdded.notify(node);
@@ -294,10 +340,10 @@ export class NodeCursor {
   }
 
   removeChild(index: number) {
-    if (!this.children) return;
-    for (let i = 0; i < this.children.length; i++) {
-      if (this.children[i] == index) {
-        const child = this.children.splice(i, 1)![0];
+    if (!this.childrenArray) return;
+    for (let i = 0; i < this.childrenArray.length; i++) {
+      if (this.childrenArray[i] == index) {
+        const child = this.childrenArray.splice(i, 1)![0];
         nodeCursor.setNode(this.graph, child);
         if (this.hasObservers) {
           this.hasObservers &&
@@ -334,41 +380,6 @@ export class NodeCursor {
     const newCursor = cursor || NodeCursor.Get();
     newCursor.setNode(this.graph, this._index);
     return newCursor;
-  }
-
-  toJSON(): SerializedNodeData {
-    let components: SerializedComponentData[] | undefined;
-    if (this.hasComponents) {
-      components = [];
-      for (const comp of this.traverseComponents()) {
-        components.push(comp.toJSON());
-      }
-    }
-
-    let tags: string[] | undefined;
-    if (this.hasTags) {
-      tags = [];
-      for (const comp of this.traverseTags()) {
-        tags.push(comp.toJSON());
-      }
-    }
-
-    let children: SerializedNodeData[] | undefined;
-    if (this.children?.length) {
-      children = [];
-      for (let i = 0; i < this.children.length; i++) {
-        nodeCursor.setNode(this.graph, this.children[i]);
-        children.push(nodeCursor.toJSON());
-      }
-    }
-
-    return {
-      id: this.id ? NodeId.ToHexString(this.id) : undefined,
-      name: this.name,
-      children,
-      tags,
-      components,
-    };
   }
 }
 

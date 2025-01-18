@@ -28,8 +28,7 @@ function createNode(graph: Graph, data: CreateNodeData, parent: number) {
     }
   }
 
-  const parentData = graph._nodes._children[parent];
-  if (typeof parentData === "undefined") {
+  if (parent >= 0) {
     parentCursor.setNode(graph, parent);
     parentCursor.addChild(nodeCursor);
   }
@@ -65,15 +64,15 @@ export class Graph {
     const rootIndex = this._nodes.addNode(null, -1, "root");
     this.root.setNode(this, rootIndex);
   }
-  getNode(index: number, cursor = NodeCursor.Get()) {
-    const nodeIndex = this._nodes._parents[index];
-    if (typeof nodeIndex === "undefined")
+  getNode(index: number, cursor = nodeCursor) {
+    const parentIndex = this._nodes._parents[index];
+    if (typeof parentIndex === "undefined")
       throw new Error(`Node with index ${index} does not exist`);
-    cursor.setNode(this, nodeIndex);
+    cursor.setNode(this, index);
     return cursor;
   }
 
-  getNodeFromId(id: bigint | string, cursor = NodeCursor.Get()) {
+  getNodeFromId(id: bigint | string, cursor = nodeCursor) {
     if (typeof id == "string") id = NodeId.FromString(id);
     const nodeIndex = this._nodes._idMap.get(id);
     if (typeof nodeIndex === "undefined")
@@ -85,7 +84,7 @@ export class Graph {
   addNode(
     data: CreateNodeData,
     parent: number = this.root.index,
-    cursor = NodeCursor.Get()
+    cursor = nodeCursor
   ) {
     const newNode = createNode(this, data, parent);
     if (newNode.hasComponents) {
@@ -119,9 +118,5 @@ export class Graph {
     for (let i = 0; i < this._systems.length; i++) {
       this._systems[i].update();
     }
-  }
-
-  toJSON() {
-    return this.root.toJSON();
   }
 }

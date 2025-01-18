@@ -17,7 +17,7 @@ function traverse(parent: any, properties: Property[]) {
           }
           return this.__cursor.data[index];
         },
-        set(this: SchemaCursorClassBase, value: any) {
+        set(this: SchemaCursorClassBase, value: any) {  
           let obs = this.__cursor.getObserver(index);
           let proxy = this.__cursor.hasProxy(index);
           if (obs) {
@@ -25,7 +25,12 @@ function traverse(parent: any, properties: Property[]) {
               ? this.__cursor.fetchProxyData(index)
               : this.__cursor.data[index];
             if (oldVale != value) {
+              this.__cursor.data[index] = value;
+              if (proxy) {
+                this.__cursor.setProxyData(index, value);
+              }
               obs.notify(value);
+              return;
             }
           }
           this.__cursor.data[index] = value;
