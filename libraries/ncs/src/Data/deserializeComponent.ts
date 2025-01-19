@@ -4,6 +4,5 @@ import { SerializedComponentData } from "./SerializedData.types";
 export function deserializeComponentData(
   data: SerializedComponentData
 ): CreateComponentData {
-  const componentId = NCSRegister.components.idPalette.getNumberId(data.type);
-  return [componentId, data.schema || null, data.schemaViewId || null];
+  return [data.type, data.schema || null, data.schemaViewId || null, null];
 }

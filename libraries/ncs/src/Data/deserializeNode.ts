@@ -5,7 +5,6 @@ import { deserializeComponentData } from "./deserializeComponent";
 import { NCSRegister } from "../Register/NCSRegister";
 import { CreateComponentData } from "../Components/Component.types";
 export function deserializeNodeData(data: SerializedNodeData): CreateNodeData {
-  console.warn("DESERALIZE NODE!!!",data);
   let components: CreateComponentData[] | null = null;
   if (data.components) {
     components = [];
@@ -30,11 +29,7 @@ export function deserializeNodeData(data: SerializedNodeData): CreateNodeData {
       children.push(deserializeNodeData(data.children[i]));
     }
   }
-  console.log({
-    components,
-    tags,
-    children,
-  })
+
   return [
     data.id ? NodeId.FromString(data.id) : null,
     data.name,

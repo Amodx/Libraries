@@ -12,7 +12,11 @@ const parentCursor = NodeCursor.Get();
 const nodeCursor = NodeCursor.Get();
 
 function createNode(graph: Graph, data: CreateNodeData, parent: number) {
-  const newNode = graph._nodes.addNode(data[0], parent, data[1]);
+  const newNode = graph._nodes.addNode(
+    typeof data[0] == "string" ? NodeId.FromString(data[0]) : data[0],
+    parent,
+    data[1]
+  );
   nodeCursor.graph = graph;
 
   nodeCursor.setNode(graph, newNode);

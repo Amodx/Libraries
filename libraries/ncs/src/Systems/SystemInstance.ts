@@ -5,7 +5,7 @@ import { NodeCursor } from "../Nodes/NodeCursor";
 
 export class SystemInstance {
   queries: QueryInstance[] = [];
-  node = NodeCursor.Get()
+  node = NodeCursor.Get();
   constructor(
     public graph: Graph,
     public proto: SystemRegisterData
@@ -13,6 +13,7 @@ export class SystemInstance {
     for (const query of proto.queries) {
       this.queries.push(query.add(graph));
     }
+    this.graph._systems.push(this);
   }
 
   update() {

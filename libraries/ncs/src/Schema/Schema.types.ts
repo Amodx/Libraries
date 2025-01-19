@@ -1,5 +1,8 @@
-import { BinaryPropertyTypes, PropertyData } from "./Property/Property.types";
-import { Schema } from "./Schema";
+import {
+  BinaryPropertyTypes,
+  PropertyData,
+  PropertyMetaData,
+} from "./Property/Property.types";
 import { SchemaView } from "./SchemaView";
 import { SchemaArrayCursor } from "./SchemaArrayCursor";
 export type SchemaTypes = "object" | "binay";
@@ -14,7 +17,8 @@ export type BinaryObjectSchemaView = {
   buffer: Uint8Array;
 };
 
-export type SchemaCursor<Shape extends {} = any> = SchemaCursorBase<Shape> & Shape;
+export type SchemaCursor<Shape extends {} = {}> = SchemaCursorBase<Shape> &
+  Shape;
 
 export interface SchemaCursorBase<Shape extends {} = any> {
   __view: SchemaView<Shape>;
@@ -26,20 +30,25 @@ export interface SchemaCursorBase<Shape extends {} = any> {
   clone(): SchemaCursorBase<Shape>;
   toJSON(): Shape;
 }
-
+export type SchemaMetaOverrideData = PropertyMetaData[] | Record<number, PropertyMetaData>;
 export type SchemaCreateData =
   | {
+      id: string;
       type: "object";
+      meta?: SchemaMetaOverrideData|null
     }
   | {
+      id: string;
       type: "typed-array";
       arrayType: BinaryPropertyTypes;
-      sharedMemory: boolean;
+      sharedMemory?: true;
+      meta?: SchemaMetaOverrideData|null
     }
   | {
+      id: string;
       type: "binary-object";
-      byteSize: number;
-      sharedMemory: boolean;
+      sharedMemory?: true;
+      meta?: SchemaMetaOverrideData|null
     };
 
 export interface SchemaCursorClassBase extends SchemaCursorBase {
@@ -62,3 +71,19 @@ export type SchemaCursorIndex<T> = {
       ? SchemaCursorIndex<T[K]>
       : never;
 };
+
+export class SchemaProperty<T extends any> {
+  constructor(
+    public value: T,
+    public meta: PropertyMetaData
+  ) {}
+}
+
+export type ExtractSchemaClass<T> =
+  T extends SchemaProperty<infer U>
+    ? U extends object
+      ? { [K in keyof U]: ExtractSchemaClass<U[K]> }
+      : U
+    : T extends object
+      ? { [K in keyof T]: ExtractSchemaClass<T[K]> }
+      : T;

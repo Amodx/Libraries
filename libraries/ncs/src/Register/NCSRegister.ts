@@ -31,7 +31,7 @@ class ItemRegister<Item extends any> {
 
 export class NCSRegister {
   static components = new ItemRegister<
-    ComponentRegisterData<any, any, any, any>
+    ComponentRegisterData<any, any,  any>
   >("Components");
   static contexts = new ItemRegister<ContextRegisterData<any, any>>("Context");
   static tags = new ItemRegister<Tag>("Tags");

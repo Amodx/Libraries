@@ -5,6 +5,7 @@ export * from "./Graphs/Graph";
 export * from "./Data/SerializedData.types"
 //schema
 export * from "./Schema/Schema";
+export * from "./Schema/Property/Property"
 //nodes
 export * from "./Nodes/NodeCursor";
 export * from "./Nodes/Node.types";

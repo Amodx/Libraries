@@ -16,48 +16,48 @@ import { NCSPools } from "../Pools/NCSPools";
 import { Nullable } from "Util/Util.types";
 
 type RegisteredComponent<
-  ComponentSchema extends object = {},
-  Data extends object = {},
-  Logic extends object = {},
-  Shared extends object = {},
-> = (ComponentRegisterData<ComponentSchema, Data, Logic, Shared> & {
+  ComponentSchema extends object = any,
+  Data extends any = any,
+  Shared extends any = any,
+> = (ComponentRegisterData<ComponentSchema, Data, Shared> & {
   getNodes(grpah: Graph): Generator<NodeCursor>;
   getComponents(
     grpah: Graph
-  ): Generator<ComponentCursor<ComponentSchema, Data, Logic, Shared>>;
+  ): Generator<ComponentCursor<ComponentSchema, Data, Shared>>;
   set(
     node: NodeCursor,
     componentSchema?: Nullable<Partial<ComponentSchema>>,
     schemaCursor?: Nullable<SchemaCursor<ComponentSchema>>,
-    cursor?: ComponentCursor<ComponentCursor, Data, Logic, Shared>
-  ): ComponentCursor<ComponentSchema, Data, Logic, Shared>;
+    cursor?: ComponentCursor<ComponentSchema, Data, Shared>
+  ): ComponentCursor<ComponentSchema, Data, Shared>;
+  has(node: NodeCursor): boolean;
   get(
-    node: NodeCursor | number,
-    cursor?: ComponentCursor<ComponentCursor, Data, Logic, Shared>
-  ): ComponentCursor<ComponentSchema, Data, Logic, Shared> | null;
+    node: NodeCursor,
+    cursor?: ComponentCursor<ComponentSchema, Data, Shared>
+  ): ComponentCursor<ComponentSchema, Data, Shared> | null;
   getRequired(
-    node: NodeCursor | number,
-    cursor?: ComponentCursor<ComponentCursor, Data, Logic, Shared>
-  ): ComponentCursor<ComponentSchema, Data, Logic, Shared>;
+    node: NodeCursor,
+    cursor?: ComponentCursor<ComponentSchema, Data, Shared>
+  ): ComponentCursor<ComponentSchema, Data, Shared>;
   getChild(
     node: NodeCursor,
-    cursor?: ComponentCursor<ComponentCursor, Data, Logic, Shared>
-  ): ComponentCursor<ComponentSchema, Data, Logic, Shared> | null;
+    cursor?: ComponentCursor<ComponentSchema, Data, Shared>
+  ): ComponentCursor<ComponentSchema, Data, Shared> | null;
   getRequiredChild(
     node: NodeCursor,
-    cursor?: ComponentCursor<ComponentCursor, Data, Logic, Shared>
-  ): ComponentCursor<ComponentSchema, Data, Logic, Shared>;
+    cursor?: ComponentCursor<ComponentSchema, Data, Shared>
+  ): ComponentCursor<ComponentSchema, Data, Shared>;
   getParent(
     node: NodeCursor,
-    cursor?: ComponentCursor<ComponentCursor, Data, Logic, Shared>
-  ): ComponentCursor<ComponentSchema, Data, Logic, Shared> | null;
+    cursor?: ComponentCursor<ComponentSchema, Data, Shared>
+  ): ComponentCursor<ComponentSchema, Data, Shared> | null;
   getRequiredParent(
     node: NodeCursor,
-    cursor?: ComponentCursor<ComponentCursor, Data, Logic, Shared>
-  ): ComponentCursor<ComponentSchema, Data, Logic, Shared>;
+    cursor?: ComponentCursor<ComponentSchema, Data, Shared>
+  ): ComponentCursor<ComponentSchema, Data, Shared>;
   getAll(
     node: NodeCursor
-  ): ComponentCursor<ComponentSchema, Data, Logic, Shared>[] | null;
+  ): ComponentCursor<ComponentSchema, Data, Shared>[] | null;
   remove(node: NodeCursor): boolean;
   removeAll(node: NodeCursor): boolean;
   nodeData: {
@@ -81,8 +81,8 @@ type RegisteredComponent<
 
   type: string;
   typeId: number;
-  data: ComponentRegisterData<ComponentSchema, Data, Logic, Shared>;
-  default: ComponentCursor<ComponentSchema, Data, Logic, Shared>;
+  data: ComponentRegisterData<ComponentSchema, Data, Shared>;
+  default: ComponentCursor<ComponentSchema, Data, Shared>;
 }) &
   ((
     schema?: Partial<ComponentSchema> | null | undefined,
@@ -90,13 +90,12 @@ type RegisteredComponent<
   ) => CreateComponentData<ComponentSchema>);
 
 export const registerComponent = <
-  ComponentSchema extends object = {},
-  Data extends object = {},
-  Logic extends object = {},
-  Shared extends object = {},
+  Data extends any = any,
+  Shared extends any = any,
+  ComponentSchema extends object = any,
 >(
-  data: ComponentRegisterData<ComponentSchema, Data, Logic, Shared>
-): RegisteredComponent<ComponentSchema, Data, Logic, Shared> => {
+  data: ComponentRegisterData<ComponentSchema, Data, Shared>
+): RegisteredComponent<ComponentSchema, Data, Shared> => {
   const typeId = NCSRegister.components.register(data.type, data);
 
   data.shared = data.shared || ({} as Shared);
@@ -106,7 +105,7 @@ export const registerComponent = <
   ): CreateComponentData<ComponentSchema> => {
     const createData: CreateComponentData<ComponentSchema> =
       NCSPools.createComponentData.get() || ([] as any);
-    createData[0] = typeId;
+    createData[0] = data.type;
     createData[1] = schema || {};
     createData[2] = schemaView || "default";
 
@@ -160,6 +159,9 @@ export const registerComponent = <
       cursor.setInstance(node, typeId, newComponent);
       node.graph._components[typeId].init(newComponent);
       return cursor;
+    },
+    has(node: NodeCursor) {
+      return node.components.has(data.type);
     },
     get(node: NodeCursor, cursor?: ComponentCursor) {
       return node.components.get(data.type, cursor);

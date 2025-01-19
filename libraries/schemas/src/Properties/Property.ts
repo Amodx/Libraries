@@ -42,6 +42,6 @@ export class Property<
     public input?: Input,
     public editable?: boolean,
     public conditions?: PropertyConditionAction[],
-    public children?: Property<any>[]
+    public children?: Property<any,any>[]
   ) {}
 }

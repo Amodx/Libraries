@@ -5,6 +5,9 @@ export class Observable<T = void> {
   private once: Set<any> | null = null;
 
   constructor() {}
+  listener(func: any): ObservableFunction<T> {
+    return func as any;
+  }
   /**
    * Subscribe to the observer. If only the first param is set must be the observer function itself which will be used as they key.
    * Otherwise the first param is the key to subsrcibe to the observer with.

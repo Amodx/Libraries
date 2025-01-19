@@ -12,6 +12,7 @@ import {
   SchemaCursorIndex,
   SchemaCreateData,
   SchemaCursor,
+  SchemaMetaOverrideData,
 } from "./Schema.types";
 import { createSchemaTypedArrayCursorClass } from "./Functions/createSchemaTypedArrayCursorClass";
 import { createSchemaBinaryObjectCursorClass } from "./Functions/createSchemaBinaryObjectCursorClass";
@@ -33,10 +34,11 @@ const traverseCreate = (
       data.children ??= [];
       for (const key in data.value) {
         const value = data.value[key];
-
+        const meta = structuredClone(data.meta || {});
+        meta.child = true;
         data.children!.push({
           id: key,
-          meta: data.meta,
+          meta,
           value,
         });
       }
@@ -64,10 +66,13 @@ const buildBinaryData = (meta: PropertyMetaData[]) => {
     const metaData = meta[i];
     if (!metaData || !metaData.binary) continue;
     byteOffsets[i] = byteSize;
-    if (metaData.binary.type == "buffer") {
+    if (typeof metaData.binary == "object") {
       byteSize += metaData.binary.byteSize;
-    } else {
-      byteSize += BinaryPropertyTypeSizeMap[metaData.binary.type];
+      continue;
+    }
+    if (typeof metaData.binary == "string") {
+      byteSize += BinaryPropertyTypeSizeMap[metaData.binary];
+      continue;
     }
   }
   return { byteSize, byteOffsets };
@@ -89,11 +94,11 @@ const traverseArray = (
   }
   return data;
 };
-type MetaOverrideData = PropertyMetaData[] | Record<number, PropertyMetaData>;
+
 function buildMeta(
   data: any[],
   meta: PropertyMetaData[],
-  metaOverrides: MetaOverrideData
+  metaOverrides: SchemaMetaOverrideData
 ) {
   let newMeta = [...meta];
   for (let i = 0; i < data.length; i++) {
@@ -169,6 +174,7 @@ export class Schema<Shape extends Record<string, any> = {}> {
   private _typedArrayCursorClass: any;
   private _binaryObjectCursorClass: any;
   readonly index: SchemaCursorIndex<Shape>;
+  public readonly shape: Shape;
   public readonly _data: any[] = [];
   public readonly _meta: PropertyMetaData[] = [];
 
@@ -178,7 +184,6 @@ export class Schema<Shape extends Record<string, any> = {}> {
   array: SchemaArray;
 
   constructor(data: SchemaData) {
-
     traverseCreate(this.root, data, -1);
     this.index = createSchemaIndex(this);
     traverseArray(this.root, this._data, this._meta);
@@ -202,86 +207,95 @@ export class Schema<Shape extends Record<string, any> = {}> {
     return this.views[this.viewIdPalettew.getNumberId(id)];
   }
 
+  createView(data: SchemaCreateData) {
+    let view: SchemaView | null = null;
+    let meta = this._meta;
+    if (data.meta) meta = buildMeta(this._data, meta, data.meta);
+    if (data.type == "object") {
+      if (!this._objectCursorClass)
+        this._objectCursorClass = createSchemaObjectCursorClass(this);
+      view = new SchemaView(
+        this,
+        data.id,
+        meta,
+        [],
+        0,
+        data,
+        this._objectCursorClass
+      );
+    }
+    if (data.type == "typed-array") {
+      if (!this._typedArrayCursorClass)
+        this._typedArrayCursorClass = createSchemaTypedArrayCursorClass(this);
+
+      view = new SchemaView(
+        this,
+        data.id,
+        meta,
+        [],
+        0,
+        data,
+        this._typedArrayCursorClass
+      );
+    }
+    if (data.type == "binary-object") {
+      if (!this._binaryObjectCursorClass)
+        this._binaryObjectCursorClass =
+          createSchemaBinaryObjectCursorClass(this);
+      const { byteSize, byteOffsets } = buildBinaryData(meta);
+
+      view = new SchemaView(
+        this,
+        data.id,
+        meta,
+        byteOffsets,
+        byteSize,
+        data,
+        this._binaryObjectCursorClass
+      );
+    }
+    if (!view) throw new Error(`Invalid data`);
+    const viewIndex = this.viewIdPalettew.register(data.id);
+    this.views[viewIndex] = view;
+    return view;
+  }
+
   createObjectView(
     id: string,
-    metaOverrides: MetaOverrideData | null = null
+    meta: SchemaMetaOverrideData | null = null
   ): SchemaView<Shape> {
-    if (!this._objectCursorClass)
-      this._objectCursorClass = createSchemaObjectCursorClass(this);
-    let meta = this._meta;
-    if (metaOverrides) meta = buildMeta(this._data, meta, metaOverrides);
-    const createData: SchemaCreateData = {
-      type: "object",
-    };
-    const view = new SchemaView(
-      this,
+    return this.createView({
       id,
+      type: "object",
       meta,
-      [],
-      createData,
-      this._objectCursorClass
-    );
-    const viewIndex = this.viewIdPalettew.register(id);
-    this.views[viewIndex] = view;
-
-    return view;
+    });
   }
 
   createBinaryObjectView(
     id: string,
     sharedMemory: boolean = false,
-    metaOverrides: MetaOverrideData | null = null
+    meta: SchemaMetaOverrideData | null = null
   ): SchemaView<Shape> {
-    if (!this._binaryObjectCursorClass)
-      this._binaryObjectCursorClass = createSchemaBinaryObjectCursorClass(this);
-    let meta = this._meta;
-    if (metaOverrides) meta = buildMeta(this._data, meta, metaOverrides);
-    const { byteSize, byteOffsets } = buildBinaryData(meta);
-    const createData: SchemaCreateData = {
-      type: "binary-object",
-      byteSize,
-      sharedMemory,
-    };
-    const view = new SchemaView(
-      this,
+    return this.createView({
       id,
+      type: "binary-object",
       meta,
-      byteOffsets,
-      createData,
-      this._binaryObjectCursorClass
-    );
-
-    const viewIndex = this.viewIdPalettew.register(id);
-    this.views[viewIndex] = view;
-
-    return view;
+      sharedMemory: sharedMemory || undefined,
+    });
   }
 
   createTypedArrayView(
     id: string,
     arrayType: BinaryPropertyTypes,
     sharedMemory: boolean = false,
-    metaOverrides: MetaOverrideData | null = null
+    meta: SchemaMetaOverrideData | null = null
   ): SchemaView<Shape> {
-    if (!this._typedArrayCursorClass)
-      this._typedArrayCursorClass = createSchemaTypedArrayCursorClass(this);
-    let meta = this._meta;
-    if (metaOverrides) meta = buildMeta(this._data, meta, metaOverrides);
-    const createData: SchemaCreateData = {
-      type: "typed-array",
-      arrayType,
-      sharedMemory,
-    };
-    const view = new SchemaView(
-      this,
+    return this.createView({
       id,
+      type: "typed-array",
       meta,
-      [],
-      createData,
-      this._typedArrayCursorClass
-    );
-    const viewIndex = this.viewIdPalettew.register(id);
-    this.views[viewIndex] = view;
-    return view;
+      arrayType,
+      sharedMemory: sharedMemory || undefined,
+    });
   }
 }

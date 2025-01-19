@@ -7,6 +7,11 @@ export class Observable<T = void> {
   observers: ObservableFunction<T>[] = [];
 
   constructor() {}
+
+  listener(func: ObservableFunction<T> ): ObservableFunction<T> {
+    return func as any;
+  }
+
   /**
    * Subsrcibe to the observer. If only the first param is set must be the observer function itself which will be used as they key.
    * Otherwise the first param is the key to subsrcibe to the observer with.
@@ -21,6 +26,9 @@ export class Observable<T = void> {
       this.observersMap.set(key, key as ObservableFunction<T>);
       this.observers.push(key as ObservableFunction<T>);
     } else if (func !== undefined) {
+      if (this.observersMap.has(key)) {
+        this.unsubscribe(key);
+      }
       this.observersMap.set(key, func);
       this.observers.push(func);
     } else {

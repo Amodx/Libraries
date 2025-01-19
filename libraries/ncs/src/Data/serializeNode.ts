@@ -1,11 +1,18 @@
 import { NodeId } from "../Nodes/NodeId";
 import { CreateNodeData } from "../Nodes/Node.types";
 import { NodeCursor } from "../Nodes/NodeCursor";
-import { serializeComponent } from "./serializeComponent";
+import {
+  createRemoteComponent,
+  serializeComponent,
+} from "./serializeComponent";
 import {
   SerializedComponentData,
   SerializedNodeData,
 } from "./SerializedData.types";
+import {
+  ComponentRegisterData,
+  CreateComponentData,
+} from "Components/Component.types";
 export function serializeNodeData(data: CreateNodeData): SerializedNodeData {
   return {
     name: data[1],
@@ -57,4 +64,45 @@ export function cloneNode(node: NodeCursor): SerializedNodeData {
   return {
     name: node.name,
   };
+}
+
+export function createRemoteNode(
+  node: NodeCursor,
+  includeChildren = false,
+  includedComponents: { type: string }[] = []
+): CreateNodeData {
+  let children: CreateNodeData[] | null = null;
+  if (includeChildren) {
+    children = [];
+    for (const child of node.children()) {
+      children.push(
+        createRemoteNode(child, includeChildren, includedComponents)
+      );
+    }
+  }
+  let components: CreateComponentData[] | null = null;
+  if (node.hasComponents) {
+    components = [];
+    for (const component of node.traverseComponents()) {
+      if (includedComponents.length) {
+        for (let i = 0; i < includedComponents.length; i++) {
+          if (includedComponents[i].type == component.type) {
+            components.push(createRemoteComponent(component));
+            break;
+          }
+        }
+      } else {
+        components.push(createRemoteComponent(component));
+      }
+    }
+  }
+  let tags: number[] | null = null;
+  if (node.hasTags) {
+    tags = [];
+    for (const tag of node.traverseTags()) {
+      tags.push(tag.typeId);
+    }
+  }
+
+  return [node.id ? node.id : null, node.name, components, tags, children];
 }

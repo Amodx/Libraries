@@ -1,5 +1,6 @@
 export interface PropertyData<Meta extends {} = {}> {
   id: string;
+
   name?: string;
   value: any;
   meta?: PropertyMetaData<Meta>;
@@ -47,11 +48,8 @@ export const BinaryPropertyTypeSizeMap: Record<BinaryPropertyTypes, number> = {
 };
 
 export type BinaryPropertyData =
+  | BinaryPropertyTypes
   | {
-      type: BinaryPropertyTypes;
-    }
-  | {
-      type: "buffer";
       byteSize: number;
       set(data: DataView, meta: any, index: number, value: any): void;
       get(data: DataView, meta: any, index: number): any;
@@ -60,4 +58,10 @@ export type BinaryPropertyData =
 export type PropertyMetaData<MetaData extends {} = any> = {
   binary?: BinaryPropertyData;
   data?: MetaData;
+  /**If the property was created from an object */
+  child?: true;
+  type?: string;
+  units?: string;
+  options?: string[] | [string, string | number][];
+  name?: string;
 };

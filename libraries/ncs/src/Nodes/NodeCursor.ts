@@ -264,14 +264,20 @@ export class NodeCursor {
 
   dispose() {
     if (this.isDisposed) return;
-    this.graph.removeNode(this.index);
+    this.hasObservers &&
+      this.observers!.isDisposedSet &&
+      this.observers!.disposed.notify(this);
+
     if (this.parent !== undefined) {
       nodeCursor.setNode(this.graph, this.parent);
       nodeCursor.removeChild(this.index);
     }
-
-    this.hasComponents && this.components!.dispose();
-    this.hasTags && this.tags!.dispose();
+    if (this.arrays._components[this._index]?.length) {
+      this.components!.dispose();
+    }
+    if (this.arrays._tags[this._index]?.length) {
+      this.tags!.dispose();
+    }
 
     if (this.childrenArray) {
       for (let i = 0; i < this.childrenArray.length; i++) {
@@ -280,10 +286,7 @@ export class NodeCursor {
       }
     }
 
-    this.hasObservers &&
-      this.observers!.isDisposedSet &&
-      this.observers!.disposed.notify(nodeCursor);
-
+    this.graph.removeNode(this.index);
     this.clear(
       this.hasEvents,
       this.hasContexts,

@@ -27,8 +27,22 @@ export function serializeComponent(
 
 export function copyComponent(component: ComponentCursor): CreateComponentData {
   return [
-    component.typeId,
+    component.type,
     component.schema ? component.schema.toJSON() : null,
     component.schema ? component.schema.__view.id : null,
+    null,
+  ];
+}
+
+export function createRemoteComponent(
+  component: ComponentCursor
+): CreateComponentData {
+  return [
+    component.type,
+    component.schema
+      ? component.schema.__view.toRemote(component.schema)
+      : null,
+    component.schema ? component.schema.__view.id : null,
+    true,
   ];
 }

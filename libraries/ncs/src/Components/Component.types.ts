@@ -1,6 +1,27 @@
 import { Schema } from "../Schema/Schema";
 import { ComponentCursor } from "./ComponentCursor";
 import { RecursivePartial } from "../Util/Util.types";
+
+export type CreateComponentData<ComponentSchema extends object = any> = [
+  /**
+   * The type of the component.
+   */
+  type: string,
+  /**
+   * The ComponentSchema of the component.
+   */
+  schema: RecursivePartial<ComponentSchema> | any | null,
+  /**
+   * The schema view id  of the component.
+   */
+  schemaViewId: string | null,
+
+  /**
+   * Wether or not if the component is remote. 
+   */
+  remote: true | null,
+];
+
 /**
  * Interface representing the meta data of a component.
  */
@@ -8,22 +29,6 @@ export interface ComponentMetaData {
   name: string;
   [key: string]: any;
 }
-
-export type CreateComponentData<ComponentSchema extends object = any> = [
-  /**
-   * The type of the component.
-   */
-  type: number,
-  /**
-   * The ComponentSchema of the component.
-   */
-  schema: RecursivePartial<ComponentSchema> | null,
-  /**
-   * The schema view id  of the component.
-   */
-  schemaViewId: string | null,
-];
-
 /**
  * Type representing the data required to register a component.
  *
@@ -35,16 +40,14 @@ export type CreateComponentData<ComponentSchema extends object = any> = [
  * @template Meta - The shared meta data of all components of this type.
  */
 export type ComponentRegisterData<
-  ComponentSchema extends object = {},
-  Data extends Record<string, any> = {},
-  Logic extends Record<string, any> = {},
-  Shared extends Record<string, any> = {},
+  ComponentSchema extends object = any,
+  Data extends any = any,
+  Shared extends any = any,
 > = {
   /**
    * The type of the component.
    */
   type: string;
-
 
   /**
    * The schema used to create an editable version of the component.
@@ -52,6 +55,7 @@ export type ComponentRegisterData<
    */
   schema?: Schema<ComponentSchema>;
 
+  data?: Data;
   /**
    * The shared data of all components.
    */
@@ -67,7 +71,7 @@ export type ComponentRegisterData<
    *
    * @param component - The instance of the component being initialized.
    */
-  init?(component: ComponentCursor<ComponentSchema, Data, Logic, Shared>): void;
+  init?(component: ComponentCursor<ComponentSchema, Data, Shared>): void;
 
   /**
    * Optional update function for the component.
@@ -76,16 +80,12 @@ export type ComponentRegisterData<
    *
    * @param component - The instance of the component being updated.
    */
-  update?(
-    component: ComponentCursor<ComponentSchema, Data, Logic, Shared>
-  ): void;
+  update?(component: ComponentCursor<ComponentSchema, Data, Shared>): void;
 
   /**
    * Optional disposal function for the component.
    *
    * @param component - The instance of the component being disposed.
    */
-  dispose?(
-    component: ComponentCursor<ComponentSchema, Data, Logic, Shared>
-  ): void;
+  dispose?(component: ComponentCursor<ComponentSchema, Data, Shared>): void;
 };

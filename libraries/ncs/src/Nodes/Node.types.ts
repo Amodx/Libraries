@@ -1,11 +1,10 @@
 import { CreateComponentData } from "../Components/Component.types";
-
 export type CreateNodeData = [
   /**
    * The unique 128 bit identifier of the node.
    *
    */
-  id: bigint | null,
+  id: bigint | string | null,
   /**
    * The name of the node.
    */

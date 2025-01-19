@@ -31,6 +31,7 @@ export class SchemaView<Shape extends {} = any> {
     public id: string,
     public meta: PropertyMetaData[],
     public byteOffset: number[],
+    public byteSize: number,
     public _createData: SchemaCreateData,
     private _cursorClass: any
   ) {}
@@ -94,7 +95,7 @@ export class SchemaView<Shape extends {} = any> {
       return typedArray;
     }
     if (data.type == "binary-object") {
-      let byteSize = data.byteSize;
+      let byteSize = this.byteSize;
       const buffer = data.sharedMemory
         ? (new SharedArrayBuffer(byteSize) as any)
         : new ArrayBuffer(byteSize);
@@ -107,7 +108,7 @@ export class SchemaView<Shape extends {} = any> {
         if (!meta.binary) continue;
         setBinaryObjectData(current, meta, this.byteOffset![i], baseData[i]);
       }
-      return [current, null, null, this.id];
+      return current;
     }
     throw new Error(`Invalid create data`);
   }
@@ -119,6 +120,34 @@ export class SchemaView<Shape extends {} = any> {
       this._createData,
       this.byteOffset
     );
+  }
+
+  /** Converts data for use of remote components */
+  toRemote(cursor: SchemaCursor<Shape>): any {
+    if (this._createData.type == "object") {
+      return cursor.__cursor.data;
+    }
+    if (this._createData.type == "typed-array") {
+      return cursor.__cursor.data;
+    }
+    if (this._createData.type == "binary-object") {
+      return cursor.__cursor.data.buffer;
+    }
+  }
+  /** Converts data for remote data to local data*/
+  fromRemote(remoteData: any): any {
+    if (this._createData.type == "object") {
+      return remoteData;
+    }
+    if (this._createData.type == "typed-array") {
+      return remoteData;
+    }
+    if (this._createData.type == "binary-object") {
+      return {
+        view: new DataView(remoteData.buffer),
+        buffer: new Uint8Array(remoteData.buffer),
+      };
+    }
   }
   toJSON(cursor: SchemaCursor<Shape>) {
     return traverseCreateJSON(this.schema.root, {}, cursor);

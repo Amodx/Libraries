@@ -6,9 +6,8 @@ import { ComponentArray } from "./ComponentArray";
 import { NCSPools } from "../Pools/NCSPools";
 export class ComponentCursor<
   ComponentSchema extends object = {},
-  Data extends object = {},
-  Logic extends object = {},
-  Shared extends object = {},
+  Data extends any = any,
+  Shared extends any = any,
 > {
   static Get() {
     const cursor = NCSPools.componentCursor.get();
@@ -34,16 +33,10 @@ export class ComponentCursor<
   set data(data: Data) {
     this.arrays._data[this._index] = data;
   }
-  get logic(): Logic {
-    return this.arrays._logic[this._index];
-  }
-  set logic(logic: Logic) {
-    this.arrays._logic[this._index] = logic;
-  }
 
   public node: NodeCursor;
   public arrays: ComponentArray;
-  public __proto: ComponentRegisterData<ComponentSchema, Data, Logic, Shared>;
+  public __proto: ComponentRegisterData<ComponentSchema, Data, Shared>;
 
   get typeId() {
     return this._type;
@@ -71,6 +64,7 @@ export class ComponentCursor<
     return this.arrays._disposed[this._index];
   }
   dispose() {
+
     if (this.__proto.dispose) this.__proto.dispose(this);
     this.arrays.removeComponent(this._index);
   }
@@ -81,7 +75,7 @@ export class ComponentCursor<
   cloneCursor(
     cursor?: ComponentCursor,
     nodeCursor?: NodeCursor
-  ): ComponentCursor<ComponentSchema, Data, Logic, Shared> {
+  ): ComponentCursor<ComponentSchema, Data, Shared> {
     const newCursor = cursor || ComponentCursor.Get();
     const newNodeCursor = nodeCursor || NodeCursor.Get();
     newNodeCursor.setNode(this.node.graph, this.node.index);

@@ -80,9 +80,9 @@ export function setBinaryObjectData(
   value: number
 ) {
   if (!meta.binary) return undefined;
-  if (meta.binary.type == "buffer")
+  if (typeof meta.binary == "object")
     return meta.binary.set(current.view, meta, index, value);
-  return valueSetMap[meta.binary.type](current.view, index, value);
+  return valueSetMap[meta.binary](current.view, index, value);
 }
 export function getBinaryObjectData(
   current: BinaryObjectSchemaView,
@@ -90,9 +90,9 @@ export function getBinaryObjectData(
   index: number
 ): any {
   if (!meta.binary) return undefined;
-  if (meta.binary.type == "buffer")
+  if (typeof meta.binary == "object")
     return meta.binary.get(current.view, meta, index);
-  return valueGetMap[meta.binary.type](current.view, index);
+  return valueGetMap[meta.binary](current.view, index);
 }
 
 function traverse(parent: any, properties: Property[]) {
@@ -107,7 +107,7 @@ function traverse(parent: any, properties: Property[]) {
             return this.__cursor.fetchProxyData(index);
           }
           return getBinaryObjectData(
-            this.__cursor.data[0] as any,
+            this.__cursor.data,
             this.__view.meta[index],
             this.__view.byteOffset![index]
           );
@@ -119,13 +119,13 @@ function traverse(parent: any, properties: Property[]) {
             const oldVale = proxy
               ? this.__cursor.fetchProxyData(index)
               : getBinaryObjectData(
-                  this.__cursor.data[0] as any,
+                  this.__cursor.data,
                   this.__view.meta[index],
                   this.__view.byteOffset![index]
                 );
             if (oldVale != value) {
               setBinaryObjectData(
-                this.__cursor.data[0] as any,
+                this.__cursor.data,
                 this.__view.meta[index],
                 this.__view.byteOffset![index],
                 value
@@ -138,7 +138,7 @@ function traverse(parent: any, properties: Property[]) {
             }
           }
           setBinaryObjectData(
-            this.__cursor.data[0] as any,
+            this.__cursor.data,
             this.__view.meta[index],
             this.__view.byteOffset![index],
             value

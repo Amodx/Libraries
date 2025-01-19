@@ -19,7 +19,7 @@ export class ComponentArray {
   _node: number[] = [];
   _disposed: boolean[] = [];
   _data: any[] = [];
-  _logic: any[] = [];
+
 
   schemaArray: SchemaArray;
 
@@ -54,7 +54,7 @@ export class ComponentArray {
     componentObserverData[0] = this.numberTypeId;
     componentObserverData[1] = slot;
     this.observers.componentAdded.notify(componentObserverData);
-    this.observers.nodeAdded.notify(node);
+
     return slot;
   }
 
@@ -65,13 +65,13 @@ export class ComponentArray {
     this.observers.componentRemoved.notify(componentObserverData);
     this.observers.nodeRemoved.notify(this._node[index]);
     this._freeSlots.push(index);
-    const data = this._node[index];
+    const nodeIndex = this._node[index];
     this._disposed[index] = true;
     (this._data as any)[index] = undefined;
-    (this._logic as any)[index] = undefined;
+
     this._node[index] = -1;
     if (this.schemaArray) this.schemaArray.removeData(index);
-    return data;
+    return nodeIndex;
   }
 
   update() {
