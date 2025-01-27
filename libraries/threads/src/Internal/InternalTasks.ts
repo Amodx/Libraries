@@ -1,252 +1,218 @@
-import { ThreadsInternalMessages, ThreadsMessageHeaders } from "./Messages.js";
-import type { MessageFunction } from "../Types/Util.types.js";
+import {
+  ChecktaskExistData,
+  ChecktaskExistResultData,
+  CompleteRemoteTasksData,
+  ConnectPortTasksData,
+  InternalHeader,
+  SetReadyTasksData,
+  RunRemoteTasksData,
+  ThreadsInternalMessageIds,
+} from "./Messages.js";
 import { Threads } from "../Threads.js";
-import { PromiseTasks } from "../Tasks/PromiseTasks.js";
-import { SyncedQueue } from "../Queue/SyncedQueue.js";
-import { TasksManager } from "../Tasks/TaskManager.js";
-import { DataSyncManager } from "../Data/DataSyncManager.js";
-export class InternalTasks {
-  static _tasks = new Map<number, Map<number, MessageFunction>>();
+import { Thread } from "../Threads/Thread.js";
+import { TaskRunFunction } from "../Thread.types.js";
 
-  static registerTasks(headID: number, taskId: number, run: MessageFunction) {
-    let map = this._tasks.get(headID);
-    if (!map) {
-      map = new Map();
-      this._tasks.set(headID, map);
-    }
-    map.set(taskId, run);
+type messageFunction<MessageData extends any> = (
+  data: MessageData,
+  thread: Thread,
+  event: MessageEvent
+) => void;
+const m = <MessageData extends any>(
+  m: messageFunction<MessageData>
+): messageFunction<MessageData> => m;
+let count = 0;
+export class InternalTasks {
+  static INTERNAL_CODE: InternalHeader = "__internal__";
+
+  static _tasks = new Map<string | number, TaskRunFunction<any, any>>();
+  static _waiting = new Map<
+    string | number,
+    Map<number, (data: any) => void>
+  >();
+  static getTasks(id: string | number) {
+    const tasks = this._tasks.get(id);
+    if (!tasks) return false;
+    return tasks;
   }
 
   static isInternal(data: any) {
-    const headerId = data[0];
-    const tasksId = data[1];
-    if (typeof headerId !== "number" || typeof tasksId !== "number")
-      return false;
-    const map = this._tasks.get(headerId);
-    if (!map) return false;
-    const tasks = map.get(tasksId);
-    if (!tasks) return false;
+    if (!Array.isArray(data)) return false;
+    if (data[0] != InternalTasks.INTERNAL_CODE) return false;
+    if (typeof data[1] !== "number") return false;
+    if (!(MessageFunctions as any)[data[1]]) return false;
     return true;
   }
+  static getInternal(data: any) {
+    if (!(MessageFunctions as any)[data[1]]) return false;
+    return (MessageFunctions as any)[data[1]];
+  }
+  static runInternal(data: any, thread: Thread, event: any) {
+    const tasks = this.getInternal(data);
+    if (!tasks) {
+      return;
+    }
+    tasks(data, thread, event);
+  }
 
-  static runInternal(data: any, event: any) {
-    const headerId = data[0];
-    const tasksId = data[1];
-    const map = this._tasks.get(headerId);
-    if (!map) return false;
-    const tasks = map.get(tasksId);
-    if (!tasks) return false;
-    data.shift();
-    data.shift();
-    tasks(data, event);
+  static getPromiseId() {
+    count++;
+    return count;
+  }
+
+  static addPromiseTakss(
+    tasksId: string | number,
+    tasksRequestsId: number,
+    onDone: (data: any) => void
+  ) {
+    let requestsMap = this._waiting.get(tasksId);
+    if (!requestsMap) {
+      requestsMap = new Map();
+      this._waiting.set(tasksId, requestsMap);
+    }
+    requestsMap.set(tasksRequestsId, onDone);
+  }
+
+  static completePromiseTasks(
+    tasksId: string | number,
+    tasksRequestsId: number,
+    data: any
+  ) {
+    let requestsMap = this._waiting.get(tasksId);
+    if (!requestsMap) return;
+
+    const run = requestsMap.get(tasksRequestsId);
+    requestsMap.delete(tasksRequestsId);
+    if (!run) return;
+    run(data);
   }
 }
 
-InternalTasks.registerTasks(
-  ThreadsMessageHeaders.internal,
-  ThreadsInternalMessages.connectPort,
-  (data, event) => {
-    const threadName = data[0];
-    const threadManager = data[1];
+const MessageFunctions: Record<
+  ThreadsInternalMessageIds,
+  messageFunction<any>
+> = {
+  [ThreadsInternalMessageIds.connectPort]: m<ConnectPortTasksData>(
+    (data, thread, event) => {
+      const taskData = data[2];
+      const threadName = taskData[0];
+      const threadManager = taskData[1];
 
-    let port: MessagePort;
-    if (Threads.environment == "browser") {
-      port = (event as MessageEvent).ports[0];
-    } else {
-      port = data[2];
-    }
-    if (threadManager == "worker") {
-      const thread = Threads.getThread(threadName);
-      if (thread) thread.setPort(port);
-    }
-    if (threadManager != "worker") {
-      const thread = Threads.getThreadPool(threadManager);
-      if (thread) thread.addPort(port);
-    }
-  }
-);
-InternalTasks.registerTasks(
-  ThreadsMessageHeaders.internal,
-  ThreadsInternalMessages.IsReady,
-  (data, event) => {
-    const name = data[0];
-    const comm = Threads.getThread(name);
-    if (!comm) return;
-    comm.__ready = true;
-  }
-);
-
-InternalTasks.registerTasks(
-  ThreadsMessageHeaders.internal,
-  ThreadsInternalMessages.nameThread,
-  (data, event) => {
-    const name = data[0];
-    const number = data[1];
-    Threads.threadName = name;
-    Threads.threadNumber = number;
-  }
-);
-
-InternalTasks.registerTasks(
-  ThreadsMessageHeaders.internal,
-  ThreadsInternalMessages.syncQueue,
-  (data, event) => {
-    const threadName = data[0];
-    const queueId = data[1];
-    const queueSAB = data[2];
-    if (!Threads._queues.has(threadName)) {
-      Threads._queues.set(threadName, new Map());
-    }
-    //@ts-ignore
-    Threads._queues
-      .get(threadName)
-      .set(queueId, new SyncedQueue(queueId, queueSAB));
-  }
-);
-
-InternalTasks.registerTasks(
-  ThreadsMessageHeaders.internal,
-  ThreadsInternalMessages.unSyncQueue,
-  (data, event) => {
-    const threadName = data[0];
-    const queueId = data[1];
-    if (!Threads._queues.has(threadName)) {
-      return;
-    }
-    Threads._queues.get(threadName)!.delete(queueId);
-  }
-);
-InternalTasks.registerTasks(
-  ThreadsMessageHeaders.internal,
-  ThreadsInternalMessages.completeTasks,
-  (data, event) => {
-    const tasksId = data[0];
-    const requestsId = data[1];
-    const tasksData = data[2];
-    PromiseTasks.completePromiseTasks(tasksId, requestsId, tasksData);
-  }
-);
-InternalTasks.registerTasks(
-  ThreadsMessageHeaders.internal,
-  ThreadsInternalMessages.checkTasksResult,
-  (data, event) => {
-    const result = data[0];
-    const promiseId = data[1];
-
-    PromiseTasks.completePromiseTasks("tasks-check", promiseId, result);
-  }
-);
-
-const __handleTasksDone = (
-  tasksId: string,
-  mode: number,
-  threadId: string,
-  tid: string,
-  tasksData: any,
-  transfers: any
-) => {
-  if (mode == 1) {
-    const thread = Threads.getThread(threadId);
-    thread &&
-      thread.sendMessage(
-        ThreadsMessageHeaders.internal,
-        [ThreadsInternalMessages.completeTasks, tasksId, tid, tasksData],
-        transfers
-      );
-  }
-  if (mode == 2) {
-    //complete queue
-    if (tid && threadId) {
-      const queue = Threads.getSyncedQueue(threadId, tid);
-      if (queue) {
-        queue.subtractFromCount();
+      let port: MessagePort;
+      if (Threads.environment == "browser") {
+        port = (event as MessageEvent).ports[0];
+      } else {
+        port = taskData[2];
+      }
+      if (threadManager == "worker") {
+        const thread = Threads.getThread(threadName);
+        if (thread) thread.setPort(port);
+      }
+      if (threadManager != "worker") {
+        const thread = Threads.getThreadPool(threadManager);
+        if (thread) thread.addPort(port);
       }
     }
-  }
+  ),
+  [ThreadsInternalMessageIds.setReady]: m<SetReadyTasksData>((data, thread) => {
+    const taskData = data[2];
+    Thread.readySet.add(thread);
+    thread.name = taskData[0];
+    thread.index = taskData[1];
+  }),
+
+  [ThreadsInternalMessageIds.runTask]: m<RunRemoteTasksData>(
+    async (data, thread, event) => {
+      const taskData = data[2];
+      const tasksId = taskData[0];
+      const takss = InternalTasks.getTasks(tasksId);
+      if (!takss) {
+        console.warn(
+          `Tried running task ${tasksId} | Thread ${Threads.threadName} | Origin Thread ${thread.name}`
+        );
+        return;
+      }
+
+      const promiseId = taskData[1];
+      const runData = taskData[2];
+
+      const taskReturn = takss(runData, thread, event);
+      //not expecting a return
+      if (promiseId < 0) return;
+      let taskReturnData = null;
+      if (taskReturn instanceof Promise) {
+        taskReturnData = await taskReturn;
+      } else {
+        taskReturnData = taskReturn;
+      }
+      let returnData: any = null;
+      let transfers: any = null;
+      if (Array.isArray(taskReturnData)) {
+        returnData = taskReturnData[0];
+        transfers = taskReturnData[1];
+      }
+
+      MessageCursors.completeTasks[2][0] = tasksId;
+      MessageCursors.completeTasks[2][1] = promiseId;
+      MessageCursors.completeTasks[2][2] = returnData;
+
+      thread.sendMessage<CompleteRemoteTasksData>(
+        MessageCursors.completeTasks,
+        transfers
+      );
+      MessageCursors.completeTasks[2][2] = null;
+    }
+  ),
+  [ThreadsInternalMessageIds.completeTasks]: m<CompleteRemoteTasksData>(
+    (data, thread) => {
+      const taskData = data[2];
+      const tasksId = taskData[0];
+      const promiseId = taskData[1];
+      const tasksData = taskData[2];
+      InternalTasks.completePromiseTasks(tasksId, promiseId, tasksData);
+    }
+  ),
+  [ThreadsInternalMessageIds.checkTasks]: m<ChecktaskExistData>(
+    (data, thread) => {
+      const taskData = data[2];
+      MessageCursors.cehckTasksResult[2][0] = InternalTasks.getTasks(
+        taskData[0]
+      )
+        ? true
+        : false;
+      MessageCursors.cehckTasksResult[2][1] = taskData[1];
+      thread.sendMessage<ChecktaskExistResultData>(
+        MessageCursors.cehckTasksResult
+      );
+    }
+  ),
+  [ThreadsInternalMessageIds.checkTasksResult]: m<ChecktaskExistResultData>(
+    (data) => {
+      const result = data[2][0];
+      const promiseId = data[2][1];
+      InternalTasks.completePromiseTasks("tasks-check", promiseId, result);
+    }
+  ),
 };
-InternalTasks.registerTasks(
-  ThreadsMessageHeaders.internal,
-  ThreadsInternalMessages.runTasks,
-  async (data, event) => {
-    //remove tasks id
-    const tasksId = data.shift();
-    //remove thread id
-    const threadId = data.shift();
-    //remove queue id
-    const mode = data.shift();
-    //remove queue id
-    const tid = data.shift();
+export const MessageCursors = {
+  runTask: <RunRemoteTasksData>[
+    InternalTasks.INTERNAL_CODE,
+    ThreadsInternalMessageIds.runTask,
+    ["", 0, null],
+  ],
+  completeTasks: <CompleteRemoteTasksData>[
+    InternalTasks.INTERNAL_CODE,
+    ThreadsInternalMessageIds.completeTasks,
+    ["", 0, null],
+  ],
 
-    const takss = TasksManager.getTasks(tasksId);
-    if (!takss) return;
-
-    if (takss.mode == "async") {
-      const tasksData = await takss.run(data[0]);
-      __handleTasksDone(tasksId, mode, threadId, tid, tasksData, []);
-    }
-    if (takss.mode == "deferred") {
-      await takss.run(data[0], (tasksData: any, transfers: any) => {
-        __handleTasksDone(tasksId, mode, threadId, tid, tasksData, transfers);
-      });
-    }
-  }
-);
-
-InternalTasks.registerTasks(
-  ThreadsMessageHeaders.internal,
-  ThreadsInternalMessages.checkTasks,
-  async (data, event) => {
-    //remove tasks id
-    const tasksId = data.shift();
-    //remove thread id
-    const threadId = data.shift();
-    //remove promise id
-    const promiseId = data.shift();
-
-    const thread = Threads.getThread(threadId);
-    const takss = TasksManager.getTasks(tasksId);
-
-    if (!takss) return;
-
-    if (takss && thread) {
-      thread.sendMessage(ThreadsMessageHeaders.internal, [
-        ThreadsInternalMessages.checkTasksResult,
-        true,
-        promiseId,
-      ]);
-    }
-    if (!takss && thread) {
-      thread.sendMessage(ThreadsMessageHeaders.internal, [
-        ThreadsInternalMessages.checkTasksResult,
-        false,
-        promiseId,
-      ]);
-    }
-  }
-);
-
-InternalTasks.registerTasks(
-  ThreadsMessageHeaders.internal,
-  ThreadsInternalMessages.SyncData,
-  async (data, event) => {
-    //remove tasks id
-    const dataTypeId = data.shift();
-    const dataSync = DataSyncManager.getDataSync(dataTypeId);
-    if (!dataSync) return false;
-    const syncData = data.shift();
-    dataSync.sync(syncData);
-  }
-);
-
-InternalTasks.registerTasks(
-  ThreadsMessageHeaders.internal,
-  ThreadsInternalMessages.UnSyncData,
-  async (data, event) => {
-    //remove tasks id
-    const dataTypeId = data.shift();
-    const dataSync = DataSyncManager.getDataSync(dataTypeId);
-    if (!dataSync) return false;
-    const unSyncData = data.shift();
-    dataSync.unSync(unSyncData);
-  }
-);
+  checkTasks: <ChecktaskExistData>[
+    InternalTasks.INTERNAL_CODE,
+    ThreadsInternalMessageIds.checkTasks,
+    ["", 0],
+  ],
+  cehckTasksResult: <ChecktaskExistResultData>[
+    InternalTasks.INTERNAL_CODE,
+    ThreadsInternalMessageIds.checkTasksResult,
+    [false, 0],
+  ],
+};

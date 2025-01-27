@@ -1,11 +1,9 @@
 import { IndexDBDatabaseCreationData } from "Types/Database.types.js";
 import { DataBase } from "../Classes/Database.js";
 
-import RegisterThreadTasks from "./IndexDBTasks.js";
 import { Thread, ThreadPool } from "@amodx/threads";
 import { IndexDBDatabaseSchema } from "Types/Database.schema.js";
 
-RegisterThreadTasks();
 export class IndexDBCore {
   static dataBase: DataBase;
   static __version = 1;
@@ -131,53 +129,4 @@ export class IndexDBCore {
     }
     indexedDB.deleteDatabase(dataBasename);
   }
-
-  static tasks = {
-    close(thread: Thread | ThreadPool, id: string) {
-      return new Promise(async (resolve, reject) => {
-        if (thread instanceof Thread) {
-          return thread.runPromiseTasks("zdb-close-database", id, [], () => {
-            resolve(true);
-          });
-        }
-        if (thread instanceof ThreadPool) {
-          await Promise.all(
-            thread.getThreads().map(
-              (_) =>
-                new Promise((r) => {
-                  _.runPromiseTasks("zdb-close-database", id, [], () => {
-                    r(true);
-                  });
-                })
-            )
-          );
-          return resolve(true);
-        }
-        reject(false);
-      });
-    },
-    open(thread: Thread | ThreadPool, id: string) {
-      return new Promise(async (resolve, reject) => {
-        if (thread instanceof Thread) {
-          return thread.runPromiseTasks("zdb-open-database", id, [], () => {
-            resolve(true);
-          });
-        }
-        if (thread instanceof ThreadPool) {
-          await Promise.all(
-            thread.getThreads().map(
-              (_) =>
-                new Promise((r) => {
-                  _.runPromiseTasks("zdb-open-database", id, [], () => {
-                    r(true);
-                  });
-                })
-            )
-          );
-          return resolve(true);
-        }
-        reject(false);
-      });
-    },
-  };
 }

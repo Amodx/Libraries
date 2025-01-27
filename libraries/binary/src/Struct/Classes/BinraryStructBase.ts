@@ -20,11 +20,11 @@ export class BinraryStructBase {
 
   constructor(public id: string) {}
 
-  setBuffer(data: BufferTypes | DataView) {
-    if (data instanceof DataView) {
-      this.data = data;
-      return;
-    }
+  setData(data: DataView) {
+    this.data = data;
+  }
+
+  setBuffer(data: BufferTypes) {
     this.data = new DataView(data);
   }
 

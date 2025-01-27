@@ -1,13 +1,10 @@
-//types
-import type { ThreadPoolData } from "./Types/ThreadPool.types";
-
 //classes
 import { Thread } from "./Threads/Thread.js";
-import { SyncedQueue } from "./Queue/SyncedQueue.js";
-import { TasksManager } from "./Tasks/TaskManager.js";
-import { DataSyncManager } from "./Data/DataSyncManager.js";
-import { InternalTasks } from "./Internal/InternalTasks.js";
 import { ThreadPool } from "./Threads/ThreadPool.js";
+import { TaskRunFunction, ThreadPortTypes } from "./Thread.types.js";
+import { InternalTasks } from "./Internal/InternalTasks.js";
+
+let initalized = false;
 
 export class Threads {
   static threadNumber = 0;
@@ -16,26 +13,22 @@ export class Threads {
   static _threads = new Map<string, Thread>();
   static _threadPools = new Map<string, ThreadPool>();
 
-  static _queues = new Map<string, Map<string, SyncedQueue>>();
+  static parent = new Thread("parent", 0);
 
-  static parent = new Thread("");
-  static internal = InternalTasks;
-
-  static __initalized = false;
-  static __expectedPorts: Record<string, boolean> = {};
-
-  static async init(threadName: string, threadParentName: string) {
-    this.threadName = threadName;
-    this.parent.name = threadParentName;
-    const port = await this.getWorkerPort();
-    this.parent.setPort(port);
-    this.__initalized = true;
-    this.addThread(this.parent);
+  static get isInitalized() {
+    return initalized;
   }
 
-  static getSyncedQueue(threadId: string, queueId: string) {
-    if (!this._queues.has(threadId)) return;
-    return this._queues.get(threadId)?.get(queueId);
+  static async init(
+    threadName: string,
+    parentPort: ThreadPortTypes,
+    threadParentName: string = "window"
+  ) {
+    this.threadName = threadName;
+    this.parent.name = threadParentName;
+    this.parent.setPort(parentPort);
+    initalized = true;
+    this.addThread(this.parent);
   }
 
   static addThread(thread: Thread) {
@@ -44,16 +37,16 @@ export class Threads {
 
   static createThread<T>(name: string, mergeObject: T = <T>{}): T & Thread {
     const newThread = Object.assign<Thread, typeof mergeObject>(
-      new Thread(name),
+      new Thread(name, 0),
       mergeObject
     );
     this._threads.set(name, newThread);
     return newThread;
   }
 
-  static createThreadPool(data: ThreadPoolData) {
-    const newThreadPool = new ThreadPool(data);
-    this._threadPools.set(data.name, newThreadPool);
+  static createThreadPool(id: string) {
+    const newThreadPool = new ThreadPool(id);
+    this._threadPools.set(id, newThreadPool);
     return newThreadPool;
   }
 
@@ -69,31 +62,11 @@ export class Threads {
     return threadPool;
   }
 
-  static async getWorkerPort() {
-    if (this.environment == "browser") {
-      return self;
-    }
-    if (this.environment == "node") {
-      //@ts-ignore
-      const { parentPort } = require("worker_threads");
-      return parentPort;
-    }
-  }
-
-  static registerTasks<T>(
+  static registerTask<TaskData = any, ReturnData = any>(
     id: string | number,
-    run: (data: T, onDone?: (data?: any, transfers?: any) => void) => void,
-    mode: "async" | "deferred" = "async"
+    run: TaskRunFunction<TaskData, ReturnData>
   ) {
-    TasksManager.registerTasks(id, run, mode);
-  }
-
-  static onDataSync<T, K>(
-    dataType: string | number,
-    onSync?: (data: T) => void,
-    onUnSync?: (data: K) => void
-  ) {
-    return DataSyncManager.registerDataSync(dataType, onSync, onUnSync);
+    InternalTasks._tasks.set(id, run);
   }
 }
 if (

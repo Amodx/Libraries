@@ -1,6 +1,6 @@
 {
  "name": "@amodx/indexdb",
- "version": "0.0.01",
+ "version": "0.0.02",
  "module": "index.js",
  "types": "index.d.ts",
  "type": "module",
