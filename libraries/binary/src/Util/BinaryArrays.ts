@@ -1,7 +1,7 @@
 import { BinaryUtil } from "./BinaryUtil";
 
 export class BinaryArrays {
-  static getBitArrayIndex(
+  static getBitArrayIndexView(
     data: DataView,
     byteOffset: number,
     arrayIndex: number
@@ -12,7 +12,7 @@ export class BinaryArrays {
     return BinaryUtil.getBitValue(arrayByte, arrayBitIndex, 1);
   }
 
-  static setBitArrayIndex(
+  static setBitArrayIndexView(
     data: DataView,
     byteOffset: number,
     arrayIndex: number,
@@ -24,6 +24,34 @@ export class BinaryArrays {
     data.setUint8(
       arrayByteIndex + byteOffset,
       BinaryUtil.setBitValue(arrayByte, arrayBitIndex, value, 1)
+    );
+  }
+
+  static getBitArrayIndex(
+    data: Uint8Array,
+    byteOffset: number,
+    arrayIndex: number
+  ) {
+    const arrayByteIndex = (arrayIndex / 8) >> 0;
+    const arrayBitIndex = arrayIndex - arrayByteIndex * 8;
+    const arrayByte = data[arrayByteIndex + byteOffset];
+    return BinaryUtil.getBitValue(arrayByte, arrayBitIndex, 1);
+  }
+
+  static setBitArrayIndex(
+    data: Uint8Array,
+    byteOffset: number,
+    arrayIndex: number,
+    value: number
+  ) {
+    const arrayByteIndex = (arrayIndex / 8) >> 0;
+    const arrayBitIndex = arrayIndex - arrayByteIndex * 8;
+    const arrayByte = data[arrayByteIndex + byteOffset];
+    data[arrayByteIndex + byteOffset] = BinaryUtil.setBitValue(
+      arrayByte,
+      arrayBitIndex,
+      value,
+      1
     );
   }
 

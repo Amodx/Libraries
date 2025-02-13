@@ -7,12 +7,10 @@ export enum ThreadsInternalMessageIds {
   checkTasksResult,
 }
 
-export type InternalHeader = "__internal__";
-
 export type ThreadsInternalMessageData<
   Message extends ThreadsInternalMessageIds,
-  Data extends any = any,
-> = [internalHeader: InternalHeader, message: Message, data: Data];
+  Data extends any[] = any,
+> = [message: Message, ...data: Data];
 
 export type SetReadyTasksData = ThreadsInternalMessageData<
   ThreadsInternalMessageIds.setReady,
@@ -27,13 +25,13 @@ export type ConnectPortTasksData = ThreadsInternalMessageData<
 export type RunRemoteTasksData<TaskData extends any = any> =
   ThreadsInternalMessageData<
     ThreadsInternalMessageIds.runTask,
-    [id: string | number, promiseId: number, data: TaskData]
+    [id: string, promiseId: number, data: TaskData]
   >;
 
 export type CompleteRemoteTasksData<ReturnData extends any = any> =
   ThreadsInternalMessageData<
     ThreadsInternalMessageIds.completeTasks,
-    [id: string | number, promiseId: number, data: ReturnData]
+    [id: string, promiseId: number, data: ReturnData]
   >;
 
 export type ChecktaskExistData = ThreadsInternalMessageData<

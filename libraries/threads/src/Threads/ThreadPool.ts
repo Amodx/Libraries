@@ -60,7 +60,7 @@ export class ThreadPool {
     this.__threads.push(newComm);
     this._totalThreads++;
   }
- 
+
   runTaskForAll<TaskData extends any>(
     id: string,
     data: TaskData,
@@ -72,7 +72,7 @@ export class ThreadPool {
   }
 
   runTask<TaskData extends any, ReturnData extends any>(
-    id: string | number,
+    id: string,
     data: TaskData,
     transfers?: any[] | null,
     onDone?: (data: ReturnData) => void | null,
@@ -94,7 +94,7 @@ export class ThreadPool {
   }
 
   runTaskAsync<TaskData extends any, ReturnData extends any>(
-    id: string | number,
+    id: string,
     data: TaskData,
     transfers?: any[] | null,
     threadNumber?: number | null,

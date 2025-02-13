@@ -36,7 +36,7 @@ export class BitArray {
     if (index < 0 || index >= this.length) {
       throw new RangeError(`Index ${index} is out of bounds`);
     }
-    return BinaryArrays.getBitArrayIndex(this.data, 0, index);
+    return BinaryArrays.getBitArrayIndexView(this.data, 0, index);
   }
 
   set(index: number, value: number): void {
@@ -46,7 +46,7 @@ export class BitArray {
     if (value < 0 || value > 1) {
       throw new RangeError(`Value ${value} is out of bounds for a bit`);
     }
-    BinaryArrays.setBitArrayIndex(this.data, 0, index, value);
+    BinaryArrays.setBitArrayIndexView(this.data, 0, index, value);
   }
 
   [Symbol.iterator](): Iterator<number> {

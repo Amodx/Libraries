@@ -30,7 +30,6 @@ export class Flat3DIndex {
       }
     );
   }
-
   static GetXYZOrder(): Flat3DIndex {
     return new Flat3DIndex(
       (position, bounds) =>
@@ -44,7 +43,17 @@ export class Flat3DIndex {
       }
     );
   }
-
+  static GetYXZOrder(): Flat3DIndex {
+    return new Flat3DIndex(
+      (position, bounds) =>
+        position[1] + bounds[1] * (position[0] + bounds[0] * position[2]),
+      (index, bounds, position) => {
+        position[2] = Math.floor(index / (bounds[0] * bounds[1]));
+        position[0] = Math.floor((index % (bounds[0] * bounds[1])) / bounds[1]);
+        position[1] = index % bounds[1];
+      }
+    );
+  }
   get size(): number {
     return this.bounds[0] * this.bounds[1] * this.bounds[2];
   }

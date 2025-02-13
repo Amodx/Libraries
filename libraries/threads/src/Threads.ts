@@ -1,7 +1,13 @@
 //classes
 import { Thread } from "./Threads/Thread.js";
 import { ThreadPool } from "./Threads/ThreadPool.js";
-import { TaskRunFunction, ThreadPortTypes } from "./Thread.types.js";
+import {
+  BinaryTaskOptions,
+  BinaryTaskRunFunction,
+  BinaryTaskType,
+  TaskRunFunction,
+  ThreadPortTypes,
+} from "./Thread.types.js";
 import { InternalTasks } from "./Internal/InternalTasks.js";
 
 let initalized = false;
@@ -19,7 +25,7 @@ export class Threads {
     return initalized;
   }
 
-  static async init(
+  static init(
     threadName: string,
     parentPort: ThreadPortTypes,
     threadParentName: string = "window"
@@ -63,12 +69,29 @@ export class Threads {
   }
 
   static registerTask<TaskData = any, ReturnData = any>(
-    id: string | number,
+    id: string,
     run: TaskRunFunction<TaskData, ReturnData>
   ) {
-    InternalTasks._tasks.set(id, run);
+    InternalTasks.registerTask(id, run);
+  }
+
+  static registerBinaryTask(
+    id: string | BinaryTaskOptions,
+    run: BinaryTaskRunFunction
+  ) {
+    InternalTasks.registerBinaryTask(typeof id == "string" ? { id } : id, run);
+  }
+
+  static createBinaryTask(byteLength: number) {
+    const buffer = InternalTasks._taskPools.get(byteLength);
+    const view = new DataView(buffer);
+    binaryTaskType.setView(view);
+    binaryTaskType.clear();
+    return view;
   }
 }
+
+const binaryTaskType = new BinaryTaskType();
 if (
   //@ts-ignore
   typeof process !== "undefined" &&

@@ -111,7 +111,7 @@ export class BinraryStructBase {
       );
     }
     if (indexData[4] == StructPropertyTypes.BitArray) {
-      return BinaryArrays.getBitArrayIndex(
+      return BinaryArrays.getBitArrayIndexView(
         this.data,
         indexData[0] + this.byteOffSet,
         index
@@ -159,7 +159,7 @@ export class BinraryStructBase {
       );
     }
     if (indexData[4] == StructPropertyTypes.BitArray) {
-      return BinaryArrays.setBitArrayIndex(
+      return BinaryArrays.setBitArrayIndexView(
         this.data,
         indexData[0] + this.byteOffSet,
         index,

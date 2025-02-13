@@ -68,7 +68,7 @@ export function CreateInstance<T extends any>(
         const array = new Uint8Array(Math.ceil(length / 8));
         const view = new DataView(array.buffer);
         for (let i = 0; i < length; i++) {
-          BinaryArrays.setBitArrayIndex(view, 0, i, parent[key][i]);
+          BinaryArrays.setBitArrayIndexView(view, 0, i, parent[key][i]);
         }
         object[key] = array;
       }
@@ -236,14 +236,14 @@ export function CreateInstance<T extends any>(
           if (!self._props.has(key)) {
             const proxy = new Proxy(new Array(length), {
               get(target, index) {
-                return BinaryArrays.getBitArrayIndex(
+                return BinaryArrays.getBitArrayIndexView(
                   self.structData,
                   byteIndex + self.structByteOffSet,
                   +(index as string)
                 );
               },
               set(target, index, value) {
-                BinaryArrays.setBitArrayIndex(
+                BinaryArrays.setBitArrayIndexView(
                   self.structData,
                   byteIndex + self.structByteOffSet,
                   +(index as string),

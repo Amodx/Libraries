@@ -1,4 +1,4 @@
-import type { ThreadPortTypes, NodeThreadPort } from "../Thread.types.js";
+import { type ThreadPortTypes, type NodeThreadPort, BinaryTaskType } from "../Thread.types.js";
 import type { ThreadPool } from "./ThreadPool.js";
 import { Threads } from "../Threads.js";
 import {
@@ -9,7 +9,8 @@ import {
   ThreadsInternalMessageIds,
 } from "../Internal/Messages.js";
 import { InternalTasks, MessageCursors } from "../Internal/InternalTasks.js";
-
+const binaryTaskType = new BinaryTaskType();
+const tempTransfers:any[] = [];
 export class Thread {
   static readySet = new Set();
 
@@ -35,9 +36,7 @@ export class Thread {
     if (Threads.environment == "browser") {
       const p = port as MessagePort;
       p.onmessage = (event: MessageEvent) => {
-        if (InternalTasks.isInternal(event.data)) {
-          return InternalTasks.runInternal(event.data, this, event);
-        }
+        InternalTasks.runInternal(event.data, this, event);
       };
       p.onmessageerror = (event: MessageEvent) => {
         console.error(`Error occured in from thread ${this.name}`);
@@ -48,9 +47,7 @@ export class Thread {
     if (Threads.environment == "node") {
       const p = port as NodeThreadPort;
       p.on("message", (data: any[]) => {
-        if (InternalTasks.isInternal(data)) {
-          return InternalTasks.runInternal(data, this, data);
-        }
+        InternalTasks.runInternal(data, this, data);
       });
       p.on("error", (data: any[]) => {
         console.error(`Error occured in from thread ${this.name}`);
@@ -58,9 +55,9 @@ export class Thread {
       });
     }
     this.sendMessage<SetReadyTasksData>([
-      InternalTasks.INTERNAL_CODE,
       ThreadsInternalMessageIds.setReady,
-      [this.name, this.index],
+      this.name,
+      this.index,
     ]);
   }
 
@@ -81,18 +78,20 @@ export class Thread {
 
     otherThread.sendMessage<ConnectPortTasksData>(
       [
-        InternalTasks.INTERNAL_CODE,
         ThreadsInternalMessageIds.connectPort,
-        [this.name, this.threadPoolName, channel.port1],
+        this.name,
+        this.threadPoolName,
+        channel.port1,
       ],
       [channel.port1]
     );
 
     this.sendMessage<ConnectPortTasksData>(
       [
-        InternalTasks.INTERNAL_CODE,
         ThreadsInternalMessageIds.connectPort,
-        [otherThread.name, otherThread.threadPoolName, channel.port2],
+        otherThread.name,
+        otherThread.threadPoolName,
+        channel.port2,
       ],
       [channel.port2]
     );
@@ -122,8 +121,8 @@ export class Thread {
 
   taskExist(id: string, onDone: (exist: boolean) => void) {
     const promiseId = InternalTasks.getPromiseId();
-    MessageCursors.checkTasks[2][0] = id;
-    MessageCursors.checkTasks[2][1] = promiseId;
+    MessageCursors.checkTasks[1] = id;
+    MessageCursors.checkTasks[2] = promiseId;
     this.sendMessage<ChecktaskExistData>(MessageCursors.checkTasks);
     InternalTasks.addPromiseTakss("tasks-check", promiseId, (data: boolean) => {
       onDone(data);
@@ -131,7 +130,7 @@ export class Thread {
   }
 
   runTask<TaskData = any, ReturnData = any>(
-    id: string | number,
+    id: string,
     data: TaskData,
     transfers?: any[] | null,
     onDone?: (data: ReturnData) => void | null
@@ -139,25 +138,53 @@ export class Thread {
     const promiseId = onDone ? InternalTasks.getPromiseId() : -1;
     if (onDone) InternalTasks.addPromiseTakss(id, promiseId, onDone);
 
-    MessageCursors.runTask[2][0] = id;
-    MessageCursors.runTask[2][1] = promiseId;
-    MessageCursors.runTask[2][2] = data;
+    MessageCursors.runTask[1] = id;
+    MessageCursors.runTask[2] = promiseId;
+    MessageCursors.runTask[3] = data;
 
     this.sendMessage<RunRemoteTasksData<TaskData>>(
       MessageCursors.runTask,
       transfers
     );
 
-    MessageCursors.runTask[2][2] = null;
+    MessageCursors.runTask[3] = null;
   }
 
   runTaskAsync<TaskData = any, ReturnData = any>(
-    id: string | number,
+    id: string,
     data: TaskData,
     transfers?: any[] | null
   ): Promise<ReturnData> {
     return new Promise<ReturnData>((resolve) => {
       this.runTask(id, data, transfers, (data) => {
+        resolve(data);
+      });
+    });
+  }
+
+  runBinaryTask<ReturnData = any>(
+    id: string,
+    data: DataView,
+    onDone?: (data: ReturnData) => void | null
+  ) {
+
+    const promiseId = onDone ? InternalTasks.getPromiseId() : -1;
+    if (onDone) InternalTasks.addPromiseTakss(id, promiseId, onDone);
+    const hashed = InternalTasks.getHashedTaskId(id);
+    binaryTaskType.view = data;
+    binaryTaskType.taskId = hashed;
+    binaryTaskType.promiseId = promiseId;
+    tempTransfers[0] = data.buffer;
+    this.sendMessage(data.buffer, tempTransfers);
+    tempTransfers[0] = null;
+  }
+
+  runBinaryTaskAsync<TaskData = any, ReturnData = any>(
+    id: string,
+    data: DataView
+  ): Promise<ReturnData> {
+    return new Promise<ReturnData>((resolve) => {
+      this.runBinaryTask(id, data, (data) => {
         resolve(data);
       });
     });
