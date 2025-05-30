@@ -1,12 +1,8 @@
-import { Vec2Array } from "../../Vector.types";
+import { Vec2Array } from "../../Abstract/Vectors/Vector.types";
 
 export class Flat2DIndex {
   private position: Vec2Array;
   private bounds: Vec2Array;
-
-  getBounds(): Vec2Array {
-    return this.bounds;
-  }
 
   constructor(
     private _getIndex: (position: Vec2Array, bounds: Vec2Array) => number,
@@ -55,7 +51,9 @@ export class Flat2DIndex {
     this._getXY(index, this.bounds, this.output);
     return this.output;
   }
-
+  getBounds(): Readonly<Vec2Array> {
+    return this.bounds;
+  }
   setBounds(x: number, y: number): void {
     this.bounds[0] = x;
     this.bounds[1] = y;

@@ -1,4 +1,4 @@
-import { Vector2Like } from "../Vectors/index.js";
+import { Vector2Like } from "../Abstract/Vectors/Vector2Like"
 
 export class Square {
   static Create(

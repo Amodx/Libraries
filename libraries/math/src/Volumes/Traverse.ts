@@ -1,4 +1,4 @@
-import { Vec2Array, Vec3Array } from "../Vector.types";
+import { Vec2Array, Vec3Array } from "../Abstract/Vectors/Vector.types";
 
 export class Traverse {
   static ForEachFromToVec2(

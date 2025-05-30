@@ -8,7 +8,7 @@ export class Observable<T = void> {
 
   constructor() {}
 
-  listener(func: ObservableFunction<T> ): ObservableFunction<T> {
+  listener(func: ObservableFunction<T>): ObservableFunction<T> {
     return func as any;
   }
 
@@ -76,10 +76,11 @@ export class Observable<T = void> {
    */
   notify(data: T) {
     for (let i = this.observers.length - 1; i >= 0; i--) {
-      this.observers[i](data, this);
-      if (once.has(this)) {
+      const observer = this.observers[i];
+      observer(data, this);
+      if (once.has(observer)) {
         this.observers.splice(i, 1);
-        once.delete(this);
+        once.delete(observer);
       }
       if (this._broken) {
         this._broken = false;
@@ -93,10 +94,11 @@ export class Observable<T = void> {
    */
   async notifyAsync(data: T) {
     for (let i = this.observers.length - 1; i >= 0; i--) {
-      await this.observers[i](data, this);
-      if (once.has(this)) {
+      const observer = this.observers[i];
+      await observer(data, this);
+      if (once.has(observer)) {
         this.observers.splice(i, 1);
-        once.delete(this);
+        once.delete(observer);
       }
       if (this._broken) {
         this._broken = false;

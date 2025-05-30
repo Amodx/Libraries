@@ -1,15 +1,18 @@
-import { GamepadManager } from "./Gamepads/GamepadManager";
-import { UserManager } from "./Users/UserManager";
-import { Controls } from "./Controls";
-import { HoldRegister } from "./HoldRegister";
-import { KeyDownEvent } from "./Events/Register";
+import { GamepadManager } from "../Gamepads/GamepadManager";
+import { UserManager } from "../Users/UserManager";
+import { Controls } from "../Controls";
+
 import { ControlsMap } from "./ControlsMap";
+import { ControlEventManager } from "../Events/ControlsEventManager";
+import { ControlEventTypes } from "../Events/Event.types";
+import { ControlsInternal } from "./ControlsInternal";
 
 export default function (controls: typeof Controls) {
   const rootElement = controls.controlRootElement as HTMLElement;
   const user = UserManager.addUser(0);
   controls.mainUser = user;
-  const heldKeys = new Set();
+
+  const heldKeybaordKey = new Set();
   const gamePadConnectionListener = (e: GamepadEvent) => {
     const newGamepad = GamepadManager.addGamepad(e);
     newGamepad.observables.buttonPressed.subscribe(
@@ -47,18 +50,37 @@ export default function (controls: typeof Controls) {
     down: {
       const key = ControlsMap.getMouseId(button, "down");
       const control = user.getControlByType(key);
-      control && control.run(key);
+      control &&
+        control.run(
+          new (ControlEventManager.getEvent(ControlEventTypes.MouseDown)!)(
+            control,
+            event
+          )
+        );
       break down;
     }
     hold: {
       const key = ControlsMap.getMouseId(button, "hold");
       const control = user.getControlByType(key);
-      if (!control || HoldRegister.hasHold(button)) break hold;
-      control.run(key);
+      if (!control || ControlsInternal.hasHold(button)) break hold;
+
+      control.run(
+        new (ControlEventManager.getEvent(ControlEventTypes.MouseHold)!)(
+          control,
+          event
+        )
+      );
+
       const input = control.data.input;
-      HoldRegister.addHold(
+      ControlsInternal.addHold(
         button,
-        () => control.run(key),
+        () =>
+          control.run(
+            new (ControlEventManager.getEvent(ControlEventTypes.MouseHold)!)(
+              control,
+              event
+            )
+          ),
         input.mouse?.holdDelay ? input.mouse?.holdDelay : 10,
         input.mouse?.initHoldDelay ? input.mouse?.initHoldDelay : 250
       );
@@ -67,10 +89,18 @@ export default function (controls: typeof Controls) {
 
   const mouseUp = (event: MouseEvent) => {
     const button = ControlsMap.mapMoueButton(event.button);
-    HoldRegister.removeHold(button);
+    ControlsInternal.removeHold(button);
+    ControlsInternal.releaseMouseButton(`${event.button}`);
+
     const key = ControlsMap.getMouseId(button, "up");
     const control = user.getControlByType(key);
-    control && control.run(key);
+    control &&
+      control.run(
+        new (ControlEventManager.getEvent(ControlEventTypes.MouseUp)!)(
+          control,
+          event
+        )
+      );
   };
 
   const keyDownListener = (event: KeyboardEvent) => {
@@ -90,42 +120,59 @@ export default function (controls: typeof Controls) {
     down: {
       const key = ControlsMap.getKeyBaordId(keyBoardKey, "down");
       const control = user.getControlByType(key);
-      if (!control || heldKeys.has(keyBoardKey)) break down;
-      control.run(key);
+      if (!control || heldKeybaordKey.has(event.key)) break down;
+      control.run(
+        new (ControlEventManager.getEvent(ControlEventTypes.KeyBoardDown)!)(
+          control,
+          event
+        )
+      );
+      heldKeybaordKey.add(event.key);
+
+      return;
     }
+
     hold: {
       const key = ControlsMap.getKeyBaordId(keyBoardKey, "hold");
       const control = user.getControlByType(key);
-      if (!control || HoldRegister.hasHold(keyBoardKey)) break hold;
-      control.run(key);
+      if (!control || ControlsInternal.hasHold(keyBoardKey)) break hold;
+      control.run(
+        new (ControlEventManager.getEvent(ControlEventTypes.KeyBoardHold)!)(
+          control,
+          event
+        )
+      );
       const input = control.data.input;
-      HoldRegister.addHold(
+      ControlsInternal.addHold(
         keyBoardKey,
-        () => control.run(key),
+        () =>
+          control.run(
+            new (ControlEventManager.getEvent(ControlEventTypes.KeyBoardHold)!)(
+              control,
+              event
+            )
+          ),
         input.keyboard?.holdDelay ? input.keyboard?.holdDelay : 10,
         input.keyboard?.initHoldDelay ? input.keyboard?.initHoldDelay : 250
       );
     }
-    heldKeys.add(keyBoardKey);
   };
 
   const keyUpListener = (event: KeyboardEvent) => {
     const keyBoardKey = ControlsMap.mapKey(event.key);
-    heldKeys.delete(keyBoardKey);
-    HoldRegister.removeHold(keyBoardKey);
-    up: {
-      const key = ControlsMap.getKeyBaordId(keyBoardKey, "up");
-      const control = user.getControlByType(key);
-      control && control.run(key);
-    }
-    down: {
-      const key = ControlsMap.getKeyBaordId(keyBoardKey, "down");
-      const control = user.getControlByType(key);
-      const event = control?.getEvent(key);
-      if (event instanceof KeyDownEvent) {
-        event.observers.onRelease.notify();
-      }
-    }
+
+    ControlsInternal.removeHold(keyBoardKey);
+    ControlsInternal.releaseKey(event.key);
+    heldKeybaordKey.delete(event.key);
+    const key = ControlsMap.getKeyBaordId(keyBoardKey, "up");
+    const control = user.getControlByType(key);
+    control &&
+      control.run(
+        new (ControlEventManager.getEvent(ControlEventTypes.KeyBoardUp)!)(
+          control,
+          event
+        )
+      );
   };
 
   const wheelListener = (event: WheelEvent) => {
@@ -141,7 +188,13 @@ export default function (controls: typeof Controls) {
       }
       const key = ControlsMap.getScrollId("up");
       const control = user.getControlByType(key);
-      control && control.run(key);
+      control &&
+        control.run(
+          new (ControlEventManager.getEvent(ControlEventTypes.WheelUp)!)(
+            control,
+            event
+          )
+        );
     } else {
       if (controls._capturing && controls._capturingMode == "keyboard") {
         controls._capturedData = {
@@ -155,7 +208,13 @@ export default function (controls: typeof Controls) {
       const key = ControlsMap.getScrollId("down");
       const control = user.getControlByType(key);
 
-      control && control.run(key);
+      control &&
+        control.run(
+          new (ControlEventManager.getEvent(ControlEventTypes.WheelDown)!)(
+            control,
+            event
+          )
+        );
     }
   };
 

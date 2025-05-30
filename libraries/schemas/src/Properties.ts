@@ -1,6 +1,8 @@
 import { PropertyFC } from "./Property.types";
 import {
-  ColorPropertyInput,
+  Color3PropertyInput,
+  Color4PropertyInput,
+  HexColorPropertyInput,
   FloatPropertyInput,
   IntPropertyInput,
   RangePropertyInput,
@@ -52,7 +54,18 @@ export const StringProp = StringPropertyInput.createPropertyFC("");
 export const FloatProp = FloatPropertyInput.createPropertyFC(0);
 export const IntProp = IntPropertyInput.createPropertyFC(0);
 export const RangeProp = RangePropertyInput.createPropertyFC(0);
-export const ColorProp = ColorPropertyInput.createPropertyFC("#ffffff");
+export const HexColorProp = HexColorPropertyInput.createPropertyFC("#ffffff");
+export const Color3Prop = Color3PropertyInput.createPropertyFC({
+  r: 255,
+  g: 255,
+  b: 255,
+});
+export const Color4Prop = Color4PropertyInput.createPropertyFC({
+  r: 255,
+  g: 255,
+  b: 255,
+  a: 255,
+});
 export const SelectProp = SelectPropertyInput.createPropertyFC("");
 export const Vec2Prop = Vec2PropertyInput.createPropertyFC({ x: 0, y: 0 });
 export const Vec3Prop = Vec3PropertyInput.createPropertyFC({
@@ -61,5 +74,3 @@ export const Vec3Prop = Vec3PropertyInput.createPropertyFC({
   z: 0,
 });
 export const BooleanProp = BooleanPropertyInput.createPropertyFC(false);
-
-

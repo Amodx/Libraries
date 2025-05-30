@@ -33,27 +33,33 @@ type RegisteredComponent<
   has(node: NodeCursor): boolean;
   get(
     node: NodeCursor,
-    cursor?: ComponentCursor<ComponentSchema, Data, Shared>
+    cursor?: ComponentCursor<ComponentSchema, Data, Shared>,
+    nodeCursor?: NodeCursor
   ): ComponentCursor<ComponentSchema, Data, Shared> | null;
   getRequired(
     node: NodeCursor,
-    cursor?: ComponentCursor<ComponentSchema, Data, Shared>
+    cursor?: ComponentCursor<ComponentSchema, Data, Shared>,
+    nodeCursor?: NodeCursor
   ): ComponentCursor<ComponentSchema, Data, Shared>;
   getChild(
     node: NodeCursor,
-    cursor?: ComponentCursor<ComponentSchema, Data, Shared>
+    cursor?: ComponentCursor<ComponentSchema, Data, Shared>,
+    nodeCursor?: NodeCursor
   ): ComponentCursor<ComponentSchema, Data, Shared> | null;
   getRequiredChild(
     node: NodeCursor,
-    cursor?: ComponentCursor<ComponentSchema, Data, Shared>
+    cursor?: ComponentCursor<ComponentSchema, Data, Shared>,
+    nodeCursor?: NodeCursor
   ): ComponentCursor<ComponentSchema, Data, Shared>;
   getParent(
     node: NodeCursor,
-    cursor?: ComponentCursor<ComponentSchema, Data, Shared>
+    cursor?: ComponentCursor<ComponentSchema, Data, Shared>,
+    nodeCursor?: NodeCursor
   ): ComponentCursor<ComponentSchema, Data, Shared> | null;
   getRequiredParent(
     node: NodeCursor,
-    cursor?: ComponentCursor<ComponentSchema, Data, Shared>
+    cursor?: ComponentCursor<ComponentSchema, Data, Shared>,
+    nodeCursor?: NodeCursor
   ): ComponentCursor<ComponentSchema, Data, Shared>;
   getAll(
     node: NodeCursor
@@ -163,33 +169,53 @@ export const registerComponent = <
     has(node: NodeCursor) {
       return node.components.has(data.type);
     },
-    get(node: NodeCursor, cursor?: ComponentCursor) {
-      return node.components.get(data.type, cursor);
+    get(node: NodeCursor, cursor?: ComponentCursor, nodeCursor?: NodeCursor) {
+      return node.components.get(data.type, cursor, nodeCursor);
     },
-    getRequired(node: NodeCursor, cursor?: ComponentCursor) {
-      const found = node.components.get(data.type, cursor);
+    getRequired(
+      node: NodeCursor,
+      cursor?: ComponentCursor,
+      nodeCursor?: NodeCursor
+    ) {
+      const found = node.components.get(data.type, cursor, nodeCursor);
       if (!found)
         throw new Error(
           `Node [${node.name}] does not have required component [${data.type}].`
         );
       return found;
     },
-    getChild(node: NodeCursor, cursor?: ComponentCursor) {
-      return node.components.getChild(data.type, cursor);
+    getChild(
+      node: NodeCursor,
+      cursor?: ComponentCursor,
+      nodeCursor?: NodeCursor
+    ) {
+      return node.components.getChild(data.type, cursor, nodeCursor);
     },
-    getRequiredChild(node: NodeCursor, cursor?: ComponentCursor) {
-      const comp = node.components.getChild(data.type, cursor);
+    getRequiredChild(
+      node: NodeCursor,
+      cursor?: ComponentCursor,
+      nodeCursor?: NodeCursor
+    ) {
+      const comp = node.components.getChild(data.type, cursor, nodeCursor);
       if (!comp)
         throw new Error(
           `Node [${node.name}] does not have a child with required component [${data.type}].`
         );
       return comp;
     },
-    getParent(node: NodeCursor, cursor?: ComponentCursor) {
-      return node.components.getParent(data.type, cursor);
+    getParent(
+      node: NodeCursor,
+      cursor?: ComponentCursor,
+      nodeCursor?: NodeCursor
+    ) {
+      return node.components.getParent(data.type, cursor, nodeCursor);
     },
-    getRequiredParent(node: NodeCursor, cursor = ComponentCursor.Get()) {
-      const comp = node.components.getParent(data.type, cursor);
+    getRequiredParent(
+      node: NodeCursor,
+      cursor?: ComponentCursor,
+      nodeCursor?: NodeCursor
+    ) {
+      const comp = node.components.getParent(data.type, cursor, nodeCursor);
       if (!comp)
         throw new Error(
           `Node [${node.name}] does not have a parent with required component [${data.type}].`

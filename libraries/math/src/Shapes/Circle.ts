@@ -1,4 +1,4 @@
-import { Vector2Like } from "../Vectors/index";
+import { Vector2Like } from "../Abstract/Vectors/Vector2Like"
 import { Square } from "./Square.js";
 
 export class Circle {

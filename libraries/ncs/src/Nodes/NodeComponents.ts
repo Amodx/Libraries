@@ -127,14 +127,16 @@ export class NodeComponents {
   }
   get(
     type: string,
-    cursor = ComponentCursor.Get()
+    cursor = ComponentCursor.Get(),
+    nodeCursor = NodeCursor.Get()
   ): ComponentCursor<any, any, any> | null {
     const components = this.components;
     if (!components) return null;
     const numberId = NCSRegister.components.idPalette.getNumberId(type);
     for (let i = 0; i < components.length; i += 2) {
       if (components[i] == numberId) {
-        cursor.setInstance(this.node, numberId, components[i + 1]);
+        if (nodeCursor !== this.node) this.node.cloneCursor(nodeCursor);
+        cursor.setInstance(nodeCursor, numberId, components[i + 1]);
         return cursor;
       }
     }
@@ -175,11 +177,12 @@ export class NodeComponents {
 
   getChild(
     type: string,
-    cursor = ComponentCursor.Get()
+    cursor = ComponentCursor.Get(),
+    nodeCursor = NodeCursor.Get()
   ): ComponentCursor<any, any, any> | null {
     for (const child of this.node.traverseChildren()) {
       if (!child.components) continue;
-      const found = child.components.get(type, cursor);
+      const found = child.components.get(type, cursor, nodeCursor);
       if (found) return found;
     }
     return null;
@@ -187,11 +190,12 @@ export class NodeComponents {
 
   getParent(
     type: string,
-    cursor = ComponentCursor.Get()
+    cursor = ComponentCursor.Get(),
+    nodeCursor = NodeCursor.Get()
   ): ComponentCursor<any, any, any> | null {
     for (const parent of this.node.traverseParents()) {
       if (!parent.components) continue;
-      const found = parent.components.get(type, cursor);
+      const found = parent.components.get(type, cursor, nodeCursor);
       if (found) return found;
     }
     return null;

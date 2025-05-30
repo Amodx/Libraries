@@ -1,7 +1,7 @@
 
 import { ControlEvent } from "../Events/ControlEventBase";
 import { Control } from "../Controls/Control";
-import { ControlsMap } from "../ControlsMap";
+import { ControlsMap } from "../Internal/ControlsMap";
 import { ControlAction } from "../Controls/ControlAction";
 import { ControlInputTypes } from "../Controls/ControlData";
 

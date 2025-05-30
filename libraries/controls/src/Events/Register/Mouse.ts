@@ -1,34 +1,43 @@
 import { ControlInputTypes } from "../../Controls/ControlData";
 import { ControlEventTypes } from "../Event.types";
 import { ControlEvent } from "../ControlEventBase";
-import { Observable } from "@amodx/core/Observers/Observable";
+import { Control } from "../../Controls/Control";
+import { ControlsInternal } from "../../Internal/ControlsInternal";
 
-export abstract class BaseMouseEvent extends ControlEvent<ControlInputTypes.Mouse> {
+abstract class BaseMouseEvent<
+  Events extends Record<string, any>,
+> extends ControlEvent<Events, MouseEvent> {
   readonly inputType = ControlInputTypes.Mouse;
   getButton() {
-    return this.controler.data.input[ControlInputTypes.Mouse]?.button;
+    return this.origin.button;
   }
 }
 
-export class MouseDownEvent extends BaseMouseEvent {
+export class MouseDownEvent extends BaseMouseEvent<{
+  release: {};
+}> {
   static eventType = ControlEventTypes.MouseDown;
   readonly eventType = ControlEventTypes.MouseDown;
+  constructor(control: Control, event: MouseEvent) {
+    super(control, event);
+    ControlsInternal.addMouseButtonForRelease(`${event.button}`, this);
+  }
 }
 
-export class MouseHoldEvent extends BaseMouseEvent {
+export class MouseHoldEvent extends BaseMouseEvent<{}> {
   static eventType = ControlEventTypes.MouseHold;
   readonly eventType = ControlEventTypes.MouseHold;
 }
 
-export class MouseUpEvent extends BaseMouseEvent {
+export class MouseUpEvent extends BaseMouseEvent<{}> {
   static eventType = ControlEventTypes.MouseUp;
   readonly eventType = ControlEventTypes.MouseUp;
 }
 
-export abstract class BaseWheelEvent extends ControlEvent<ControlInputTypes.Scroll> {
+abstract class BaseWheelEvent extends ControlEvent {
   readonly inputType = ControlInputTypes.Scroll;
   getDirection() {
-    return this.controler.data.input[ControlInputTypes.Scroll]?.mode;
+    return this.control.data.input[ControlInputTypes.Scroll]?.mode;
   }
 }
 

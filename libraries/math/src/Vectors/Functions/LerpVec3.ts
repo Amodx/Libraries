@@ -1,4 +1,4 @@
-import { Vec3Array } from "../../Vector.types"
+import { Vec3Array } from "../../Abstract/Vectors/Vector.types"
 
 const lerpedVec3: Vec3Array = [0, 0, 0];
 export function LerpVec3Array(start: Vec3Array, end: Vec3Array, alpha: number) {

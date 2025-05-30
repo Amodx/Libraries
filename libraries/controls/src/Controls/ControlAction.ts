@@ -1,8 +1,12 @@
-import { ControlEvents } from "../Events/ControlsEventManager";
+import { ControlEvent } from "../Events/ControlEventBase";
 import { ControlData } from "./ControlData";
 
-export type ControlAction = {
-  action: (event: ControlEvents) => void;
+export type ControlAction<
+Control extends ControlEvent<any, any, any> = any,
+> = {
+  action: (
+    event: Control
+  ) => void;
 } & ControlData;
 
 export type ControlGroupData = {

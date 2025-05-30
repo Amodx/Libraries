@@ -79,9 +79,9 @@ const idSchema = new Schema<{
     object: Record<string, number>
   ): Record<number, PropertyMetaData> {
     return {
-      [object["x"]]: { binary: { type: "f32" } },
-      [object["y"]]: { binary: { type: "f32" } },
-      [object["z"]]: { binary: { type: "f32" } },
+      [object["x"]]: { binary: "f32" },
+      [object["y"]]: { binary: "f32" },
+      [object["z"]]: { binary: "f32" },
     };
   }
   const view = transformSchema.createBinaryObjectView("binary-object", false, {
@@ -109,7 +109,6 @@ const idSchema = new Schema<{
   const view = idSchema.createBinaryObjectView("binary-object", false, {
     [i.nodeid]: {
       binary: {
-        type: "buffer",
         byteSize: 16,
         get(view, meta, index) {
           const high = view.getBigUint64(index, false);
@@ -147,7 +146,7 @@ const TranformComponent = NCS.registerComponent<Trasnform>({
 
 const graph = NCS.createGraph();
 const newNode = graph
-  .addNode(Node([TranformComponent(null, "typed-view")],null,Node()))
+  .addNode(Node([TranformComponent(null, "typed-view")], null, Node()))
   .toRef();
 console.log(newNode);
 const tranformComp = TranformComponent.get(newNode);

@@ -45,14 +45,9 @@ let count = 0;
 class BinaryTaskPool {
   pooled = new Map<number, ArrayBuffer[]>();
   get(size: number) {
-    let pooled = this.pooled.get(size);
-    if (!pooled) {
-      pooled = [];
-      this.pooled.set(size, pooled);
-    }
-    return !pooled.length
+    return !this.pooled.get(size)?.length
       ? new ArrayBuffer(BinaryTaskType.HeaderSize + size)
-      : pooled.shift()!;
+      : this.pooled.get(size)!.shift()!;
   }
   return(buffer: ArrayBuffer) {
     const size = buffer.byteLength - BinaryTaskType.HeaderSize;

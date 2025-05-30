@@ -1,5 +1,4 @@
-import { AMath } from "./AMath";
-import { Vector2Like } from "./Vectors";
+import { Vector2Like } from "./Abstract/Vectors/Vector2Like";
 
 export enum CompassDirections {
   North = "north",

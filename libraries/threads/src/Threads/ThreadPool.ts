@@ -47,17 +47,18 @@ export class ThreadPool {
   }
 
   addPort(port: ThreadPortTypes) {
-    const newCommName = `${this.name}-${this._totalThreads}`;
-    const newComm = new Thread(
-      newCommName,
+    const threadName = `${this.name}-${this._totalThreads}`;
+    const thread = new Thread(
+      threadName,
       this._totalThreads,
       this.name,
       this
     );
-    Threads.addThread(newComm);
-    newComm.setPort(port);
+    thread.index = this._totalThreads;
+    Threads.addThread(thread);
+    thread.setPort(port);
 
-    this.__threads.push(newComm);
+    this.__threads.push(thread);
     this._totalThreads++;
   }
 
@@ -69,6 +70,10 @@ export class ThreadPool {
     for (let i = 0; i < this.__threads.length; i++) {
       this.__threads[i].runTask(id, data, transfers);
     }
+  }
+
+  nextThread() {
+    return this.__threads[this.__handleCount()];
   }
 
   runTask<TaskData extends any, ReturnData extends any>(

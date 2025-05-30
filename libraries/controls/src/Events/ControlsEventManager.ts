@@ -1,5 +1,5 @@
 import { ControlEventTypes } from "./Event.types.js";
-import {  ControlEventConstructor } from "./ControlEventBase.js";
+import { ControlEventConstructor } from "./ControlEventBase.js";
 import {
   WheelDownEvent,
   WheelUpEvent,
@@ -16,16 +16,14 @@ import {
 } from "./Register/index.js";
 
 export class ControlEventManager {
-  private static _events = new Map<string, ControlEventConstructor>();
+  private static _events = new Map<string, ControlEventConstructor<any, any>>();
 
-  static registerEvents(event: ControlEventConstructor[]) {
+  static registerEvents(event: ControlEventConstructor<any, any>[]) {
     event.forEach((event) => this._events.set(event.eventType, event));
   }
   static getEvent(id: ControlEventTypes) {
     return this._events.get(id)!;
   }
-
-
 }
 
 export type ControlEvents =

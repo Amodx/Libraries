@@ -1,4 +1,4 @@
-import { InputModeTypes, MouseButtonTypes } from "./Controls/ControlData";
+import { InputModeTypes, MouseButtonTypes } from "../Controls/ControlData";
 
 export class ControlsMap {
   static mapMoueButton(input: number): MouseButtonTypes {

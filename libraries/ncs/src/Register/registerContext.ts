@@ -25,7 +25,6 @@ type RegisteredContext<
   default: ContextCursor<ContextSchema, Data>;
 }) &
   ((
-    
     schema?: ContextSchema,
     schemaViewId?: string,
     data?: Data
@@ -59,12 +58,17 @@ export function registerContext<
       parent: NodeCursor,
       schema?: ContextSchema,
       schemaViewId?: string,
-      data?: Data
+      data?: Data,
+      cursor = ContextCursor.Get()
     ) => {
       const newContext = parent.context.add(
         createContext(schema, schemaViewId, data)
       );
-      return newContext;
+      if (data) {
+        parent.graph._contexts._data[newContext] = data;
+      }
+      cursor.setContext(parent, newContext);
+      return cursor;
     },
     get: (parent: NodeCursor) => {
       return parent.context.get(data.type);

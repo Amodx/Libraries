@@ -45,7 +45,8 @@
     "libraries\\controls\\dist",
     "libraries\\rng\\dist",
     "libraries\\audio\\dist",
-    "libraries\\schemas\\dist"
+    "libraries\\schemas\\dist",
+    "libraries/math/dist"
   ],
   "devDependencies": {
     "@webgpu/types": "^0.1.40",

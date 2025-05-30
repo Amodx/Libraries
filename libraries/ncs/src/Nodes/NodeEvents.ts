@@ -44,7 +44,11 @@ export class NodeEvents {
     (this.node.arrays._events[numberId][this.index] as any) = undefined;
   }
 
-  addListener<Data>(id: string, run: (data: Data) => void) {
+  addListener<Data>(
+    id: string,
+    run: (data: Data) => void,
+    options?: { once?: boolean }
+  ) {
     const numberId = this.node.arrays._eventPalette.isRegistered(id)
       ? this.node.arrays._eventPalette.getNumberId(id)
       : this.node.arrays._eventPalette.register(id);
@@ -58,7 +62,11 @@ export class NodeEvents {
       observer = NCSPools.observers.get() || new Observable();
       observers[this.index] = observer;
     }
-    observer.subscribe(run );
+    if (options?.once) {
+      observer.subscribeOnce(run);
+    } else {
+      observer.subscribe(run);
+    }
   }
 
   removeListener(id: string, run: ObservableFunction<any>) {

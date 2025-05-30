@@ -4,6 +4,7 @@ import { NCSRegister } from "../Register/NCSRegister";
 import { NodeCursor } from "../Nodes/NodeCursor";
 import { NCSPools } from "../Pools/NCSPools";
 import { SchemaCursor } from "../Schema/Schema.types";
+import { Graph } from "../Graphs/Graph";
 export class ContextCursor<
   ContextSchema extends {} = {},
   Data extends {} = {},
@@ -25,6 +26,9 @@ export class ContextCursor<
   get data(): Data {
     return this.arrays._data[this._index];
   }
+  set data(data: Data) {
+    this.arrays._data[this._index] = data;
+  }
   schema: SchemaCursor<ContextSchema>;
   get nodes() {
     return this.arrays._node[this._index];
@@ -35,12 +39,17 @@ export class ContextCursor<
     );
   }
 
+  private _graph: Graph;
+  get graph() {
+    return this._graph;
+  }
   arrays: ContextArray;
   private constructor() {}
 
   setContext(node: NodeCursor, index: number) {
     this._index = index;
     this.arrays = node.graph._contexts;
+    this._graph = node.graph;
     this._type = this.arrays._type[index];
   }
 

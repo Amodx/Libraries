@@ -5,8 +5,8 @@ import { RecursivePartial } from "@amodx/core";
 import { User } from "./Users/User.js";
 import { Environment } from "@amodx/core/Environment/Environment.js";
 
-import { HoldRegister } from "./HoldRegister.js";
-import InitControls from "./InitControls.js";
+import { ControlsInternal } from "./Internal/ControlsInternal.js";
+import InitControls from "./Internal/InitControls.js";
 import { UserManager } from "./Users/UserManager.js";
 import { ControlRegister } from "./Controls/ControlRegister.js";
 export class Controls {
@@ -94,6 +94,6 @@ export class Controls {
 
   static update(delta = 0.16) {
     GamepadManager.updateGamepads();
-    HoldRegister.run(delta);
+    ControlsInternal.runHoldUpdate(delta);
   }
 }

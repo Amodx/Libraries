@@ -2,11 +2,11 @@ import { ControlInputTypes } from "../../Controls//ControlData";
 import { ControlEventTypes } from "../Event.types";
 import { ControlEvent } from "../ControlEventBase";
 
-export abstract class BaseGamepadButtonEvent extends ControlEvent<ControlInputTypes.GamePadButton> {
+abstract class BaseGamepadButtonEvent extends ControlEvent {
   readonly inputType = ControlInputTypes.GamePadButton;
 
   getButton() {
-    return this.controler.data.input[ControlInputTypes.GamePadButton]?.button;
+    return this.control.data.input[ControlInputTypes.GamePadButton]?.button;
   }
 }
 

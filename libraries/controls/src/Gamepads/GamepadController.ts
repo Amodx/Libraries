@@ -3,8 +3,10 @@ import { DefaultGamePadButtons } from "../index.js";
 import { GamepadAxesMoveEvent } from "../Events/Register/GamePadAxes.js";
 import { Observable } from "@amodx/core/Observers/Observable.js";
 import { User } from "../Users/User.js";
-import { ControlsMap } from "../ControlsMap.js";
-import { HoldRegister } from "../HoldRegister.js";
+import { ControlsMap } from "../Internal/ControlsMap.js"
+import { ControlEventManager } from "../Events/ControlsEventManager.js";
+import { ControlEventTypes } from "../Events/Event.types.js";
+import { ControlsInternal } from "../Internal/ControlsInternal.js";
 
 export class GamepadController {
   static BINDINGS = {
@@ -42,7 +44,10 @@ export class GamepadController {
     buttonReleased: new Observable<{ number: number; key: string }>(),
   };
 
-  constructor(public user: User, public gamepad: Gamepad) {
+  constructor(
+    public user: User,
+    public gamepad: Gamepad
+  ) {
     for (const button of GamepadController.BINDINGS.XBOX360) {
       this.pressed[button] = -1;
     }
@@ -52,8 +57,8 @@ export class GamepadController {
     }
   }
 
-  _axes1: number[] = [0, 0];
-  _axes2: number[] = [0, 0];
+  _axes1: [x: number, y: number] = [0, 0];
+  _axes2: [x: number, y: number] = [0, 0];
 
   _testAxes(value: number) {
     return (value * 100) >> 0;
@@ -65,24 +70,29 @@ export class GamepadController {
     if (this._testAxes(gp.axes[0]) || this._testAxes(gp.axes[1])) {
       const key = ControlsMap.getGamePadAxeusId("Left");
       const control = this.user.getControlByType(key);
-      control && control.run(key);
       if (control) {
-        const dcEvent = control.getEvent(key) as GamepadAxesMoveEvent;
-        dcEvent.axes[0] = gp.axes[0];
-        dcEvent.axes[1] = gp.axes[1] * (this.invertYAxis ? -1 : 1);
-        control.run(key);
+        this._axes1[0] = gp.axes[0];
+        this._axes1[1] = gp.axes[1] * (this.invertYAxis ? -1 : 1);
+        const event = new GamepadAxesMoveEvent(control, {
+          stick: "Left",
+          axes: this._axes1,
+        });
+
+        control.run(event);
       }
     }
 
     if (this._testAxes(gp.axes[2]) || this._testAxes(gp.axes[3])) {
       const key = ControlsMap.getGamePadAxeusId("Left");
       const control = this.user.getControlByType(key);
-      control && control.run(key);
       if (control) {
-        const dcEvent = control.getEvent(key) as GamepadAxesMoveEvent;
-        dcEvent.axes[0] = gp.axes[2];
-        dcEvent.axes[1] = gp.axes[3] * (this.invertYAxis ? -1 : 1);
-        control.run(key);
+        this._axes2[0] = gp.axes[2];
+        this._axes2[1] = gp.axes[3] * (this.invertYAxis ? -1 : 1);
+        const event = new GamepadAxesMoveEvent(control, {
+          stick: "Right",
+          axes: this._axes2,
+        });
+        control.run(event);
       }
     }
     for (let i = 0; i < gp.buttons.length; i++) {
@@ -95,7 +105,11 @@ export class GamepadController {
           const key = ControlsMap.getGamePadId(buttonKey, "down");
           const control = this.user.getControlByType(key);
           if (control) {
-            control.run(key);
+            control.run(
+              new (ControlEventManager.getEvent(
+                ControlEventTypes.GamePadButtonDown
+              )!)(control, this)
+            );
           }
           this.observables.buttonPressed.notify({
             number: i,
@@ -110,15 +124,23 @@ export class GamepadController {
         const control = this.user.getControlByType(key);
 
         if (control) {
-          if (!HoldRegister.hasHold(id)) {
-            control.run(key);
+          if (!ControlsInternal.hasHold(id)) {
+            control.run(
+              new (ControlEventManager.getEvent(
+                ControlEventTypes.GamePadButtonHold
+              )!)(control, this)
+            );
             const input = control.data.input;
             let delay = input["gamepad-button"]?.holdDelay;
             delay = delay ? delay : 10;
-            HoldRegister.addHold(
+            ControlsInternal.addHold(
               id,
               () => {
-                control.run(key);
+                control.run(
+                  new (ControlEventManager.getEvent(
+                    ControlEventTypes.GamePadButtonHold
+                  )!)(control, this)
+                );
               },
               delay,
               input["gamepad-button"]?.initHoldDelay
@@ -132,11 +154,15 @@ export class GamepadController {
           const key = ControlsMap.getGamePadId(buttonKey, "up");
           const control = this.user.getControlByType(key);
           if (control) {
-            control.run(key);
+            control.run(
+              new (ControlEventManager.getEvent(
+                ControlEventTypes.GamePadButtonUp
+              )!)(control, this)
+            );
           }
         }
-        if (HoldRegister.hasHold(id)) {
-          HoldRegister.removeHold(id);
+        if (ControlsInternal.hasHold(id)) {
+          ControlsInternal.removeHold(id);
         }
         this.pressed[buttonKey] = -1;
         this.observables.buttonReleased.notify({

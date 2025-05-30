@@ -2,12 +2,21 @@ import { ControlInputTypes } from "../../Controls/ControlData";
 import { ControlEventTypes } from "../../Events/Event.types";
 import { ControlEvent } from "../../Events/ControlEventBase";
 
-export abstract class BaseGamepadAxesEvent extends ControlEvent<ControlInputTypes.GamePadAxes> {
-  axes: [x: number, y: number] = [0, 0];
+abstract class BaseGamepadAxesEvent extends ControlEvent<
+  {},
+  {
+    stick: "Left" | "Right";
+    axes: [x: number, y: number];
+  }
+> {
+  get axes(): Readonly<[x: number, y: number]> {
+    return this.origin.axes;
+  }
   readonly inputType = ControlInputTypes.GamePadAxes;
 
   getStick() {
-    return this.controler.data.input[ControlInputTypes.GamePadAxes]?.stick;
+
+    return this.origin.stick;
   }
 }
 

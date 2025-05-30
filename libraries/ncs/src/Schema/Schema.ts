@@ -30,7 +30,7 @@ const traverseCreate = (
   for (let i = 0; i < properties.length; i++) {
     const data = properties[i];
 
-    if (typeof data.value == "object" && !data.children) {
+    if (typeof data.value == "object" && !data.children?.length) {
       data.children ??= [];
       for (const key in data.value) {
         const value = data.value[key];

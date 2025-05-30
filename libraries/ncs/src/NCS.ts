@@ -33,35 +33,50 @@ import {
   SchemaProperty,
 } from "./Schema/Schema.types";
 import { PropertyData } from "Schema/Property/Property.types";
-const traverseCreateSchema = (object: any, parent: PropertyData) => {
-  for (const key in object) {
-    parent.children ??= [];
-    const value = object[key];
-    if (value instanceof SchemaProperty) {
-      if (
-        value.value instanceof SchemaProperty &&
-        typeof value.value.value == "object"
-      ) {
-        const newParent = {
-          id: key,
-          meta: value.meta,
-          value: value.value,
-          children: [],
-        };
-        parent.children.push(newParent);
-        traverseCreateSchema(value.value.value, newParent);
-      } else {
-        parent.children.push({
-          id: key,
-          meta: value.meta,
-          value: value.value,
-        });
-      }
+function traverseCreateSchema(
+  obj: Record<string, SchemaProperty<any>>,
+  parent: PropertyData
+): PropertyData {
+  parent.children ??= [];
+
+  for (const key in obj) {
+    const schemaProp = obj[key];
+    // If this isn't a SchemaProperty, either skip or handle differently
+    if (!(schemaProp instanceof SchemaProperty)) {
+      continue;
+    }
+
+    // If the SchemaProperty's value is itself an object, we treat it as a parent
+    if (
+      schemaProp.value !== null &&
+      typeof schemaProp.value === "object" &&
+      !Array.isArray(schemaProp.value)
+    ) {
+      // Make a new "parent" property data
+      const newParent: PropertyData = {
+        id: key,
+        meta: schemaProp.meta,
+        value: schemaProp.value,
+      };
+      parent.children.push(newParent);
+
+      // Recurse into the object’s own keys (which themselves may be SchemaProperties)
+      traverseCreateSchema(
+        schemaProp.value as Record<string, SchemaProperty<any>>,
+        newParent
+      );
+    } else {
+      // Otherwise it's a leaf (number, boolean, string, etc.)
+      parent.children.push({
+        id: key,
+        meta: schemaProp.meta,
+        value: schemaProp.value,
+      });
     }
   }
-  return parent;
-};
 
+  return parent;
+}
 export const NCS = {
   /** Create a graph. */
   createGraph() {
@@ -92,18 +107,19 @@ export const NCS = {
     schema: T,
     views?: SchemaCreateData[]
   ): Schema<ExtractSchemaClass<T>> {
-    const s = new Schema(
-      traverseCreateSchema(schema, {
-        id: "root",
-        value: {},
-        children: [],
-      }).children!
-    );
+    const data = traverseCreateSchema(schema, {
+      id: "root",
+      value: {},
+      children: [],
+    }).children!;
+
+    const s = new Schema(data);
     if (views) {
       for (const view of views) {
         s.createView(view);
       }
     }
+
 
     return s as any;
   },

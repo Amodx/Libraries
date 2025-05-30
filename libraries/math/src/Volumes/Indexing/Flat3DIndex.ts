@@ -1,5 +1,5 @@
-import { Vec3Array } from "../../Vector.types";
-import { Vector3Like } from "../../Vectors/index";
+import { Vec3Array } from "../../Abstract/Vectors/Vector.types";
+import { Vector3Like } from "../../Abstract/Vectors/Vector3Like";
 
 export class Flat3DIndex {
   private position: Vec3Array;
@@ -88,6 +88,9 @@ export class Flat3DIndex {
     return this.output;
   }
 
+  getBounds(): Readonly<Vec3Array> {
+    return this.bounds;
+  }
   setBounds(x: number, y: number, z: number): void {
     this.bounds[0] = x;
     this.bounds[1] = y;
