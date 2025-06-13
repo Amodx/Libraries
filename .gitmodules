@@ -1,0 +1,36 @@
+[submodule "libraries/threads"]
+	path = libraries/threads
+	url = https://github.com/Amodx/threads.git
+[submodule "libraries/schemas"]
+	path = libraries/schemas
+	url = https://github.com/Amodx/schemas.git
+[submodule "libraries/rng"]
+	path = libraries/rng
+	url = https://github.com/Amodx/rng.git
+[submodule "libraries/network"]
+	path = libraries/network
+	url = https://github.com/Amodx/network.git
+[submodule "libraries/ncs"]
+	path = libraries/ncs
+	url = https://github.com/Amodx/ncs.git
+[submodule "libraries/math"]
+	path = libraries/math
+	url = https://github.com/Amodx/math.git
+[submodule "libraries/indexdb"]
+	path = libraries/indexdb
+	url = https://github.com/Amodx/indexdb.git
+[submodule "libraries/elm"]
+	path = libraries/elm
+	url = https://github.com/Amodx/elm.git
+[submodule "libraries/core"]
+	path = libraries/core
+	url = https://github.com/Amodx/core.git
+[submodule "libraries/controls"]
+	path = libraries/controls
+	url = https://github.com/Amodx/controls.git
+[submodule "libraries/binary"]
+	path = libraries/binary
+	url = https://github.com/Amodx/binary.git
+[submodule "libraries/audio"]
+	path = libraries/audio
+	url = https://github.com/Amodx/audio.git

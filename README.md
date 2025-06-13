@@ -5,8 +5,6 @@
 
 - **@amodx/math**
   - A math library offering common types and tools for vector and matrix math.
-- **@amodx/meshing**
-  - A library for building custom meshes from scratch.
 - **@amodx/schemas**
   - A library for creating type-safe schemas for objects.
 - **@amodx/elm**
