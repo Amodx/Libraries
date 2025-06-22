@@ -1,6 +1,15 @@
 
 <h1 align="center">Amodx Libraries</h1>
 
+To Start
+```console
+git pull
+git lfs pull
+git submodule update --init --recursive
+npm run init:all
+npm install
+```
+
 ### Packages
 
 - **@amodx/math**
