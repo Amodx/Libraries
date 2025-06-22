@@ -4,7 +4,6 @@
 To Start
 ```console
 git pull
-git lfs pull
 git submodule update --init --recursive
 npm run init:all
 npm install
