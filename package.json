@@ -3,6 +3,8 @@
   "version": "0.0.0",
   "main": "index.js",
   "scripts": {
+    "init:amodx-elms:babylongui": "cd ./elements/babylongui ; npm run build ; cd ../../ ; npm init -y --scope @amodx-elms -w ./elements/babylongui/dist",
+    "init:amodx-elms:controlui": "cd ./elements/controlui ; npm run build ; cd ../../ ; npm init -y --scope @amodx-elms -w ./elements/controlui/dist",
     "init:amodx:binary": "cd ./libraries/binary ; npm run build ; cd ../../ ; npm init -y --scope @amodx -w ./libraries/binary/dist",
     "init:amodx:threads": "cd ./libraries/threads ; npm run build ; cd ../../ ; npm init -y --scope @amodx -w ./libraries/threads/dist",
     "init:amodx:schemas": "cd ./libraries/schemas ; npm run build ; cd ../../ ; npm init -y --scope @amodx -w ./libraries/schemas/dist",
@@ -45,7 +47,9 @@
     "libraries/controls/dist",
     "libraries/rng/dist",
     "libraries/elm/dist",
-    "libraries/network/dist"
+    "libraries/network/dist",
+    "elements/babylongui/dist",
+    "elements/controlui/dist"
   ],
   "devDependencies": {
     "@webgpu/types": "^0.1.40",
@@ -62,6 +66,9 @@
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.1"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@babylonjs/core": "^8.13.0",
+    "@babylonjs/gui": "^8.13.0"
+  },
   "description": ""
 }

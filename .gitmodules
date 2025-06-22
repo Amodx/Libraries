@@ -34,3 +34,9 @@
 [submodule "libraries/audio"]
 	path = libraries/audio
 	url = https://github.com/Amodx/audio.git
+[submodule "elements/controlui"]
+	path = elements/controlui
+	url = https://github.com/Amodx/controlui.git
+[submodule "elements/babylongui"]
+	path = elements/babylongui
+	url = https://github.com/Amodx/babylongui.git

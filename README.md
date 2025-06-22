@@ -9,7 +9,7 @@ npm run init:all
 npm install
 ```
 
-### Packages
+### Libraries
 
 - **@amodx/math**
   - A math library offering common types and tools for vector and matrix math.
@@ -33,3 +33,10 @@ npm install
   - The NCS library is used to build flexible and scalable Node Component Systems (NCS). 
 - **@amodx/core**
   - A collection of utility classes and functions that serve as the foundation for most other Amodx libraries, ensuring consistency and reducing redundancy.
+
+## Elements
+
+- **@amodx-elms/controlui**
+    - A library of custom html components to make it easy to build a gamepad based UI.
+- **@amodx-elms/babylonjsgui**
+    -  A set of custom html components to make working with the 2d babylonjs gui eaiser. 
