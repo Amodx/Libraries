@@ -6,7 +6,7 @@ import { ReaderManager } from "./ReaderManager";
 import Viewer from "./Viewer";
 export default function Reader() {
   let compressed = false;
-  let fileBuffer: ArrayBuffer;
+  let fileBuffer: ArrayBufferLike;
   return elm(
     "div",
     {
@@ -58,7 +58,7 @@ export default function Reader() {
 
           if (compressed) {
             fileBuffer = (
-              await Compressor.core.decompressArrayBuffer(fileBuffer)
+              await Compressor.core.decompressArrayBuffer(fileBuffer as any)
             ).buffer;
           }
           const binaryObject = BinaryObject.bufferToObject(fileBuffer);

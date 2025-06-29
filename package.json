@@ -5,6 +5,8 @@
   "scripts": {
     "init:amodx-elms:babylongui": "cd ./elements/babylongui ; npm run build ; cd ../../ ; npm init -y --scope @amodx-elms -w ./elements/babylongui/dist",
     "init:amodx-elms:controlui": "cd ./elements/controlui ; npm run build ; cd ../../ ; npm init -y --scope @amodx-elms -w ./elements/controlui/dist",
+    "init:amodx-elms:flow": "cd ./elements/flow ; npm run build ; cd ../../ ; npm init -y --scope @amodx-elms -w ./elements/flow/dist",
+    "init:amodx:flow": "cd ./libraries/flow ; npm run build ; cd ../../ ; npm init -y --scope @amodx -w ./libraries/flow/dist",
     "init:amodx:binary": "cd ./libraries/binary ; npm run build ; cd ../../ ; npm init -y --scope @amodx -w ./libraries/binary/dist",
     "init:amodx:threads": "cd ./libraries/threads ; npm run build ; cd ../../ ; npm init -y --scope @amodx -w ./libraries/threads/dist",
     "init:amodx:schemas": "cd ./libraries/schemas ; npm run build ; cd ../../ ; npm init -y --scope @amodx -w ./libraries/schemas/dist",
@@ -17,7 +19,7 @@
     "init:amodx:elm": "cd ./libraries/elm ; npm run build ; cd ../../ ; npm init -y --scope @amodx -w ./libraries/elm/dist",
     "init:amodx:network": "cd ./libraries/network ; npm run build ; cd ../../ ; npm init -y --scope @amodx -w ./libraries/network/dist",
     "init:amodx:math": "cd ./libraries/math ; npm run build ; cd ../../ ; npm init -y --scope @amodx -w ./libraries/math/dist",
-    "init:amodx:all": "npm run init:amodx:core ; npm run init:amodx:math ; npm run init:amodx:binary ; npm run init:amodx:threads ; npm run init:amodx:schemas ; npm run init:amodx:indexdb ; npm run init:amodx:audio ; npm run init:amodx:ncs ; npm run init:amodx:controls ; npm run init:amodx:rng ; npm run init:amodx:elm ; npm run init:amodx:network",
+    "init:amodx:all": "npm run init:amodx:core ; npm run init:amodx:math ; npm run init:amodx:binary ; npm run init:amodx:threads ; npm run init:amodx:flow ; npm run init:amodx:schemas ; npm run init:amodx:indexdb ; npm run init:amodx:audio ; npm run init:amodx:ncs ; npm run init:amodx:controls ; npm run init:amodx:rng ; npm run init:amodx:elm ; npm run init:amodx:network",
     "build:amodx:binary": "cd ./libraries/binary && npm run build",
     "build:amodx:threads": "cd ./libraries/threads && npm run build",
     "build:amodx:schemas": "cd ./libraries/schemas && npm run build",
@@ -49,7 +51,9 @@
     "libraries/elm/dist",
     "libraries/network/dist",
     "elements/babylongui/dist",
-    "elements/controlui/dist"
+    "elements/controlui/dist",
+    "libraries/flow/dist",
+    "elements/flow/dist"
   ],
   "devDependencies": {
     "@webgpu/types": "^0.1.40",

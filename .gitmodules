@@ -40,3 +40,9 @@
 [submodule "elements/babylongui"]
 	path = elements/babylongui
 	url = https://github.com/Amodx/babylongui.git
+[submodule "libraries/flow"]
+	path = libraries/flow
+	url = https://github.com/Amodx/flow.git
+[submodule "elements/flow"]
+	path = elements/flow
+	url = https://github.com/Amodx/flow-elements.git
