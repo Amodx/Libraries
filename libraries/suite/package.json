@@ -1,0 +1,42 @@
+{
+  "name": "@amodx/suite",
+  "version": "0.0.1",
+  "module": "index.js",
+  "types": "index.d.ts",
+  "type": "module",
+  "description": "",
+  "keywords": [],
+  "scripts": {
+    "build": "mkdir -p dist && rm -rf dist/* && cp package.json dist/package.json && cd ./src && npx tsc",
+    "compile": "cd ./src && npx tsc --watch"
+  },
+  "repository": {
+    "url": "git+https://github.com/Amodx/Libraries.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Amodx/Libraries/issues"
+  },
+  "homepage": "https://github.com/Amodx/Libraries",
+  "author": "Amodx",
+  "license": "MIT",
+  "devDependencies": {},
+  "main": "index.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@amodx/audio": "^0.0.16",
+    "@amodx/binary": "^0.0.21",
+    "@amodx/controls": "^0.0.40",
+    "@amodx/core": "^0.0.26",
+    "@amodx/elm": "^0.0.27",
+    "@amodx/flow": "^0.0.33",
+    "@amodx/indexdb": "^0.0.34",
+    "@amodx/math": "^0.0.19",
+    "@amodx/ncs": "^0.0.28",
+    "@amodx/network": "^0.0.33",
+    "@amodx/rng": "^0.0.44",
+    "@amodx/schemas": "^0.0.26",
+    "@amodx/threads": "^0.0.36"
+  }
+}
